@@ -1,0 +1,15 @@
+# Cloudflare Workers static assets: response headers by path.
+#
+# no-transform stops Cloudflare from rewriting our HTML at the edge. Without it,
+# Cloudflare injects its Web Analytics beacon (static.cloudflareinsights.com),
+# a third-party script we did not ask for. Content blockers block that script,
+# which shows up as "net::ERR_BLOCKED_BY_CLIENT" in the browser console, and the
+# strict CSP planned for M12 would block it as well.
+
+/*
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+
+# Vite gives built files content hashes, so they can be cached for a year.
+/assets/*
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable, no-transform
