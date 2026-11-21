@@ -82,6 +82,26 @@ describe("App routing", () => {
     }
   });
 
+  it("copy never says 'in the app' or names Plinthwell as a brand", () => {
+    for (const path of ["/", "/demo", "/missing"]) {
+      const { unmount } = renderAt(path);
+      const text = document.body.textContent ?? "";
+      expect(text, path).not.toMatch(/in the app|download the app/i);
+      // Hostnames are lowercase (roaamm.plinthwell.com); the brand never appears.
+      expect(text, path).not.toMatch(/Plinthwell/);
+      unmount();
+    }
+  });
+
+  it("credits the photo source in the footer", () => {
+    renderAt("/");
+    const footer = screen.getByRole("contentinfo");
+    expect(within(footer).getByRole("link", { name: "Unsplash" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("CREDITS.md"),
+    );
+  });
+
   it("uses first-level plinthwell.com subdomains only", () => {
     for (const s of SERVICES) {
       expect(new URL(s.url).host).toMatch(/^roaamm(-[a-z]+)?\.plinthwell\.com$/);
