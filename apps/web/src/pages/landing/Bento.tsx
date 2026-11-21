@@ -1,7 +1,9 @@
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { Photo } from "../../components/Photo";
-import { useReveal } from "../../motion";
+import type { CSSProperties } from "react";
+import { Reveal } from "../../motion";
+import { SectionHead } from "./SectionHead";
 import "./Bento.css";
 
 // Not real numbers: shown with the "Simulated data" label.
@@ -11,10 +13,10 @@ const METERS = [
   { label: "Trips with a local guide", value: 36 },
 ];
 
-function DotMeter({ label, value }: { label: string; value: number }) {
+function DotMeter({ label, value, index }: { label: string; value: number; index: number }) {
   const filled = Math.round(value / 10);
   return (
-    <li className="meter">
+    <li className="meter" style={{ "--m": index } as CSSProperties}>
       <div className="meter__row">
         <span>{label}</span>
         <span className="mono meter__value" data-simulated>
@@ -23,7 +25,11 @@ function DotMeter({ label, value }: { label: string; value: number }) {
       </div>
       <div className="meter__dots" aria-hidden="true">
         {Array.from({ length: 10 }, (_, i) => (
-          <span key={i} className={i < filled ? "is-on" : undefined} />
+          <span
+            key={i}
+            className={i < filled ? "is-on" : undefined}
+            style={{ "--d": i } as CSSProperties}
+          />
         ))}
       </div>
     </li>
@@ -31,19 +37,22 @@ function DotMeter({ label, value }: { label: string; value: number }) {
 }
 
 export function Bento() {
-  const ref = useReveal<HTMLDivElement>();
   return (
-    <section className="section bento-section" aria-labelledby="about-title">
+    <section className="section bento-section cv-auto" aria-labelledby="about-title">
       <div className="container">
-        <div className="section-head bento-head">
-          <p className="eyebrow">About ROAAMM</p>
-          <h2 id="about-title">
-            Private, verified, <span className="serif">yours</span>
-          </h2>
-        </div>
+        <SectionHead
+          className="bento-head"
+          eyebrow="About ROAAMM"
+          id="about-title"
+          title={
+            <>
+              Private, verified, <span className="serif">yours</span>
+            </>
+          }
+        />
 
-        <div className="bento" ref={ref}>
-          <div className="bento__card bento__card--dark">
+        <div className="bento">
+          <Reveal className="bento__card bento__card--dark">
             <p className="bento__promise">
               Everyone you meet has shown ID. Your chats and calls are end-to-end encrypted, so
               not even ROAAMM can read them.
@@ -54,28 +63,28 @@ export function Bento() {
             <Button href="/demo" variant="inverse" size="lg" arrow>
               Try demo
             </Button>
-          </div>
+          </Reveal>
 
-          <div className="bento__card bento__card--photo">
+          <Reveal variant="scale" delay={1} className="bento__card bento__card--photo">
             <Photo
               slot="bento-solo-traveller"
               alt="A traveller with a backpack, seen from behind, looking out over a city"
               sizes="(min-width: 900px) 30vw, 92vw"
             />
             <span className="glass-pill glass-pill--dark bento__chip">Made for you</span>
-          </div>
+          </Reveal>
 
-          <div className="bento__card bento__card--stats" data-simulated-scope>
+          <Reveal delay={2} className="bento__card bento__card--stats" data-simulated-scope>
             <div className="bento__stats-head">
               <h3>Community health</h3>
               <Badge>Simulated data</Badge>
             </div>
             <ul className="meters">
-              {METERS.map((m) => (
-                <DotMeter key={m.label} {...m} />
+              {METERS.map((m, i) => (
+                <DotMeter key={m.label} index={i} {...m} />
               ))}
             </ul>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { IdCardIcon, CalendarIcon, ShieldIcon } from "../../components/icons";
-import { useReveal } from "../../motion";
+import { Reveal } from "../../motion";
+import { SectionHead } from "./SectionHead";
 import "./HowItWorks.css";
 
 const STEPS: { title: string; body: string; icon: ReactNode }[] = [
@@ -22,19 +23,22 @@ const STEPS: { title: string; body: string; icon: ReactNode }[] = [
 ];
 
 export function HowItWorks() {
-  const ref = useReveal<HTMLOListElement>();
   return (
-    <section id="how-it-works" className="section" aria-labelledby="how-title">
+    <section id="how-it-works" className="section cv-auto" aria-labelledby="how-title">
       <div className="container">
-        <div className="section-head how-head">
-          <p className="eyebrow">How it works</p>
-          <h2 id="how-title">
-            Three steps to your <span className="serif">first trip</span>
-          </h2>
-        </div>
-        <ol className="steps" ref={ref}>
+        <SectionHead
+          className="how-head"
+          eyebrow="How it works"
+          id="how-title"
+          title={
+            <>
+              Three steps to your <span className="serif">first trip</span>
+            </>
+          }
+        />
+        <ol className="steps">
           {STEPS.map((s, i) => (
-            <li key={s.title} className="step">
+            <Reveal as="li" key={s.title} delay={i} className="step">
               <div className="step__top">
                 <span className="step__num mono" aria-hidden="true">
                   {String(i + 1).padStart(2, "0")}
@@ -43,7 +47,7 @@ export function HowItWorks() {
               </div>
               <h3>{s.title}</h3>
               <p>{s.body}</p>
-            </li>
+            </Reveal>
           ))}
         </ol>
       </div>

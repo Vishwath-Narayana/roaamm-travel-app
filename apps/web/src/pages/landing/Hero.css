@@ -49,13 +49,12 @@
   object-fit: cover;
 }
 
-/* Dark gradient so white text stays readable on every photo. Measured with
-   the three hero photos: headline >= 4.3:1, body text >= 5.1:1 (WCAG AA). */
+/* A soft halo behind the headline plus light bands for the nav and the
+   controls, instead of a dark wash over the whole photo. Measured by
+   scripts/check-hero-contrast.mjs on all three photos (WCAG AA). */
 .hero__overlay {
   z-index: -1;
-  background:
-    radial-gradient(ellipse 70% 55% at 50% 48%, rgba(11, 11, 15, 0.35), transparent 72%),
-    var(--overlay-hero);
+  background: var(--overlay-focus), var(--overlay-hero);
 }
 
 .hero__content {
@@ -67,9 +66,10 @@
   text-align: center;
 }
 
+/* Dark glass: the pill, not the photo, carries the text contrast. */
 .eyebrow.eyebrow--glass {
-  background: var(--glass-bg);
-  border-color: var(--glass-border);
+  background: var(--glass-dark);
+  border-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -156,7 +156,7 @@
   flex: none;
   border: 1px solid var(--glass-border);
   border-radius: 50%;
-  background: var(--glass-bg);
+  background: var(--glass-dark);
   color: #ffffff;
   cursor: pointer;
   backdrop-filter: blur(12px);
@@ -237,5 +237,89 @@
 @media (prefers-reduced-motion: reduce) {
   .hero__slide {
     transition: none;
+  }
+}
+
+/* ---- Motion (only when the visitor allows it) ---- */
+@media (prefers-reduced-motion: no-preference) {
+  /* Slow Ken Burns zoom on the active photo; restarts each time a slide
+     becomes active, paused while the hero is off screen. */
+  .hero__slide.is-active .hero__photo img {
+    animation: hero-kenburns 12s var(--ease-out) both;
+  }
+
+  .hero__frame[data-onscreen="false"] .hero__photo img {
+    animation-play-state: paused;
+  }
+
+  /* Headline lines rise out of a mask on first load, 90 ms apart. */
+  .line-mask__inner {
+    display: inline-block;
+    animation: hero-line var(--dur-4) var(--ease-out) both;
+    animation-delay: 0ms;
+  }
+
+  /* Everything under the headline follows. */
+  .hero__content > :not(h1) {
+    animation: hero-fade var(--dur-3) var(--ease-out) both;
+    animation-delay: 260ms;
+  }
+
+  .hero__content > .eyebrow {
+    animation-delay: 0ms;
+  }
+}
+
+/* Mask: clips the bottom so a line can rise from below; generous on the
+   other sides so italic overhangs are never cut. */
+.line-mask {
+  clip-path: inset(-0.3em -0.4em 0 -0.4em);
+  padding-bottom: 0.06em;
+}
+
+@keyframes hero-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes hero-line {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* Gentle scroll parallax where scroll-driven animations exist. Browsers
+   without them simply skip it. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__slides {
+      animation: hero-parallax linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+  }
+}
+
+/* Scaled 10% so moving 4% never uncovers the frame behind the photo. */
+@keyframes hero-parallax {
+  from {
+    transform: scale(1.1);
+  }
+  to {
+    transform: translateY(4%) scale(1.1);
   }
 }

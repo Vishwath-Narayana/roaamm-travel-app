@@ -75,8 +75,9 @@
   background: #ececee;
 }
 
+/* Glass over photos. Dark-tinted so white text passes AA on bright photos. */
 .btn--glass {
-  background: var(--glass-bg);
+  background: var(--glass-dark);
   border-color: var(--glass-border);
   color: #ffffff;
   backdrop-filter: blur(12px);
@@ -84,7 +85,7 @@
 }
 
 .btn--glass:hover {
-  background: rgba(255, 255, 255, 0.26);
+  background: rgba(11, 11, 15, 0.62);
 }
 
 @media (prefers-reduced-transparency: reduce) {

@@ -3,8 +3,8 @@ import type { ImageSlot } from "../../images.gen";
 export const HERO_SLIDES: { slot: ImageSlot; alt: string; credit: string }[] = [
   {
     slot: "hero-1",
-    alt: "A lone hiker on a hilltop path at sunrise, with fog filling the valleys below",
-    credit: "Edoardo Bortoli",
+    alt: "A hiker with a backpack crossing a golden mountain meadow in warm evening light",
+    credit: "Alex Moliski",
   },
   {
     slot: "hero-2",
@@ -13,8 +13,8 @@ export const HERO_SLIDES: { slot: ImageSlot; alt: string; credit: string }[] = [
   },
   {
     slot: "hero-3",
-    alt: "A traveller sitting on a rocky ledge, watching the sun set over a river valley",
-    credit: "Rafael Peier",
+    alt: "A traveller walking through a golden field towards distant mountains",
+    credit: "Angel Balashev",
   },
 ];
 

@@ -1,4 +1,5 @@
 import { ChatIcon, GuideIcon, IdCardIcon, PinIcon } from "../../components/icons";
+import { Reveal } from "../../motion";
 import "./TrustStrip.css";
 
 const ITEMS = [
@@ -11,14 +12,14 @@ const ITEMS = [
 export function TrustStrip() {
   return (
     <div className="container trust-wrap">
-      <ul className="trust" aria-label="Built in">
-        {ITEMS.map((item) => (
-          <li key={item.label}>
+      <Reveal as="ul" variant="line" className="trust" aria-label="Built in">
+        {ITEMS.map((item, i) => (
+          <Reveal as="li" key={item.label} variant="fade" delay={i + 2}>
             {item.icon}
             <span>{item.label}</span>
-          </li>
+          </Reveal>
         ))}
-      </ul>
+      </Reveal>
     </div>
   );
 }

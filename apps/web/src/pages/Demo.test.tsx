@@ -6,7 +6,7 @@ describe("Demo", () => {
     render(<Demo />);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     for (const role of ["Traveller", "Guide", "Admin"]) {
-      expect(screen.getByRole("heading", { level: 2, name: role })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 3, name: role })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: `Open as ${role}` })).toBeDisabled();
     }
     expect(screen.getAllByText("Opens in M2")).toHaveLength(3);

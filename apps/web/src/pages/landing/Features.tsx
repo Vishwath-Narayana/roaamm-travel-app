@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { Card } from "../../components/Card";
+import "../../components/Card.css";
 import { CalendarIcon, CheckIcon, GuideIcon, PriceIcon, ShieldIcon } from "../../components/icons";
 import { Photo } from "../../components/Photo";
-import { useReveal } from "../../motion";
+import { Reveal } from "../../motion";
 import "./Features.css";
 
 const FEATURES: { title: string; body: string; icon: ReactNode }[] = [
@@ -42,44 +42,45 @@ function CheckList({ items }: { items: string[] }) {
 }
 
 export function Features() {
-  const ref = useReveal<HTMLDivElement>();
   return (
-    <section id="features" className="section" aria-labelledby="features-title">
+    <section id="features" className="section cv-auto" aria-labelledby="features-title">
       <div className="container">
-        <div className="split" ref={ref}>
+        <div className="split">
           <div className="split__text">
             <div className="section-head">
-              <p className="eyebrow">Features</p>
-              <h2 id="features-title">
+              <Reveal as="p" variant="fade" className="eyebrow">
+                Features
+              </Reveal>
+              <Reveal as="h2" id="features-title" delay={1}>
                 Built for travelling <span className="serif">alone</span>
-              </h2>
-              <p className="lead">
+              </Reveal>
+              <Reveal as="p" className="lead" delay={2}>
                 Everything a solo trip needs, in one place: people to meet, someone local to
                 show you around, and a safety net that is always on.
-              </p>
+              </Reveal>
             </div>
             <ul className="features-grid">
-              {FEATURES.map((f) => (
-                <li key={f.title} className="feature">
+              {FEATURES.map((f, i) => (
+                <Reveal as="li" key={f.title} delay={i} className="feature">
                   <span className="feature__icon">{f.icon}</span>
                   <h3>{f.title}</h3>
                   <p>{f.body}</p>
-                </li>
+                </Reveal>
               ))}
             </ul>
           </div>
-          <div className="split__media">
+          <Reveal variant="scale" className="split__media">
             <Photo
               slot="feature-guide"
               alt="A traveller walking down a sunlit cobblestone alley in an old town"
               sizes="(min-width: 900px) 40vw, 92vw"
             />
             <span className="glass-pill glass-pill--dark split__chip">Walk it with a local</span>
-          </div>
+          </Reveal>
         </div>
 
         <div className="spotlights">
-          <Card as="section" id="safety" aria-labelledby="safety-title" className="spotlight">
+          <Reveal as="section" id="safety" aria-labelledby="safety-title" className="card spotlight">
             <h3 id="safety-title">Safety, built in</h3>
             <CheckList
               items={[
@@ -88,9 +89,9 @@ export function Features() {
                 "A check-in timer escalates if you miss it.",
               ]}
             />
-          </Card>
-          <Card as="section" id="guides" aria-labelledby="guides-title" className="spotlight">
-            <h3 id="guides-title">Licensed local guides</h3>
+          </Reveal>
+          <Reveal as="section" aria-labelledby="licence-title" delay={1} className="card spotlight">
+            <h3 id="licence-title">Licensed local guides</h3>
             <CheckList
               items={[
                 "Every guide's licence is checked before they can take bookings.",
@@ -98,7 +99,7 @@ export function Features() {
                 "Chat with your guide before you meet.",
               ]}
             />
-          </Card>
+          </Reveal>
         </div>
       </div>
     </section>

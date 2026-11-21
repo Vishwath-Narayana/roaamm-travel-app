@@ -1,4 +1,4 @@
-import { color, effect, font, layout, radius, shadow, size, space, type } from "@roaamm/design-tokens";
+import { color, effect, font, layout, motion, radius, shadow, size, space, type } from "@roaamm/design-tokens";
 import css from "./tokens.css?raw";
 
 /** Returns the declarations inside the first block whose selector matches. */
@@ -40,5 +40,6 @@ describe("tokens.css mirrors @roaamm/design-tokens", () => {
     for (const [k, v] of Object.entries(type)) expect(root[`type-${k}`]).toBe(v);
     for (const [k, v] of Object.entries(layout)) expect(root[`layout-${k}`]).toBe(v);
     for (const [k, v] of Object.entries(effect)) expect(root[`effect-${k}`]).toBe(v);
+    for (const [k, v] of Object.entries(motion)) expect(root[k]).toBe(v);
   });
 });

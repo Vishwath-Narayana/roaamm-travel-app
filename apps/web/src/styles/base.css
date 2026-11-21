@@ -98,7 +98,7 @@ h3 {
   padding: 0 14px;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
-  background: var(--glass-bg);
+  background: var(--glass-dark);
   color: #ffffff;
   font-size: 13px;
   font-weight: 500;
@@ -231,5 +231,35 @@ kbd,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Section head with something on the right (carousel buttons, a badge). */
+.section-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+/* Photos (see components/Photo.tsx): a blurred placeholder sits behind each
+   photo, which fades in once it has loaded. Sizes never change, so no shift. */
+picture.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: var(--surface);
+  background-position: center;
+  background-size: cover;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  picture.photo img {
+    transition: opacity var(--dur-2) var(--ease-out);
+  }
+
+  picture.photo img[data-loaded="false"] {
+    opacity: 0;
   }
 }

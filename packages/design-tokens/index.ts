@@ -81,9 +81,22 @@ export const layout = {
 /** CSS expressions that depend on the active theme's ink colour. */
 export const effect = {
   hairline: "color-mix(in srgb, var(--ink) 10%, transparent)",
+  /** Light bands at the top (nav) and bottom (controls) of the hero photo. */
   "overlay-hero":
-    "linear-gradient(180deg, rgba(11, 11, 15, 0.62) 0%, rgba(11, 11, 15, 0.55) 30%, rgba(11, 11, 15, 0.55) 62%, rgba(11, 11, 15, 0.85) 100%)",
+    "linear-gradient(180deg, rgba(11, 11, 15, 0.45) 0%, rgba(11, 11, 15, 0.15) 12%, rgba(11, 11, 15, 0) 24%, rgba(11, 11, 15, 0) 62%, rgba(11, 11, 15, 0.7) 100%)",
+  /** Soft dark halo behind the hero headline only; the photo edges stay bright. */
+  "overlay-focus":
+    "radial-gradient(ellipse 75% 40% at 50% 38%, rgba(11, 11, 15, 0.62) 0%, rgba(11, 11, 15, 0.47) 55%, rgba(11, 11, 15, 0) 100%)",
 } as const;
 
-export const tokens = { color, font, type, radius, size, shadow, space, layout, effect } as const;
+/** Motion. Animate only transform, opacity, clip-path and filter. */
+export const motion = {
+  "ease-out": "cubic-bezier(0.16, 1, 0.3, 1)",
+  "dur-1": "200ms",
+  "dur-2": "400ms",
+  "dur-3": "700ms",
+  "dur-4": "1100ms",
+} as const;
+
+export const tokens = { color, font, type, radius, size, shadow, space, layout, effect, motion } as const;
 export type ThemeName = keyof typeof color;

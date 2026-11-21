@@ -3,6 +3,7 @@ import { Link, useRoute } from "../router";
 import { currentTheme, onSystemThemeChange, setTheme, type Theme } from "../theme";
 import { Button } from "./Button";
 import { CloseIcon, MarkIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
+import { themeTransition } from "../viewTransition";
 import "./TopNav.css";
 
 export const NAV_LINKS = [
@@ -23,9 +24,12 @@ function ThemeToggle() {
       type="button"
       className="icon-btn"
       aria-label={`Switch to ${next} theme`}
-      onClick={() => {
-        setTheme(next);
-        setState(next);
+      onClick={(e) => {
+        const button = e.currentTarget;
+        themeTransition(button, () => {
+          setTheme(next);
+          setState(next);
+        });
       }}
     >
       {theme === "dark" ? <SunIcon size={20} /> : <MoonIcon size={20} />}
@@ -40,7 +44,9 @@ type TopNavProps = {
 
 export function TopNav({ overlay = false }: TopNavProps) {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(false); // past the hero: solid pill
+  const [hidden, setHidden] = useState(false); // scrolling down: slide away
+  const headerRef = useRef<HTMLElement>(null);
   const menuId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const path = useRoute();
@@ -54,9 +60,31 @@ export function TopNav({ overlay = false }: TopNavProps) {
   useEffect(() => setOpen(false), [path]);
 
   useEffect(() => {
-    if (!overlay) return;
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
+    let last = window.scrollY;
+    let queued = false;
+    const measure = () => {
+      queued = false;
+      const y = window.scrollY;
+      if (overlay) {
+        // Clear over the hero photo, solid once the hero has scrolled away.
+        const hero = document.querySelector(".hero");
+        const limit = hero ? hero.getBoundingClientRect().height - 96 : 24;
+        setScrolled(y > limit);
+      }
+      // Hide when scrolling down, show again on the way up. Never hide near
+      // the top or while keyboard focus is inside the nav.
+      const focusInside = headerRef.current?.contains(document.activeElement) ?? false;
+      if (y < 120 || focusInside) setHidden(false);
+      else if (y > last + 6) setHidden(true);
+      else if (y < last - 6) setHidden(false);
+      last = y;
+    };
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(measure);
+    };
+    measure();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [overlay]);
@@ -72,10 +100,15 @@ export function TopNav({ overlay = false }: TopNavProps) {
 
   return (
     <header
+      ref={headerRef}
       className={[
         "topnav",
         overlay && !scrolled && !open ? "topnav--clear" : "topnav--solid",
-      ].join(" ")}
+        hidden && !open && "topnav--hidden",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onFocus={() => setHidden(false)}
     >
       <div className="topnav__bar">
         <Link href="/" className="wordmark" aria-label="ROAAMM home">
