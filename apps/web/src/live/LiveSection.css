@@ -1,0 +1,167 @@
+.live {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.live__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.live__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.live__tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.live__tab {
+  position: relative;
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color var(--dur-1) var(--ease-out);
+}
+
+.live__tab[aria-selected="true"] {
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(11, 11, 15, 0.08);
+}
+
+/* Thin bar under the active tab while its script plays. */
+.live__tab-progress {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ink);
+  transform-origin: left;
+  animation: live-tab-progress 6s linear both;
+}
+
+.live[data-playing="false"] .live__tab-progress {
+  animation-play-state: paused;
+}
+
+@keyframes live-tab-progress {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.live__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.circle-btn--sm {
+  width: 40px;
+  height: 40px;
+}
+
+.live__replay {
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.live__replay:hover {
+  background: var(--surface);
+}
+
+/* Fixed height so switching tabs never moves the page. */
+.live__stage {
+  min-height: 560px;
+  padding: var(--space-5);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-hero);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--verified-bg) 70%, transparent), transparent 60%),
+    var(--surface);
+}
+
+.live__stage {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.live__about {
+  display: grid;
+  align-content: center;
+  gap: var(--space-3);
+}
+
+.live__about p {
+  max-width: 44ch;
+  color: var(--muted);
+}
+
+.live__about ul {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.live__about li {
+  padding-left: var(--space-5);
+  position: relative;
+  font-weight: 500;
+}
+
+.live__about li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--verified-fg);
+}
+
+.live__loading {
+  min-height: 480px;
+}
+
+@media (min-width: 900px) {
+  .live__stage {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    min-height: 560px;
+    padding: var(--space-7);
+  }
+}

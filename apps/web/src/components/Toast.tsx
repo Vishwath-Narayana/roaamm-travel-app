@@ -72,3 +72,8 @@ export function useToast(): ToastApi {
   if (!ctx) throw new Error("useToast must be used inside <ToastProvider>");
   return ctx;
 }
+
+/** Like useToast, but returns null outside a provider (for reusable demos). */
+export function useOptionalToast(): ToastApi | null {
+  return useContext(ToastContext);
+}
