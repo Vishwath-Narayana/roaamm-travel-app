@@ -38,7 +38,7 @@ export function Destinations() {
   }
 
   return (
-    <section className="section destinations" aria-labelledby="dest-title">
+    <section className="section destinations" aria-labelledby="dest-title" data-near-root>
       <div className="container">
         <div className="destinations__head" ref={headRef}>
           <div className="section-head">
