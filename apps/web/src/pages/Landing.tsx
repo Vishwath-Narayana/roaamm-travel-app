@@ -9,6 +9,7 @@ import { HowItWorks } from "./landing/HowItWorks";
 import { LiveSection } from "../live/LiveSection";
 import { SearchBar } from "./landing/SearchBar";
 import { Stats } from "./landing/Stats";
+import { Stories } from "./landing/Stories";
 import { TrustStrip } from "./landing/TrustStrip";
 
 export function Landing() {
@@ -25,6 +26,7 @@ export function Landing() {
       </div>
       <Features />
       <Guides />
+      <Stories />
       <Stats />
       <HowItWorks />
       <FinalCta />

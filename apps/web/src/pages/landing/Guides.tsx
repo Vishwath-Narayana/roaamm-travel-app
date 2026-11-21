@@ -82,8 +82,9 @@ function GuideCard({ guide, index }: { guide: (typeof GUIDES)[number]; index: nu
           <h3 id={titleId}>{guide.name}</h3>
           <p className="guide__city">{guide.city}</p>
         </div>
-        <span className="guide__rating" aria-label={`Rated ${guide.rating} out of 5`}>
-          <span aria-hidden="true">★</span> {guide.rating}
+        <span className="guide__rating">
+          <span aria-hidden="true">★ {guide.rating}</span>
+          <span className="visually-hidden">Rated {guide.rating} out of 5</span>
         </span>
       </div>
 
