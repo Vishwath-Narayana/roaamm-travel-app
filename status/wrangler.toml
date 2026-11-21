@@ -1,0 +1,9 @@
+name = "roaamm-status"
+compatibility_date = "2026-11-01"
+
+[assets]
+directory = "./public"
+
+[[routes]]
+pattern = "roaamm-status.plinthwell.com"
+custom_domain = true
