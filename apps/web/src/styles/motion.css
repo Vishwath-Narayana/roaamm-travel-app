@@ -1,0 +1,59 @@
+/*
+ * Motion. Animate only transform, opacity, clip-path and filter.
+ * Everything here sits inside "no-preference", so with reduced motion the
+ * final state shows immediately and nothing moves.
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Reveal on scroll (see <Reveal> in motion.tsx). Stagger with --i. */
+  .reveal {
+    transition:
+      opacity 500ms var(--ease-out),
+      transform 500ms var(--ease-out),
+      clip-path var(--dur-3) var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 80ms);
+  }
+
+  .reveal:not(.is-visible) {
+    will-change: opacity, transform;
+  }
+
+  .reveal--fade-up:not(.is-visible) {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  .reveal--fade:not(.is-visible) {
+    opacity: 0;
+  }
+
+  .reveal--scale:not(.is-visible) {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  .reveal--line:not(.is-visible) {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+/* Below-the-fold sections: the browser skips their rendering until they come
+   near the screen. The intrinsic size is a placeholder until measured once. */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+/* Theme toggle: the new theme is revealed by a growing circle (the circle is
+   animated from viewTransition.ts), so the default cross-fade is switched off. */
+html.theme-transition::view-transition-old(root),
+html.theme-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Page changes: a short cross-fade (the browser default, slightly quicker). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-2);
+}

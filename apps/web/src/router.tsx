@@ -1,3 +1,4 @@
+import { withViewTransition } from "./viewTransition";
 import {
   useEffect,
   useRef,
@@ -40,9 +41,15 @@ export function navigate(to: string, { replace = false } = {}): void {
     return;
   }
   const target = url.pathname + url.search + url.hash;
-  if (replace) window.history.replaceState(null, "", target);
-  else window.history.pushState(null, "", target);
-  window.dispatchEvent(new Event(NAVIGATE_EVENT));
+  const samePage = normalize(url.pathname) === getPath();
+  const go = () => {
+    if (replace) window.history.replaceState(null, "", target);
+    else window.history.pushState(null, "", target);
+    window.dispatchEvent(new Event(NAVIGATE_EVENT));
+  };
+  // Cross-fade between pages where the browser supports View Transitions.
+  if (samePage) go();
+  else withViewTransition(go);
 }
 
 function isPlainLeftClick(e: MouseEvent<HTMLAnchorElement>): boolean {

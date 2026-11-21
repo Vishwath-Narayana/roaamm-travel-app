@@ -51,15 +51,24 @@ function useNear(enabled: boolean, margin = "600px") {
  * their container keeps its size meanwhile.
  */
 export function Photo({ slot, alt, sizes, priority = false, className }: PhotoProps) {
-  const { widths, jpegWidths, width, height } = IMAGES[slot];
+  const { widths, jpegWidths, width, height, placeholder } = IMAGES[slot];
   const fallback = jpegWidths[jpegWidths.length - 1];
   const [ref, near] = useNear(!priority);
-  if (!near) return <picture ref={ref} className={className} />;
+  const [loaded, setLoaded] = useState(priority);
+  const cls = ["photo", className].filter(Boolean).join(" ");
+  // The blurred placeholder fills the box until the real photo arrives.
+  const style = { backgroundImage: `url("${placeholder}")` };
+
+  if (!near) return <picture ref={ref} className={cls} style={style} />;
   return (
-    <picture className={className}>
+    <picture className={cls} style={style}>
       <source type="image/avif" srcSet={srcSet(slot, "avif", widths)} sizes={sizes} />
       <source type="image/webp" srcSet={srcSet(slot, "webp", widths)} sizes={sizes} />
       <img
+        // A cached photo can finish loading before React attaches onLoad.
+        ref={(img) => {
+          if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+        }}
         src={`${BASE}/${slot}-${fallback}.jpg`}
         srcSet={srcSet(slot, "jpg", jpegWidths)}
         sizes={sizes}
@@ -69,6 +78,8 @@ export function Photo({ slot, alt, sizes, priority = false, className }: PhotoPr
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={priority ? "high" : undefined}
+        data-loaded={loaded}
+        onLoad={() => setLoaded(true)}
       />
     </picture>
   );

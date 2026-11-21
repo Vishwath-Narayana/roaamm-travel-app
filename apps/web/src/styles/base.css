@@ -233,3 +233,33 @@ kbd,
     scroll-behavior: auto !important;
   }
 }
+
+/* Section head with something on the right (carousel buttons, a badge). */
+.section-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+/* Photos (see components/Photo.tsx): a blurred placeholder sits behind each
+   photo, which fades in once it has loaded. Sizes never change, so no shift. */
+picture.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: var(--surface);
+  background-position: center;
+  background-size: cover;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  picture.photo img {
+    transition: opacity var(--dur-2) var(--ease-out);
+  }
+
+  picture.photo img[data-loaded="false"] {
+    opacity: 0;
+  }
+}

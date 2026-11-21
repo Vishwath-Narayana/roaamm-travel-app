@@ -33,7 +33,7 @@ describe("Landing", () => {
     const h1s = screen.getAllByRole("heading", { level: 1 });
     expect(h1s).toHaveLength(1);
     expect(h1s[0]).toHaveTextContent("Travel solo. Never alone.");
-    expect(within(h1s[0]).getByText("Never alone.")).toHaveClass("serif");
+    expect(within(h1s[0]).getByText("Never alone.").closest(".serif")).not.toBeNull();
   });
 
   it("hero buttons go to the demo and to the how-it-works section", () => {

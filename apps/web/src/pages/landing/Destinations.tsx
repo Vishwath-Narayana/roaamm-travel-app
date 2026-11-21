@@ -1,23 +1,33 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 import { Badge } from "../../components/Badge";
 import { ArrowLeftIcon, ArrowRightIcon } from "../../components/icons";
 import { Photo } from "../../components/Photo";
 import { Link } from "../../router";
-import { prefersReducedMotion, useReveal } from "../../motion";
+import { prefersReducedMotion, Reveal } from "../../motion";
 import { DESTINATIONS } from "./data";
+import { SectionHead } from "./SectionHead";
 import "./Destinations.css";
+
+/** Pixels a press must move before it counts as a drag (and not a click). */
+const DRAG_THRESHOLD = 6;
 
 export function Destinations() {
   const trackRef = useRef<HTMLUListElement>(null);
-  const headRef = useReveal<HTMLDivElement>();
+  const barRef = useRef<HTMLSpanElement>(null);
+  const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   const update = useCallback(() => {
     const t = trackRef.current;
     if (!t) return;
+    const max = t.scrollWidth - t.clientWidth;
     setAtStart(t.scrollLeft <= 4);
-    setAtEnd(t.scrollLeft + t.clientWidth >= t.scrollWidth - 4);
+    setAtEnd(t.scrollLeft >= max - 4);
+    // Progress bar: written straight to the DOM so scrolling never re-renders.
+    const p = max > 0 ? t.scrollLeft / max : 1;
+    barRef.current?.style.setProperty("--progress", String(Math.min(1, Math.max(0, p))));
   }, []);
 
   useEffect(() => {
@@ -37,52 +47,97 @@ export function Destinations() {
     t.scrollBy({ left: dir * distance, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }
 
+  // Drag to scroll with a mouse. Touch and trackpads already scroll natively.
+  function onPointerDown(e: PointerEvent<HTMLUListElement>) {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    drag.current = { x: e.clientX, left: e.currentTarget.scrollLeft, moved: false };
+  }
+
+  function onPointerMove(e: PointerEvent<HTMLUListElement>) {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    if (!d.moved && Math.abs(dx) < DRAG_THRESHOLD) return;
+    if (!d.moved) {
+      d.moved = true;
+      setDragging(true); // turns off scroll-snap while dragging
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    e.currentTarget.scrollLeft = d.left - dx;
+  }
+
+  function endDrag(e: PointerEvent<HTMLUListElement>) {
+    if (!drag.current) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    // Keep the flag one tick so the click that ends a drag is swallowed.
+    const moved = drag.current.moved;
+    setTimeout(() => {
+      drag.current = null;
+    }, 0);
+    if (moved) setDragging(false); // scroll-snap returns and settles on a card
+  }
+
   return (
     <section className="section destinations" aria-labelledby="dest-title">
       <div className="container">
-        <div className="destinations__head" ref={headRef}>
-          <div className="section-head">
-            <p className="eyebrow">Your journey</p>
-            <h2 id="dest-title">
+        <SectionHead
+          className="destinations__head"
+          eyebrow="Your journey"
+          id="dest-title"
+          title={
+            <>
               Meet travellers on <span className="serif">your dates</span>
-            </h2>
-          </div>
-          <div className="destinations__nav">
-            <button
-              type="button"
-              className="circle-btn"
-              aria-label="Previous destinations"
-              aria-controls="dest-track"
-              disabled={atStart}
-              onClick={() => step(-1)}
-            >
-              <ArrowLeftIcon size={20} />
-            </button>
-            <button
-              type="button"
-              className="circle-btn"
-              aria-label="Next destinations"
-              aria-controls="dest-track"
-              disabled={atEnd}
-              onClick={() => step(1)}
-            >
-              <ArrowRightIcon size={20} />
-            </button>
-          </div>
-        </div>
+            </>
+          }
+          aside={
+            <div className="destinations__nav">
+              <button
+                type="button"
+                className="circle-btn"
+                aria-label="Previous destinations"
+                aria-controls="dest-track"
+                disabled={atStart}
+                onClick={() => step(-1)}
+              >
+                <ArrowLeftIcon size={20} />
+              </button>
+              <button
+                type="button"
+                className="circle-btn"
+                aria-label="Next destinations"
+                aria-controls="dest-track"
+                disabled={atEnd}
+                onClick={() => step(1)}
+              >
+                <ArrowRightIcon size={20} />
+              </button>
+            </div>
+          }
+        />
       </div>
 
       <ul
         id="dest-track"
         ref={trackRef}
-        className="dest-track"
+        className={`dest-track${dragging ? " is-dragging" : ""}`}
         aria-label="Destinations"
         tabIndex={0}
         onScroll={update}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onClickCapture={(e) => {
+          if (drag.current?.moved) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onDragStart={(e) => e.preventDefault()}
         data-near-root
       >
-        {DESTINATIONS.map((d) => (
-          <li key={d.slot} className="dest-card" data-simulated-scope>
+        {DESTINATIONS.map((d, i) => (
+          <Reveal as="li" key={d.slot} delay={i} className="dest-card" data-simulated-scope>
             <div className="dest-card__media">
               <Photo slot={d.slot} alt={d.alt} sizes="(min-width: 900px) 340px, 78vw" />
               <span className="dest-card__country">{d.country}</span>
@@ -105,9 +160,14 @@ export function Destinations() {
                 <ArrowRightIcon size={18} className="dest-card__arrow" />
               </div>
             </div>
-          </li>
+          </Reveal>
         ))}
       </ul>
+      <div className="container">
+        <div className="dest-progress" aria-hidden="true">
+          <span ref={barRef} />
+        </div>
+      </div>
     </section>
   );
 }

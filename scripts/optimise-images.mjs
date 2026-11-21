@@ -103,7 +103,16 @@ async function main() {
       }
       console.log(line.join(""));
     }
-    manifest[slot] = { widths, jpegWidths, width: largest, height: Math.round(largest / ratio) };
+    // Blur-up placeholder: a 20 px wide, pre-blurred WebP inlined as base64.
+    // The browser stretches it smoothly behind the photo until it loads.
+    const tiny = await src
+      .clone()
+      .resize(20, Math.round(20 / ratio), { fit: "cover", position })
+      .blur(1)
+      .webp({ quality: 40 })
+      .toBuffer();
+    const placeholder = `data:image/webp;base64,${tiny.toString("base64")}`;
+    manifest[slot] = { widths, jpegWidths, width: largest, height: Math.round(largest / ratio), placeholder };
   }
 
   const total = readdirSync(OUT).reduce((n, f) => n + statSync(join(OUT, f)).size, 0);

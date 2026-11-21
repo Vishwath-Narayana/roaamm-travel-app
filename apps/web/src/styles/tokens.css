@@ -80,6 +80,13 @@
   --nav-height: 64px;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --duration: 200ms;
+
+  /* Motion tokens */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 200ms;
+  --dur-2: 400ms;
+  --dur-3: 700ms;
+  --dur-4: 1100ms;
 }
 
 /* Dark theme: follows the OS unless the user picked light explicitly. */

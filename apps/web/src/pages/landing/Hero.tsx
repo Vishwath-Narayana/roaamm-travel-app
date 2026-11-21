@@ -1,8 +1,8 @@
-import { useEffect, useState, type FocusEvent } from "react";
+import { useEffect, useRef, useState, type FocusEvent } from "react";
 import { Button } from "../../components/Button";
 import { ArrowLeftIcon, ArrowRightIcon, PauseIcon, PlayIcon } from "../../components/icons";
 import { Photo } from "../../components/Photo";
-import { usePrefersReducedMotion } from "../../motion";
+import { useInView, usePrefersReducedMotion } from "../../motion";
 import { HERO_SLIDES } from "./data";
 import "./Hero.css";
 
@@ -12,6 +12,9 @@ const TAGS = ["ID verified", "Licensed guides", "Safety built in"];
 export function Hero() {
   const count = HERO_SLIDES.length;
   const reducedMotion = usePrefersReducedMotion();
+  const frameRef = useRef<HTMLDivElement>(null);
+  // Pause the slideshow (and the slow zoom) while the hero is off screen.
+  const onScreen = useInView(frameRef);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false); // pause button
   const [hovering, setHovering] = useState(false); // pointer over the frame
@@ -31,7 +34,7 @@ export function Hero() {
   }, []);
 
   const autoplay = !reducedMotion && !paused;
-  const playing = autoplay && !hovering && !focused;
+  const playing = autoplay && !hovering && !focused && onScreen;
 
   function go(delta: number) {
     setRestReady(true);
@@ -47,7 +50,9 @@ export function Hero() {
   return (
     <section className="hero" aria-labelledby="hero-title">
       <div
+        ref={frameRef}
         className="hero__frame"
+        data-onscreen={onScreen}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
         onFocus={() => setFocused(true)}
@@ -80,8 +85,15 @@ export function Hero() {
             ID-verified travellers only
           </p>
           <h1 id="hero-title" className="display">
-            <span className="display__line">Travel solo.</span>{" "}
-            <span className="display__line serif">Never alone.</span>
+            {/* Each line rises out of a mask on first load (see .line-mask). */}
+            <span className="display__line line-mask">
+              <span className="line-mask__inner">Travel solo.</span>
+            </span>{" "}
+            <span className="display__line line-mask serif">
+              <span className="line-mask__inner" style={{ animationDelay: "90ms" }}>
+                Never alone.
+              </span>
+            </span>
           </h1>
           <p className="hero__lead">
             Meet ID-verified travellers on your dates, book licensed local guides by the hour, and

@@ -1,5 +1,6 @@
 import { Badge } from "../../components/Badge";
-import { useReveal } from "../../motion";
+import { Reveal, useCountUp, useReveal } from "../../motion";
+import { SectionHead } from "./SectionHead";
 import "./Stats.css";
 
 // Not real numbers: always shown with the "Simulated data" label.
@@ -10,23 +11,60 @@ const STATS = [
   { value: "58k", label: "trips planned" },
 ];
 
-export function Stats() {
-  const ref = useReveal<HTMLDListElement>();
+/** "1,326" -> 1326 with a thousands separator; "212k" -> 212 with suffix "k". */
+function parse(value: string) {
+  const m = value.match(/^([\d,]+)(.*)$/);
+  if (!m) return { n: 0, suffix: value, comma: false };
+  return { n: Number(m[1].replace(/,/g, "")), suffix: m[2], comma: m[1].includes(",") };
+}
+
+/**
+ * Counts up once when it scrolls into view. The final value is always in the
+ * DOM (visually hidden) so screen readers and tests read the real number;
+ * the animated digits are aria-hidden.
+ */
+export function CountUp({ value }: { value: string }) {
+  const [ref, shown] = useReveal<HTMLSpanElement>();
+  const { n, suffix, comma } = parse(value);
+  const current = useCountUp(n, shown);
+  const text = (comma ? current.toLocaleString("en-US") : String(current)) + suffix;
   return (
-    <section className="section stats-section" aria-labelledby="stats-title" data-simulated-scope>
+    <span ref={ref} className="count-up">
+      <span className="visually-hidden">{value}</span>
+      <span aria-hidden="true" data-testid="count-anim">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+export function Stats() {
+  return (
+    <section
+      className="section stats-section cv-auto"
+      aria-labelledby="stats-title"
+      data-simulated-scope
+    >
       <div className="container">
-        <div className="stats__head">
-          <h2 id="stats-title">
-            ROAAMM in <span className="serif">numbers</span>
-          </h2>
-          <Badge>Simulated data</Badge>
-        </div>
-        <dl className="stats" ref={ref}>
-          {STATS.map((s) => (
-            <div key={s.label} className="stat">
+        <SectionHead
+          className="stats__head"
+          eyebrow="By the numbers"
+          id="stats-title"
+          title={
+            <>
+              ROAAMM in <span className="serif">numbers</span>
+            </>
+          }
+          aside={<Badge>Simulated data</Badge>}
+        />
+        <dl className="stats">
+          {STATS.map((s, i) => (
+            <Reveal key={s.label} delay={i} className="stat">
               <dt>{s.label}</dt>
-              <dd data-simulated>{s.value}</dd>
-            </div>
+              <dd data-simulated aria-label={s.value}>
+                <CountUp value={s.value} />
+              </dd>
+            </Reveal>
           ))}
         </dl>
       </div>

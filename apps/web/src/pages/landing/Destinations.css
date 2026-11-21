@@ -1,9 +1,4 @@
 .destinations__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-5);
   margin-bottom: var(--space-7);
 }
 
@@ -57,6 +52,44 @@
   display: none;
 }
 
+/* Mouse drag: grab cursor, and no snapping until the drag ends. */
+@media (hover: hover) and (pointer: fine) {
+  .dest-track {
+    cursor: grab;
+  }
+}
+
+.dest-track.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.dest-track.is-dragging .dest-card__link {
+  pointer-events: none;
+}
+
+.dest-track img {
+  -webkit-user-drag: none;
+}
+
+.dest-progress {
+  height: 2px;
+  margin-top: var(--space-5);
+  border-radius: 2px;
+  background: var(--hairline);
+  overflow: hidden;
+}
+
+.dest-progress span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left;
+  transform: scaleX(max(0.12, var(--progress, 0)));
+  transition: transform var(--dur-1) linear;
+}
+
 .dest-track:focus-visible {
   outline-offset: -2px;
   border-radius: var(--radius-card);
@@ -68,11 +101,18 @@
   align-content: start;
   gap: var(--space-4);
   scroll-snap-align: start;
-  transition: transform 300ms var(--ease);
 }
 
-.dest-card:hover,
-.dest-card:focus-within {
+/* Lift lives on the inner parts so it never fights the reveal transform. */
+.dest-card__media,
+.dest-card__body {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.dest-card:hover .dest-card__media,
+.dest-card:focus-within .dest-card__media,
+.dest-card:hover .dest-card__body,
+.dest-card:focus-within .dest-card__body {
   transform: translateY(-4px);
 }
 
@@ -88,11 +128,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 600ms var(--ease);
+  transition: transform var(--dur-3) var(--ease-out);
 }
 
 .dest-card:hover .dest-card__media img {
-  transform: scale(1.03);
+  transform: scale(1.06);
 }
 
 .dest-card__country {
@@ -163,13 +203,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dest-card,
+  .dest-card__media,
+  .dest-card__body,
   .dest-card__media img {
     transition: none;
   }
 
-  .dest-card:hover,
-  .dest-card:focus-within {
+  .dest-card:hover .dest-card__media,
+  .dest-card:focus-within .dest-card__media,
+  .dest-card:hover .dest-card__body,
+  .dest-card:focus-within .dest-card__body,
+  .dest-card:hover .dest-card__media img {
     transform: none;
   }
 }

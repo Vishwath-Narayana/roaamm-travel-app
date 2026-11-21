@@ -12,7 +12,8 @@ export const IMAGES = {
       1280
     ],
     "width": 2048,
-    "height": 1152
+    "height": 1152,
+    "placeholder": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAACwAwCdASoUAAsAPu1iqk4ppaQiMAgBMB2JaACdACEItgJ6evhZsAD+VdOqfHPBjilB823UDaYxerhZM6T+TsxOEcbv2GRdjC7TedoZnaasMzCQCi/qAMXpHQAAAA=="
   },
   "hero-2": {
     "widths": [
@@ -26,7 +27,8 @@ export const IMAGES = {
       1280
     ],
     "width": 2048,
-    "height": 1152
+    "height": 1152,
+    "placeholder": "data:image/webp;base64,UklGRmAAAABXRUJQVlA4IFQAAACQBACdASoUAAsAPu1iqU2ppaQiMAgBMB2JZgCdMoR3ACxlcw7hiK04OEaf/gAA/sjDTUnSyht4pcNNedHnQGdsBrlznbfHOO9xV0c4l5qPS/vgAAA="
   },
   "hero-3": {
     "widths": [
@@ -40,7 +42,8 @@ export const IMAGES = {
       1280
     ],
     "width": 2048,
-    "height": 1152
+    "height": 1152,
+    "placeholder": "data:image/webp;base64,UklGRloAAABXRUJQVlA4IE4AAADwAwCdASoUAAsAPu1kq04ppaQiMAgBMB2JQBOmUGYwCTJ+6Rbi2o7gAPjHNCljJOwXy71yULVIcsab2+JNAk3JjrnpEAnYB02EXzWwAAA="
   },
   "cta-bleed": {
     "widths": [
@@ -54,7 +57,8 @@ export const IMAGES = {
       1280
     ],
     "width": 2048,
-    "height": 1152
+    "height": 1152,
+    "placeholder": "data:image/webp;base64,UklGRmAAAABXRUJQVlA4IFQAAADwAwCdASoUAAsAPu1iqU2ppaQiMAgBMB2JZgCdMoRwABubIg7mKWLAAPzXY93HQBeIKGZRdGJURZNg1mnanuuNlvVXF+tyd+sq4n8Zk6kKuFkAAAA="
   },
   "dest-kyoto": {
     "widths": [
@@ -65,7 +69,8 @@ export const IMAGES = {
       480
     ],
     "width": 960,
-    "height": 1200
+    "height": 1200,
+    "placeholder": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAACQBACdASoUABkAPu1mqE2ppaOiMAgBMB2JQBhQAnriFwESV9UoFPJ7Fjn0klAA/f/G6jf5ZghrLADaGx5azr98AHj940Ma+GMLO5DtN24QQkyi/YqMEXOgm4gaJN7qqCdzs/wWfCIO1STqIxZTDh+p72T2lIAA"
   },
   "dest-lisbon": {
     "widths": [
@@ -76,7 +81,8 @@ export const IMAGES = {
       480
     ],
     "width": 960,
-    "height": 1200
+    "height": 1200,
+    "placeholder": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4IHoAAAAQBQCdASoUABkAPu1irVAppSQisBgIATAdiUAXYAHoOnvCVL2jZOxY1TJHhk164BwAAP6e/QvCaJCY0CU2cmYMpOZIqOkgcoaPkU6XQ1k0dGhMpSrJubj+r8rPdjJKqDDKgH812OIpeoqLh+w4YJhfhCPyAOCBC6sAAA=="
   },
   "dest-hanoi": {
     "widths": [
@@ -87,7 +93,8 @@ export const IMAGES = {
       480
     ],
     "width": 960,
-    "height": 1200
+    "height": 1200,
+    "placeholder": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAACwBACdASoUABkAPu1qrE8ppiQiMBgIATAdiWMArhwuo9N16CSPWlR/Uqxnu1SsAKY5Zyhnlno9Q+BjUlvtKu4dqdbnWwSiArWWGpjnhZtlY0/7z5d/wxkygRJMX0K+lxqxCh/+a7KBoAAA"
   },
   "dest-cusco": {
     "widths": [
@@ -98,7 +105,8 @@ export const IMAGES = {
       480
     ],
     "width": 960,
-    "height": 1200
+    "height": 1200,
+    "placeholder": "data:image/webp;base64,UklGRpAAAABXRUJQVlA4IIQAAACwBACdASoUABkAPu1kq04ppaQiKA1RMB2JbACdM2h86Aw1M94gvMmfKcOFx3UAAP203PKXvAvjHTsEPD/MwgFxnLEd7GO+wmZjnp8pzYeX4p6qk4r7VQh+12UXsrO9MhyvrTGNdsNNwtMpVUNaXsntBZAiFkIJ7b9zxQVTsn2H8n/FAAA="
   },
   "dest-marrakech": {
     "widths": [
@@ -109,7 +117,8 @@ export const IMAGES = {
       480
     ],
     "width": 960,
-    "height": 1200
+    "height": 1200,
+    "placeholder": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAABwBQCdASoUABkAPu1qqVAppiOiqA1RMB2JZQDE2BDl42ZK7oPBHAEpOZAC2KXicAUeUBMAAP7byWV6tMhutu4divlkJkY83vj1lYgDmJL3+HQbENYfML4B3rpI1jun1A5ACSDGUVsxq5DI4uL/JUAA"
   },
   "dest-reykjavik": {
     "widths": [
@@ -120,7 +129,8 @@ export const IMAGES = {
       480
     ],
     "width": 960,
-    "height": 1200
+    "height": 1200,
+    "placeholder": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAADwBACdASoUABkAPuFapk2opSOiN/qoARAcCWMAsOwYA/hE9iZK2wsdRNZDdxiPxAAA/tQ2S7jfBqSIIzq0wcAmYLLwSlAO0IrYwPBPwReJWZH2XCeDfnIn9v7HRvWMXsr7toTMKhOOHLfiKshw4AAA"
   },
   "bento-solo-traveller": {
     "widths": [
@@ -131,7 +141,8 @@ export const IMAGES = {
       480
     ],
     "width": 960,
-    "height": 1200
+    "height": 1200,
+    "placeholder": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAACwBACdASoUABkAPulmqk2pJiQiMBgMASAdCUAVw4GYgZjHNuSXfVCMuo2ub1lAAP3OpmNjmKPSXA/9rVfbJE969UsyfRVItoz+RoTXVC6q0FtyuTPfbmaSB6emeOFTsLANN11p7Ap5giTQ5S0atgAA"
   },
   "feature-guide": {
     "widths": [
@@ -142,7 +153,8 @@ export const IMAGES = {
       480
     ],
     "width": 960,
-    "height": 1200
+    "height": 1200,
+    "placeholder": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAAAwBACdASoUABkAPuFep02opSOiMAwBEBwJYgC7L9SBm83+xs1D1AF65oAA3M1LsGRPxvnv26dk/vhkx4vsr4Eb58juJCBCYzOFB7j0f+tSQF1S8XNKrRiK6ha9Un4kAcObQXvoKpZdgC8xHhnb5+ftvfzMAAAA"
   }
 } as const;
 

@@ -8,7 +8,6 @@ import { HowItWorks } from "./landing/HowItWorks";
 import { SearchBar } from "./landing/SearchBar";
 import { Stats } from "./landing/Stats";
 import { TrustStrip } from "./landing/TrustStrip";
-import "./landing/reveal.css";
 
 export function Landing() {
   usePageTitle("ROAAMM");
