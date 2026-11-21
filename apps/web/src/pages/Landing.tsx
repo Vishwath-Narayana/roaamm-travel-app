@@ -1,6 +1,7 @@
 import { usePageTitle } from "../router";
 import { Bento } from "./landing/Bento";
 import { Destinations } from "./landing/Destinations";
+import { Faq } from "./landing/Faq";
 import { Features } from "./landing/Features";
 import { FinalCta } from "./landing/FinalCta";
 import { Hero } from "./landing/Hero";
@@ -29,6 +30,7 @@ export function Landing() {
       <Stories />
       <Stats />
       <HowItWorks />
+      <Faq />
       <FinalCta />
     </>
   );
