@@ -77,15 +77,20 @@ function focusWithoutScroll(el: HTMLElement) {
  * the new page. The first render is left alone apart from honouring a #hash.
  */
 export function useRouteFocus(path: string): void {
-  const first = useRef(true);
+  // Compare with the previous path (not a "first run" flag) so React StrictMode,
+  // which runs effects twice in development, does not count as a navigation.
+  const prev = useRef<string | null>(null);
   useEffect(() => {
+    const isInitial = prev.current === null;
+    const changed = prev.current !== null && prev.current !== path;
+    prev.current = path;
     const hash = decodeURIComponent(window.location.hash.slice(1));
     const target = hash ? document.getElementById(hash) : null;
-    if (first.current) {
-      first.current = false;
+    if (isInitial) {
       target?.scrollIntoView?.();
       return;
     }
+    if (!changed) return;
     if (target) {
       target.scrollIntoView?.();
       focusWithoutScroll(target);

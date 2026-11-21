@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "./App";
@@ -16,6 +17,16 @@ describe("App routing", () => {
       "Travel solo. Never alone.",
     );
     expect(document.title).toBe("ROAAMM");
+  });
+
+  it("does not steal focus on the first render, even in StrictMode", () => {
+    window.history.replaceState(null, "", "/");
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+    expect(screen.getByRole("heading", { level: 1 })).not.toHaveFocus();
   });
 
   it("navigates to /demo, moves focus to the h1, and goes back", async () => {
