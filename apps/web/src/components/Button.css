@@ -1,0 +1,64 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--size-button);
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
+}
+
+.btn--lg {
+  min-height: var(--size-button-lg);
+  padding: 0 var(--space-5);
+  font-size: 1rem;
+}
+
+.btn--primary {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.btn--primary:hover {
+  background: color-mix(in srgb, var(--ink) 86%, var(--bg));
+}
+
+.btn--secondary {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+.btn--secondary:hover {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--ink) 20%, var(--border));
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn--ghost:hover {
+  background: var(--surface);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
