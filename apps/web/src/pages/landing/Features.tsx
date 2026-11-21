@@ -90,7 +90,7 @@ export function Features() {
               ]}
             />
           </Reveal>
-          <Reveal as="section" id="guides" aria-labelledby="licence-title" delay={1} className="card spotlight">
+          <Reveal as="section" aria-labelledby="licence-title" delay={1} className="card spotlight">
             <h3 id="licence-title">Licensed local guides</h3>
             <CheckList
               items={[

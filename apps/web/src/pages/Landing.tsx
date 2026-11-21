@@ -4,6 +4,7 @@ import { Destinations } from "./landing/Destinations";
 import { Features } from "./landing/Features";
 import { FinalCta } from "./landing/FinalCta";
 import { Hero } from "./landing/Hero";
+import { Guides } from "./landing/Guides";
 import { HowItWorks } from "./landing/HowItWorks";
 import { LiveSection } from "../live/LiveSection";
 import { SearchBar } from "./landing/SearchBar";
@@ -23,6 +24,7 @@ export function Landing() {
         <LiveSection />
       </div>
       <Features />
+      <Guides />
       <Stats />
       <HowItWorks />
       <FinalCta />
