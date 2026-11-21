@@ -1,0 +1,241 @@
+/* Hero: a rounded photo frame 12px in from the viewport. The nav floats
+   inside it (see TopNav overlay), so the section pulls up under the header. */
+.hero {
+  padding: 12px;
+  margin-top: calc(-1 * (var(--nav-height) + 12px));
+}
+
+.hero__frame {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: min(calc(100svh - 24px), 880px);
+  min-height: 640px;
+  border-radius: var(--radius-hero);
+  overflow: hidden;
+  background: #2a2622;
+  color: #ffffff;
+  isolation: isolate;
+}
+
+.hero__slides,
+.hero__slide,
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.hero__slides {
+  z-index: -2;
+}
+
+.hero__slide {
+  opacity: 0;
+  transition: opacity 1200ms var(--ease);
+}
+
+.hero__slide.is-active {
+  opacity: 1;
+}
+
+.hero__photo,
+.hero__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero__photo img {
+  object-fit: cover;
+}
+
+/* Dark gradient so white text stays readable on every photo. Measured with
+   the three hero photos: headline >= 4.3:1, body text >= 5.1:1 (WCAG AA). */
+.hero__overlay {
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 48%, rgba(11, 11, 15, 0.35), transparent 72%),
+    var(--overlay-hero);
+}
+
+.hero__content {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 20px;
+  padding: calc(var(--nav-height) + 24px) var(--layout-page-pad) var(--space-6);
+  text-align: center;
+}
+
+.eyebrow.eyebrow--glass {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  color: #ffffff;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hero__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25);
+}
+
+.display {
+  font-family: var(--font-display);
+  font-size: var(--type-display);
+  font-weight: 500;
+  letter-spacing: var(--type-track-display);
+  line-height: 0.95;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.25);
+}
+
+.display__line {
+  display: block;
+}
+
+.display .serif {
+  font-size: 1.08em;
+  letter-spacing: 0;
+  line-height: 0.95;
+}
+
+.hero__lead {
+  max-width: 44ch;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: var(--type-body);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: 12px; /* 20px gap + 12px = 32px body -> button */
+}
+
+/* Bottom row: tags left, carousel controls right. */
+.hero__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  /* leave room for the search bar that overlaps the frame's bottom edge */
+  padding: 0 var(--space-5) calc(var(--space-4) + var(--search-overlap));
+}
+
+.hero__tags {
+  display: none;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+}
+
+.hero__carousel {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  justify-items: stretch;
+}
+
+.hero__buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hero__btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: var(--glass-bg);
+  color: #ffffff;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background-color var(--duration) var(--ease);
+}
+
+.hero__btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.hero__btn:focus-visible {
+  outline-color: #ffffff;
+}
+
+.hero__count {
+  min-width: 3.5ch;
+  font-size: 13px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero__progress {
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+}
+
+.hero__progress span {
+  display: block;
+  height: 100%;
+  background: #ffffff;
+  transition: width 400ms var(--ease);
+}
+
+.hero__progress span.is-timed {
+  width: 0;
+  animation-name: hero-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes hero-progress {
+  to {
+    width: 100%;
+  }
+}
+
+.hero__credit {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .eyebrow.eyebrow--glass,
+  .hero__btn {
+    background: rgba(11, 11, 15, 0.72);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .hero__tags {
+    display: flex;
+  }
+
+  .hero__carousel {
+    width: 240px;
+  }
+
+  .hero__bottom {
+    padding: 0 var(--space-6) calc(var(--space-5) + var(--search-overlap));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__slide {
+    transition: none;
+  }
+}

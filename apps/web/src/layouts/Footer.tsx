@@ -3,6 +3,7 @@ import { MarkIcon } from "../components/icons";
 import "./Footer.css";
 
 export const REPO_URL = "https://github.com/Vishwath-Narayana/roaamm-travel-app";
+const CREDITS_URL = `${REPO_URL}/blob/main/apps/web/public/images/CREDITS.md`;
 const STATUS_URL = new URL(SERVICES.find((s) => s.name === "status")!.url).origin;
 
 export function Footer() {
@@ -15,6 +16,9 @@ export function Footer() {
             ROAAMM
           </p>
           <p className="footer__note">Portfolio project. All data is simulated.</p>
+          <p className="footer__note">
+            Photos: <a href={CREDITS_URL}>Unsplash</a>
+          </p>
         </div>
 
         <nav aria-label="Footer" className="footer__links">

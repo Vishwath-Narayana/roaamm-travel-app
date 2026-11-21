@@ -20,3 +20,6 @@ _to_delete/
 # Lighthouse CI output
 .lighthouseci/
 .lighthouseci-reports/
+
+# Full-size stock photos (optimised copies live in apps/web/public/images)
+design/stock-originals/

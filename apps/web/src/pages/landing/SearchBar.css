@@ -1,0 +1,168 @@
+/* Overlaps the bottom edge of the hero frame. */
+.search-wrap {
+  position: relative;
+  z-index: 2;
+  margin-top: calc(-1 * var(--search-overlap));
+}
+
+:root {
+  --search-overlap: 44px;
+}
+
+.search {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  box-shadow: 0 12px 32px rgba(11, 11, 15, 0.1);
+}
+
+.search__field {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px var(--space-4);
+  border: 0;
+  border-radius: 16px;
+  transition: background-color var(--duration) var(--ease);
+}
+
+.search__field:hover,
+.search__field:focus-within {
+  background: var(--surface);
+}
+
+.search__field label,
+.search__field legend {
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* legend does not sit inside the grid gap like a label does */
+.search__when legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.search__field input,
+.search__field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.search__field input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.search__field input:focus-visible,
+.search__field select:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.search__when {
+  min-inline-size: 0; /* fieldsets default to min-content width */
+}
+
+.search__dates {
+  clear: both;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+  color: var(--muted);
+}
+
+.search__dates input {
+  flex: 1 1 128px;
+  min-width: 0;
+}
+
+.search__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--duration) var(--ease);
+}
+
+.search__submit:hover {
+  transform: scale(1.03);
+}
+
+.search__note {
+  margin-top: var(--space-3);
+  text-align: center;
+  color: var(--muted);
+}
+
+@media (min-width: 900px) {
+  .search {
+    grid-template-columns: 1.1fr 1.5fr 1fr auto;
+    align-items: center;
+    border-radius: var(--radius-pill);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  }
+
+  .search__field {
+    border-radius: var(--radius-pill);
+    padding-inline: var(--space-5);
+  }
+
+  .search__field + .search__field {
+    position: relative;
+  }
+
+  .search__field + .search__field::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 1px;
+    background: var(--hairline);
+  }
+
+  .search__submit {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+  }
+
+  .search__submit-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  :root {
+    --search-overlap: 40px;
+  }
+}

@@ -99,3 +99,57 @@ export const MarkIcon = (p: IconProps) => (
     <circle cx="16" cy="8" r="1.25" fill="currentColor" />
   </Icon>
 );
+
+export const ArrowLeftIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </Icon>
+);
+
+export const LockIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+  </Icon>
+);
+
+export const IdCardIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="2.5" />
+    <circle cx="9" cy="11" r="2" />
+    <path d="M6 16c.5-1.6 1.6-2.5 3-2.5s2.5.9 3 2.5M14.5 10h3.5M14.5 13.5h2.5" />
+  </Icon>
+);
+
+export const PinIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+    <circle cx="12" cy="10" r="2.5" />
+  </Icon>
+);
+
+export const SearchIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
+  </Icon>
+);
+
+export const PauseIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 6v12M15 6v12" />
+  </Icon>
+);
+
+export const PlayIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M8 5.5v13l10.5-6.5z" />
+  </Icon>
+);
+
+export const ChatIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4.5 18.5V7a2.5 2.5 0 0 1 2.5-2.5h10A2.5 2.5 0 0 1 19.5 7v7a2.5 2.5 0 0 1-2.5 2.5H8z" />
+    <path d="M9 9.5h6M9 12.5h3.5" />
+  </Icon>
+);
