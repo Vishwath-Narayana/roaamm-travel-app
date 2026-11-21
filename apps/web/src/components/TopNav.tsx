@@ -33,8 +33,14 @@ function ThemeToggle() {
   );
 }
 
-export function TopNav() {
+type TopNavProps = {
+  /** Landing page: float transparently over the hero photo until the page scrolls. */
+  overlay?: boolean;
+};
+
+export function TopNav({ overlay = false }: TopNavProps) {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const menuId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const path = useRoute();
@@ -48,6 +54,14 @@ export function TopNav() {
   useEffect(() => setOpen(false), [path]);
 
   useEffect(() => {
+    if (!overlay) return;
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [overlay]);
+
+  useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") close(true);
@@ -57,8 +71,13 @@ export function TopNav() {
   }, [open, close]);
 
   return (
-    <header className="topnav">
-      <div className="topnav__bar container">
+    <header
+      className={[
+        "topnav",
+        overlay && !scrolled && !open ? "topnav--clear" : "topnav--solid",
+      ].join(" ")}
+    >
+      <div className="topnav__bar">
         <Link href="/" className="wordmark" aria-label="ROAAMM home">
           <MarkIcon size={22} />
           <span aria-hidden="true">ROAAMM</span>
@@ -98,7 +117,7 @@ export function TopNav() {
       <nav
         id={menuId}
         aria-label="Mobile"
-        className="topnav__mobile container"
+        className="topnav__mobile"
         hidden={!open}
       >
         <ul>
