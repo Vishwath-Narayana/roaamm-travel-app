@@ -14,7 +14,6 @@ permissions:
 
 jobs:
   edge-web-status:
-    # Turn on after the Cloudflare setup: Settings > Variables > DEPLOY_ENABLED = true
     if: vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: production
@@ -32,29 +31,25 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Deploy web
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/web
-          command: deploy
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm dlx wrangler@4 deploy
       - name: Deploy edge
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: edge
-          command: deploy
+        working-directory: edge
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm dlx wrangler@4 deploy
       - name: Deploy status
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: status
-          command: deploy
+        working-directory: status
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm dlx wrangler@4 deploy
 
   core:
-    # Turn on after the Google Cloud server and tunnel exist: CORE_DEPLOY_ENABLED = true
     if: vars.CORE_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: production
@@ -108,15 +103,21 @@ jobs:
     needs: [edge-web-status, core]
     if: always() && !cancelled() && (needs.edge-web-status.result == 'success' || needs.core.result == 'success')
     runs-on: ubuntu-latest
+    env:
+      EDGE_RESULT: ${{ needs.edge-web-status.result }}
+      CORE_RESULT: ${{ needs.core.result }}
     steps:
       - name: Health checks
         run: |
           set -e
-          for url in \
-            https://roaamm.plinthwell.com/health.json \
-            https://roaamm-rt.plinthwell.com/health \
-            https://roaamm-status.plinthwell.com/health.json \
-            https://roaamm-api.plinthwell.com/health; do
+          urls=""
+          if [ "$EDGE_RESULT" = "success" ]; then
+            urls="https://roaamm.plinthwell.com/health.json https://roaamm-rt.plinthwell.com/health https://roaamm-status.plinthwell.com/health.json"
+          fi
+          if [ "$CORE_RESULT" = "success" ]; then
+            urls="$urls https://roaamm-api.plinthwell.com/health"
+          fi
+          for url in $urls; do
             ok=0
             for _ in 1 2 3 4 5 6; do
               if curl -fsS --max-time 10 "$url" > /dev/null; then ok=1; break; fi
