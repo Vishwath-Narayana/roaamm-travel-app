@@ -14,9 +14,12 @@ export function FinalCta() {
           <h2 id="cta-title">
             See it for <span className="serif">yourself</span>
           </h2>
-          <p className="lead">Explore sample traveller, guide and admin views.</p>
+          <p className="lead">
+            Watch the live preview of chat, the AI assistant and safety tools now. Sandbox
+            accounts for travellers, guides and admins open in M2.
+          </p>
           <Button href="/demo" size="lg" arrow>
-            Try demo
+            Open the demo
           </Button>
         </Reveal>
       </div>

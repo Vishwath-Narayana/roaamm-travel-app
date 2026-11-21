@@ -35,9 +35,22 @@
   gap: var(--space-2);
 }
 
-.role h2,
-.note h2 {
+.role h3,
+.note h3 {
   font-size: 1.25rem;
+}
+
+.demo__live {
+  margin-bottom: var(--space-8);
+}
+
+.demo__section {
+  margin-top: var(--space-8);
+}
+
+.demo__h2 {
+  margin-bottom: var(--space-5);
+  font-size: clamp(28px, 3vw, 40px);
 }
 
 .role p,
