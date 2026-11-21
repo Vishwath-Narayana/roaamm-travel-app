@@ -5,7 +5,6 @@
 .guides {
   display: grid;
   gap: var(--gutter);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   padding: 0;
   list-style: none;
 }
@@ -183,4 +182,17 @@
 
 .guides__foot svg {
   color: var(--verified-fg);
+}
+
+/* 1 column on phones, 2x2 on tablets, 4 across on wide screens (no orphans). */
+@media (min-width: 640px) {
+  .guides {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .guides {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }

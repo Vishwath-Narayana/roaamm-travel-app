@@ -3,6 +3,14 @@
   gap: var(--space-5);
 }
 
+/* Grid children may shrink below their content (the tab strip scrolls
+   sideways instead of widening the page on phones). */
+.live > *,
+.live__bar > *,
+.live__stage > * {
+  min-width: 0;
+}
+
 .live__head {
   display: flex;
   flex-wrap: wrap;
@@ -21,6 +29,7 @@
 
 .live__tabs {
   display: flex;
+  max-width: 100%;
   gap: 2px;
   padding: 4px;
   border: 1px solid var(--hairline);

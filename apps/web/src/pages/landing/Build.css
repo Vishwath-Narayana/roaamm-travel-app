@@ -11,7 +11,6 @@
 .build__facts {
   display: grid;
   gap: var(--gutter);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   padding: 0;
   list-style: none;
 }
@@ -88,4 +87,17 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+/* 1 column on phones, 2x2 on tablets, 4 across on wide screens (no orphans). */
+@media (min-width: 640px) {
+  .build__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .build__facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
