@@ -1,0 +1,90 @@
+.status-row {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.status-row__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "dot name value"
+    ". host host";
+  align-items: center;
+  gap: 2px var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--bg);
+}
+
+.status-row__dot {
+  grid-area: dot;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status-row__item[data-state="up"] .status-row__dot {
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+.status-row__item[data-state="down"] .status-row__dot {
+  background: var(--sos);
+}
+
+.status-row__item[data-state="not-deployed"] .status-row__dot,
+.status-row__item[data-state="idle"] .status-row__dot {
+  background: transparent;
+  border: 1.5px solid var(--muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .status-row__item[data-state="checking"] .status-row__dot {
+    animation: status-blink 900ms ease-in-out infinite alternate;
+  }
+}
+
+@keyframes status-blink {
+  to {
+    opacity: 0.3;
+  }
+}
+
+.status-row__name {
+  grid-area: name;
+  font-weight: 600;
+  font-size: var(--type-small);
+}
+
+.status-row__host {
+  grid-area: host;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.status-row__value {
+  grid-area: value;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.status-row__item[data-state="down"] .status-row__value {
+  color: var(--sos);
+}
+
+.status-row__note {
+  color: var(--muted);
+}
+
+@media (min-width: 900px) {
+  .status-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .status-row__note {
+    grid-column: 1 / -1;
+  }
+}

@@ -153,3 +153,31 @@ export const ChatIcon = (p: IconProps) => (
     <path d="M9 9.5h6M9 12.5h3.5" />
   </Icon>
 );
+
+export const BoltIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M13 2.5L4.5 13.5H11l-1 8 8.5-11H12z" />
+  </Icon>
+);
+
+export const LayersIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3l9 5-9 5-9-5z" />
+    <path d="M3 13l9 5 9-5" />
+  </Icon>
+);
+
+export const GaugeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4.5 17a8 8 0 1 1 15 0" />
+    <path d="M12 13l4-4" />
+    <circle cx="12" cy="13" r="1.25" />
+  </Icon>
+);
+
+export const ExternalIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M14 4h6v6M20 4l-9 9" />
+    <path d="M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10" />
+  </Icon>
+);

@@ -1,5 +1,6 @@
 import { usePageTitle } from "../router";
 import { Bento } from "./landing/Bento";
+import { Build } from "./landing/Build";
 import { Destinations } from "./landing/Destinations";
 import { Faq } from "./landing/Faq";
 import { Features } from "./landing/Features";
@@ -31,6 +32,7 @@ export function Landing() {
       <Stats />
       <HowItWorks />
       <Faq />
+      <Build />
       <FinalCta />
     </>
   );
