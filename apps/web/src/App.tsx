@@ -1,21 +1,22 @@
-import { SERVICES } from "./services";
+import type { ComponentType } from "react";
+import { Shell } from "./layouts/Shell";
+import { Demo } from "./pages/Demo";
+import { Landing } from "./pages/Landing";
+import { NotFound } from "./pages/NotFound";
+import { useRoute, useRouteFocus } from "./router";
+
+const ROUTES: Record<string, ComponentType> = {
+  "/": Landing,
+  "/demo": Demo,
+};
 
 export function App() {
+  const path = useRoute();
+  useRouteFocus(path);
+  const Page = ROUTES[path] ?? NotFound;
   return (
-    <main className="shell">
-      <h1 className="wordmark">ROAAMM</h1>
-      <p className="tagline">
-        End-to-end encrypted, real-time platform for verified solo travellers.
-      </p>
-      <p className="note">Foundation milestone (M0). The product is under construction.</p>
-      <ul className="services" aria-label="Deployed services">
-        {SERVICES.map((s) => (
-          <li key={s.name}>
-            <span>{s.label}</span>
-            <code>{new URL(s.url).host}</code>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <Shell>
+      <Page />
+    </Shell>
   );
 }
