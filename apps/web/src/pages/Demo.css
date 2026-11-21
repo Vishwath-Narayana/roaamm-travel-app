@@ -1,0 +1,57 @@
+.page {
+  padding-top: var(--space-7);
+}
+
+.page__head {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.page__lead {
+  font-size: 1.125rem;
+  color: var(--muted);
+}
+
+.roles {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.role {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-4);
+}
+
+.role__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.role h2,
+.note h2 {
+  font-size: 1.25rem;
+}
+
+.role p,
+.note p {
+  color: var(--muted);
+}
+
+.note {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+  background: var(--bg);
+}
+
+.page__back {
+  margin-top: var(--space-5);
+}

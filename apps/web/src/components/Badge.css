@@ -1,0 +1,20 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.badge--verified {
+  background: var(--verified-bg);
+  color: var(--verified-fg);
+  border-color: transparent;
+}

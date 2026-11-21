@@ -82,6 +82,8 @@ jobs:
       - run: pnpm build
       - name: Bundle size budget
         run: node scripts/check-bundle-size.mjs apps/web/dist 250
+      - name: Lighthouse (performance >= 0.9, accessibility >= 0.95)
+        run: pnpm dlx @lhci/cli@0.14 autorun --config=apps/web/lighthouserc.json
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist

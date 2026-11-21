@@ -1,16 +1,85 @@
-import { render, screen } from "@testing-library/react";
+import { StrictMode } from "react";
+import { act, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { App } from "./App";
+import { navigate } from "./router";
 import { SERVICES } from "./services";
 
-describe("App", () => {
-  it("renders the wordmark", () => {
-    render(<App />);
-    expect(screen.getByRole("heading", { name: "ROAAMM" })).toBeInTheDocument();
+function renderAt(path: string) {
+  window.history.replaceState(null, "", path);
+  return render(<App />);
+}
+
+describe("App routing", () => {
+  it("renders the landing page at /", () => {
+    renderAt("/");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Travel solo. Never alone.",
+    );
+    expect(document.title).toBe("ROAAMM");
   });
 
-  it("lists every deployed service", () => {
-    render(<App />);
-    expect(screen.getAllByRole("listitem")).toHaveLength(SERVICES.length);
+  it("does not steal focus on the first render, even in StrictMode", () => {
+    window.history.replaceState(null, "", "/");
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+    expect(screen.getByRole("heading", { level: 1 })).not.toHaveFocus();
+  });
+
+  it("navigates to /demo, moves focus to the h1, and goes back", async () => {
+    const user = userEvent.setup();
+    renderAt("/");
+    const hero = screen.getByRole("region", { name: "Travel solo. Never alone." });
+    await user.click(within(hero).getByRole("link", { name: "Try demo" }));
+
+    expect(window.location.pathname).toBe("/demo");
+    const h1 = screen.getByRole("heading", { level: 1, name: "Try the demo" });
+    expect(h1).toHaveFocus();
+    expect(document.title).toBe("Try the demo · ROAAMM");
+
+    await act(async () => {
+      window.history.back();
+      await new Promise((r) => window.addEventListener("popstate", r, { once: true }));
+    });
+    expect(window.location.pathname).toBe("/");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Travel solo.");
+  });
+
+  it("navigate() renders the matching page and ignores a trailing slash", () => {
+    renderAt("/");
+    act(() => navigate("/demo/"));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Try the demo");
+  });
+
+  it("shows a 404 with a link home for unknown paths", async () => {
+    const user = userEvent.setup();
+    renderAt("/no/such/page");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Page not found");
+    expect(screen.getByText("/no/such/page")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("link", { name: "Back to home" }));
+    expect(window.location.pathname).toBe("/");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Travel solo.");
+  });
+
+  it("has a skip link to the main landmark", () => {
+    renderAt("/");
+    expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#main");
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main");
+    expect(screen.getByRole("banner")).toBeInTheDocument();
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+  });
+
+  it("lists every deployed service in the footer", () => {
+    renderAt("/");
+    const system = screen.getByRole("region", { name: "System" });
+    expect(within(system).getAllByRole("listitem")).toHaveLength(SERVICES.length);
+    for (const s of SERVICES) {
+      expect(within(system).getByText(new URL(s.url).host)).toBeInTheDocument();
+    }
   });
 
   it("uses first-level plinthwell.com subdomains only", () => {
