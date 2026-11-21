@@ -1,0 +1,50 @@
+/* A wide golden photo that fades into the page colour, with the CTA card over its lower edge. */
+.final-cta {
+  position: relative;
+  padding-top: var(--layout-section-pad);
+}
+
+.final-cta__media {
+  position: relative;
+  height: clamp(320px, 42vw, 560px);
+  margin-inline: 12px;
+  border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+}
+
+.final-cta__media picture,
+.final-cta__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.final-cta__media img {
+  object-fit: cover;
+  object-position: center 70%;
+}
+
+.final-cta__inner {
+  position: relative;
+  margin-top: clamp(-220px, -16vw, -120px);
+}
+
+.final-cta__card {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  max-width: 720px;
+  margin-inline: auto;
+  padding: var(--space-8) var(--space-5);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-hero);
+  background: var(--bg);
+  box-shadow: var(--shadow-elevated);
+  text-align: center;
+}
+
+.final-cta__card .lead {
+  margin-bottom: 12px;
+}
