@@ -38,7 +38,7 @@ export function Destinations() {
   }
 
   return (
-    <section className="section destinations" aria-labelledby="dest-title" data-near-root>
+    <section className="section destinations" aria-labelledby="dest-title">
       <div className="container">
         <div className="destinations__head" ref={headRef}>
           <div className="section-head">
@@ -79,6 +79,7 @@ export function Destinations() {
         aria-label="Destinations"
         tabIndex={0}
         onScroll={update}
+        data-near-root
       >
         {DESTINATIONS.map((d) => (
           <li key={d.slot} className="dest-card" data-simulated-scope>
