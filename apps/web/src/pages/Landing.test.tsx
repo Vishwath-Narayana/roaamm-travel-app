@@ -67,6 +67,8 @@ describe("Landing", () => {
     const numbers = document.querySelectorAll("[data-simulated]");
     // 6 destination counts + 3 meters + 4 stats
     expect(numbers).toHaveLength(DESTINATIONS.length + 3 + 4);
+    // The guides section anchors the nav's Guides link.
+    expect(document.getElementById("guides")).toHaveAttribute("aria-labelledby", "guides-title");
     numbers.forEach((n) => {
       const scope = n.closest("[data-simulated-scope]");
       expect(scope, `no scope for ${n.textContent}`).not.toBeNull();
@@ -76,9 +78,27 @@ describe("Landing", () => {
     for (const v of ["212k", "1,326", "41", "58k"]) expect(within(stats).getByText(v)).toBeInTheDocument();
   });
 
+  it("every simulated block carries a 'Simulated' label", () => {
+    render(<Landing />);
+    const scopes = document.querySelectorAll("[data-simulated-scope]");
+    // destinations (6), community health, live preview, guides, stories, stats
+    expect(scopes.length).toBeGreaterThanOrEqual(11);
+    scopes.forEach((scope) => {
+      expect(within(scope as HTMLElement).getAllByText(/^Simulated/).length).toBeGreaterThan(0);
+    });
+  });
+
+  it("claims scale honestly", () => {
+    render(<Landing />);
+    expect(
+      screen.getByText(/Designed for 50,000 concurrent users; load test planned \(M11\)/),
+    ).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/50,000 (users|travellers) (use|trust)/i);
+  });
+
   it("keeps the nav targets and the four features", () => {
     render(<Landing />);
-    for (const id of ["features", "safety", "guides", "how-it-works"]) {
+    for (const id of ["features", "safety", "guides", "live", "build", "how-it-works"]) {
       expect(document.getElementById(id)).toBeInTheDocument();
     }
     const features = screen.getByRole("region", { name: "Built for travelling alone" });
