@@ -70,7 +70,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.14.3"
+          gradle-version: "9.1.0"
       - name: Native build
         working-directory: services/core
         run: gradle nativeCompile -PjavaVersion=25
@@ -118,7 +118,7 @@ jobs:
             https://roaamm-status.plinthwell.com/health.json \
             https://roaamm-api.plinthwell.com/health; do
             ok=0
-            for i in 1 2 3 4 5 6; do
+            for _ in 1 2 3 4 5 6; do
               if curl -fsS --max-time 10 "$url" > /dev/null; then ok=1; break; fi
               sleep 10
             done

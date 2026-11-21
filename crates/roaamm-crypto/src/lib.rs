@@ -59,33 +59,47 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
-    const KEY: [u8; KEY_LEN] = [7u8; KEY_LEN];
-    const NONCE: [u8; NONCE_LEN] = [9u8; NONCE_LEN];
+    /// Fresh random bytes for each test, so no key or nonce is ever hard-coded.
+    fn random<const N: usize>() -> [u8; N] {
+        let mut buf = [0u8; N];
+        getrandom::getrandom(&mut buf).expect("system randomness");
+        buf
+    }
 
     #[test]
     fn round_trip() {
-        let sealed = seal(&KEY, &NONCE, b"hello traveller").unwrap();
-        assert_eq!(open(&KEY, &sealed).unwrap(), b"hello traveller");
+        let key = random::<KEY_LEN>();
+        let nonce = random::<NONCE_LEN>();
+        let sealed = seal(&key, &nonce, b"hello traveller").unwrap();
+        assert_eq!(open(&key, &sealed).unwrap(), b"hello traveller");
     }
 
     #[test]
     fn tampering_is_detected() {
-        let mut sealed = seal(&KEY, &NONCE, b"hello").unwrap();
+        let key = random::<KEY_LEN>();
+        let nonce = random::<NONCE_LEN>();
+        let mut sealed = seal(&key, &nonce, b"hello").unwrap();
         let last = sealed.len() - 1;
         sealed[last] ^= 1;
-        assert_eq!(open(&KEY, &sealed), Err(CryptoError::Decrypt));
+        assert_eq!(open(&key, &sealed), Err(CryptoError::Decrypt));
     }
 
     #[test]
     fn wrong_key_fails() {
-        let sealed = seal(&KEY, &NONCE, b"hello").unwrap();
-        assert_eq!(open(&[1u8; KEY_LEN], &sealed), Err(CryptoError::Decrypt));
+        let key = random::<KEY_LEN>();
+        let other_key = random::<KEY_LEN>();
+        let nonce = random::<NONCE_LEN>();
+        let sealed = seal(&key, &nonce, b"hello").unwrap();
+        assert_eq!(open(&other_key, &sealed), Err(CryptoError::Decrypt));
     }
 
     #[test]
     fn rejects_bad_key_length_and_truncated_input() {
-        assert_eq!(seal(&[0u8; 5], &NONCE, b"x"), Err(CryptoError::InvalidKey));
-        assert_eq!(open(&KEY, &[0u8; 3]), Err(CryptoError::Truncated));
+        let key = random::<KEY_LEN>();
+        let nonce = random::<NONCE_LEN>();
+        let short_key = random::<5>();
+        assert_eq!(seal(&short_key, &nonce, b"x"), Err(CryptoError::InvalidKey));
+        assert_eq!(open(&key, &random::<3>()), Err(CryptoError::Truncated));
     }
 
     #[test]
@@ -99,8 +113,10 @@ mod tests {
     proptest! {
         #[test]
         fn any_plaintext_round_trips(data in proptest::collection::vec(any::<u8>(), 0..2048)) {
-            let sealed = seal(&KEY, &NONCE, &data).unwrap();
-            prop_assert_eq!(open(&KEY, &sealed).unwrap(), data);
+            let key = random::<KEY_LEN>();
+            let nonce = random::<NONCE_LEN>();
+            let sealed = seal(&key, &nonce, &data).unwrap();
+            prop_assert_eq!(open(&key, &sealed).unwrap(), data);
         }
     }
 }

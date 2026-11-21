@@ -123,7 +123,7 @@ jobs:
           java-version: "25"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.14.3"
+          gradle-version: "9.1.0"
       - run: gradle check -PjavaVersion=25
 
   ci-ok:
