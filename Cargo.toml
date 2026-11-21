@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = ["edge", "crates/roaamm-crypto", "crates/roaamm-protocol"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Vishwath-Narayana/roaamm-travel-app"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1

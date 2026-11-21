@@ -1,0 +1,12 @@
+name = "roaamm-rt"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-11-01"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[[routes]]
+pattern = "roaamm-rt.plinthwell.com"
+custom_domain = true
+
+# Durable Objects (SessionDO, RoomDO, KeyPackageDO) are added in M5.

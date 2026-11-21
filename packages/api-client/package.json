@@ -1,0 +1,7 @@
+{
+  "name": "@roaamm/api-client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Generated from the core OpenAPI spec (openapi-typescript). Populated in M2."
+}

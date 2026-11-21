@@ -1,0 +1,10 @@
+[package]
+name = "roaamm-protocol"
+description = "WebSocket frame types shared by the edge Worker and the browser."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

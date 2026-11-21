@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule: { interval: weekly }
+    groups:
+      npm-all: { patterns: ["*"] }
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule: { interval: weekly }
+    groups:
+      cargo-all: { patterns: ["*"] }
+  - package-ecosystem: gradle
+    directory: "/services/core"
+    schedule: { interval: weekly }
+    groups:
+      gradle-all: { patterns: ["*"] }
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly }
+    groups:
+      actions-all: { patterns: ["*"] }
+  - package-ecosystem: docker
+    directory: "/services/core"
+    schedule: { interval: weekly }
