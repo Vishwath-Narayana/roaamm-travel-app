@@ -16,9 +16,9 @@ Each slot is cropped (heroes 16:9, cards 4:5) and written as
 
 | Slot (file prefix) | Title | Photographer | Source | Licence |
 |---|---|---|---|---|
-| `hero-1` | Foggy mountain landscape at sunrise with a lone hiker (Euganean Hills, Italy) | Edoardo Bortoli | https://unsplash.com/photos/WsZutvCfxeU | Unsplash License |
+| `hero-1` | Hiker walks through a golden mountain meadow at sunset | Alex Moliski | https://unsplash.com/photos/gEJjuWnYnmM | Unsplash License |
 | `hero-2` | Person standing on mountain | Cristina Gottardi | https://unsplash.com/photos/iEGXkSXRXN4 | Unsplash License |
-| `hero-3` | Woman watches sunset over a mountain valley and river (Jasper, Canada) | Rafael Peier | https://unsplash.com/photos/tij1DTJUFRc | Unsplash License |
+| `hero-3` | A person walking in a field | Angel Balashev | https://unsplash.com/photos/Cg8zwxTs300 | Unsplash License |
 | `dest-kyoto` | A narrow street with a pagoda in the background (Yasaka Pagoda, Kyoto) | Filipe Freitas | https://unsplash.com/photos/yQvYgnh9XEg | Unsplash License |
 | `dest-lisbon` | A yellow trolley is coming down the tracks (Lisbon) | Evgeny Matveev | https://unsplash.com/photos/XmdOh2u4FgQ | Unsplash License |
 | `dest-hanoi` | A large body of water with a building in the background (Hoan Kiem Lake, Hanoi) | Elliot Andrews | https://unsplash.com/photos/kBSfmPMmAzI | Unsplash License |

@@ -49,13 +49,12 @@
   object-fit: cover;
 }
 
-/* Dark gradient so white text stays readable on every photo. Measured with
-   the three hero photos: headline >= 4.3:1, body text >= 5.1:1 (WCAG AA). */
+/* A soft halo behind the headline plus light bands for the nav and the
+   controls, instead of a dark wash over the whole photo. Measured by
+   scripts/check-hero-contrast.mjs on all three photos (WCAG AA). */
 .hero__overlay {
   z-index: -1;
-  background:
-    radial-gradient(ellipse 70% 55% at 50% 48%, rgba(11, 11, 15, 0.35), transparent 72%),
-    var(--overlay-hero);
+  background: var(--overlay-focus), var(--overlay-hero);
 }
 
 .hero__content {
@@ -67,9 +66,10 @@
   text-align: center;
 }
 
+/* Dark glass: the pill, not the photo, carries the text contrast. */
 .eyebrow.eyebrow--glass {
-  background: var(--glass-bg);
-  border-color: var(--glass-border);
+  background: var(--glass-dark);
+  border-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -156,7 +156,7 @@
   flex: none;
   border: 1px solid var(--glass-border);
   border-radius: 50%;
-  background: var(--glass-bg);
+  background: var(--glass-dark);
   color: #ffffff;
   cursor: pointer;
   backdrop-filter: blur(12px);

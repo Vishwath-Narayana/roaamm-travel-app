@@ -3,6 +3,7 @@ export const IMAGES = {
   "hero-1": {
     "widths": [
       640,
+      960,
       1280,
       2048
     ],
@@ -16,6 +17,7 @@ export const IMAGES = {
   "hero-2": {
     "widths": [
       640,
+      960,
       1280,
       2048
     ],
@@ -29,6 +31,7 @@ export const IMAGES = {
   "hero-3": {
     "widths": [
       640,
+      960,
       1280,
       2048
     ],
@@ -42,6 +45,7 @@ export const IMAGES = {
   "cta-bleed": {
     "widths": [
       640,
+      960,
       1280,
       2048
     ],

@@ -63,14 +63,18 @@
   --layout-section-pad: clamp(72px, 10vw, 144px);
 
   --effect-hairline: color-mix(in srgb, var(--ink) 10%, transparent);
-  --effect-overlay-hero: linear-gradient(180deg, rgba(11, 11, 15, 0.62) 0%, rgba(11, 11, 15, 0.55) 30%, rgba(11, 11, 15, 0.55) 62%, rgba(11, 11, 15, 0.85) 100%);
+  --effect-overlay-hero: linear-gradient(180deg, rgba(11, 11, 15, 0.45) 0%, rgba(11, 11, 15, 0.15) 12%, rgba(11, 11, 15, 0) 24%, rgba(11, 11, 15, 0) 62%, rgba(11, 11, 15, 0.7) 100%);
+  --effect-overlay-focus: radial-gradient(ellipse 75% 40% at 50% 38%, rgba(11, 11, 15, 0.62) 0%, rgba(11, 11, 15, 0.47) 55%, rgba(11, 11, 15, 0) 100%);
 
   /* Short aliases used by components */
   --hairline: var(--effect-hairline);
   --overlay-hero: var(--effect-overlay-hero);
+  --overlay-focus: var(--effect-overlay-focus);
   --gutter: var(--layout-gutter-mobile);
   --glass-bg: rgba(255, 255, 255, 0.16);
   --glass-border: rgba(255, 255, 255, 0.24);
+  /* Dark glass for text that sits on photos (alpha used by check-hero-contrast). */
+  --glass-dark: rgba(11, 11, 15, 0.5);
 
   --content-max: var(--layout-container);
   --nav-height: 64px;

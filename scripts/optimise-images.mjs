@@ -8,7 +8,7 @@
 // Usage:  node scripts/optimise-images.mjs
 //
 // Budgets (the script fails if one is exceeded):
-//   hero AVIF at 2048 px <= 180 kB, card AVIF <= 60 kB, whole folder <= 3 MB.
+//   hero AVIF at 2048 px <= 180 kB, card AVIF <= 60 kB, whole folder <= 4.5 MB.
 //
 // AVIF and WebP are written at every width. JPEG is only the fallback for
 // browsers that support neither (pre-2020 Safari, IE), so it skips the
@@ -24,11 +24,11 @@ const OUT = join(ROOT, "apps/web/public/images");
 const MANIFEST = join(ROOT, "apps/web/src/images.gen.ts");
 
 const KB = 1024;
-const BUDGET = { heroAvif2048: 180 * KB, cardAvif: 60 * KB, folder: 3 * 1024 * KB };
+const BUDGET = { heroAvif2048: 180 * KB, cardAvif: 60 * KB, folder: 4.5 * 1024 * KB };
 
 /** hero: wide photos, 16:9. card: portrait photos, 4:5. */
 const KINDS = {
-  hero: { ratio: 16 / 9, widths: [640, 1280, 2048], jpegWidths: [640, 1280] },
+  hero: { ratio: 16 / 9, widths: [640, 960, 1280, 2048], jpegWidths: [640, 1280] },
   card: { ratio: 4 / 5, widths: [480, 960], jpegWidths: [480] },
 };
 

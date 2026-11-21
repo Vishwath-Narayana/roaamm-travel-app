@@ -90,8 +90,8 @@
 }
 
 .topnav--clear .topnav__links ul {
-  border-color: var(--glass-border);
-  background: var(--glass-bg);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--glass-dark);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -142,8 +142,21 @@
 }
 
 .topnav--clear .icon-btn {
-  border-color: var(--glass-border);
-  background: var(--glass-bg);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--glass-dark);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Over the photo the wordmark sits on its own dark glass pill. */
+.topnav--clear .wordmark {
+  padding: 8px 14px;
+  margin-left: calc(-1 * 14px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-pill);
+  background: var(--glass-dark);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .topnav--clear .icon-btn:hover {
