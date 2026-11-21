@@ -16,3 +16,7 @@ coverage/
 *.class
 pkg/
 _to_delete/
+
+# Lighthouse CI output
+.lighthouseci/
+.lighthouseci-reports/
