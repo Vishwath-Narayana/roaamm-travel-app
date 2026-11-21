@@ -27,15 +27,32 @@ export const color = {
 } as const;
 
 export const font = {
+  display: '"Inter Tight Variable", "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif',
   sans: '"Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif',
+  serif: '"Instrument Serif", "Iowan Old Style", Georgia, serif',
   mono: '"JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace',
   weight: { regular: 400, medium: 500, semibold: 600, bold: 700, extrabold: 800 },
 } as const;
 
+/** Type scale. Display and h2 use Inter Tight; one italic serif phrase per heading. */
+export const type = {
+  display: "clamp(48px, 8vw, 120px)",
+  h2: "clamp(36px, 4.6vw, 64px)",
+  h3: "clamp(22px, 1.8vw, 24px)",
+  body: "clamp(16px, 1.25vw, 18px)",
+  small: "14px",
+  stat: "clamp(48px, 6vw, 88px)",
+  "track-display": "-0.045em",
+  "track-h2": "-0.035em",
+  "track-h3": "-0.02em",
+  "track-stat": "-0.04em",
+} as const;
+
 export const radius = {
-  button: "12px",
+  button: "999px",
   input: "12px",
-  card: "20px",
+  card: "24px",
+  photo: "24px",
   hero: "32px",
   pill: "999px",
 } as const;
@@ -49,8 +66,24 @@ export const shadow = {
   elevated: "0 20px 50px rgba(11, 11, 15, 0.16)",
 } as const;
 
-/** Spacing scale in px: space[1] = 4px ... space[9] = 96px. */
-export const space = [0, 4, 8, 12, 16, 24, 32, 48, 64, 96] as const;
+/** Spacing scale in px: space[1] = 4px ... space[10] = 144px. Base unit 8px. */
+export const space = [0, 4, 8, 12, 16, 24, 32, 48, 64, 96, 144] as const;
 
-export const tokens = { color, font, radius, size, shadow, space } as const;
+/** 12-column grid. */
+export const layout = {
+  container: "1280px",
+  "page-pad": "clamp(16px, 4vw, 48px)",
+  gutter: "24px",
+  "gutter-mobile": "16px",
+  "section-pad": "clamp(72px, 10vw, 144px)",
+} as const;
+
+/** CSS expressions that depend on the active theme's ink colour. */
+export const effect = {
+  hairline: "color-mix(in srgb, var(--ink) 10%, transparent)",
+  "overlay-hero":
+    "linear-gradient(180deg, rgba(11, 11, 15, 0.62) 0%, rgba(11, 11, 15, 0.55) 30%, rgba(11, 11, 15, 0.55) 62%, rgba(11, 11, 15, 0.85) 100%)",
+} as const;
+
+export const tokens = { color, font, type, radius, size, shadow, space, layout, effect } as const;
 export type ThemeName = keyof typeof color;
