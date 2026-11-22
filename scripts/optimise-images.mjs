@@ -27,16 +27,18 @@ const MANIFEST = join(ROOT, "apps/web/src/images.gen.ts");
 const KB = 1024;
 const BUDGET = { heroAvif2048: 180 * KB, cardAvif: 60 * KB, folder: 4.5 * 1024 * KB };
 
-/** hero: wide photos, 16:9. card: portrait photos, 4:5. */
+/** hero: wide photos, 16:9. card: portrait photos, 4:5. story: 4:3. */
 const KINDS = {
   hero: { ratio: 16 / 9, widths: [640, 960, 1280, 2048], jpegWidths: [640, 1280] },
   card: { ratio: 4 / 5, widths: [480, 960], jpegWidths: [480] },
+  story: { ratio: 4 / 3, widths: [480, 960], jpegWidths: [480] },
 };
 
 /** Starting quality per format; lowered step by step only when a budget needs it. */
 const QUALITY = { avif: 50, webp: 52, jpeg: 50 };
 
 // position: which part of the photo to keep when cropping (sharp gravity).
+// crop: optional [x, y, width, height] fractions to cut first.
 const SLOTS = {
   "hero-1": { kind: "hero", position: "centre" },
   "hero-2": { kind: "hero", position: "centre" },
@@ -50,6 +52,10 @@ const SLOTS = {
   "dest-reykjavik": { kind: "card", position: "south" },
   "bento-solo-traveller": { kind: "card", position: "centre" },
   "feature-guide": { kind: "card", position: "centre" },
+  "story-kyoto": { kind: "story", position: "centre" },
+  // Cropped to the left of the frame so two passers-by are not in the photo.
+  "story-hanoi": { kind: "story", position: "centre", crop: [0, 0, 0.72, 1] },
+  "story-lisbon": { kind: "story", position: "centre" },
 };
 
 const ENCODERS = {
@@ -155,10 +161,21 @@ async function main() {
   for (const f of readdirSync(OUT)) if (/\.(avif|webp|jpg)$/.test(f)) rmSync(join(OUT, f));
 
   const manifest = {};
-  for (const [slot, { kind, position }] of Object.entries(SLOTS)) {
+  for (const [slot, { kind, position, crop }] of Object.entries(SLOTS)) {
     const { ratio, widths, jpegWidths } = KINDS[kind];
-    const src = sharp(join(IN, `${slot}.jpg`)).rotate(); // honour EXIF orientation
-    const meta = await src.metadata();
+    let src = sharp(join(IN, `${slot}.jpg`)).rotate(); // honour EXIF orientation
+    let meta = await src.metadata();
+    if (crop) {
+      const [x, y, w, h] = crop;
+      const region = {
+        left: Math.round(x * meta.width),
+        top: Math.round(y * meta.height),
+        width: Math.round(w * meta.width),
+        height: Math.round(h * meta.height),
+      };
+      src = sharp(await src.extract(region).toBuffer());
+      meta = await src.metadata();
+    }
     const largest = widths[widths.length - 1];
     if (Math.min(meta.width, meta.height * ratio) < largest) {
       throw new Error(`${slot}: original is too small for ${largest} px at this aspect ratio`);

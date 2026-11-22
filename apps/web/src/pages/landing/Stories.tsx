@@ -18,8 +18,8 @@ const STORIES: {
 }[] = [
   {
     kind: "Trip post",
-    slot: "dest-kyoto",
-    alt: "A quiet stone lane in Kyoto leading up to the Yasaka Pagoda",
+    slot: "story-kyoto",
+    alt: "A quiet tatami room in Kyoto with a red carpet, open to a green garden",
     title: "Three slow days in Kyoto",
     excerpt: "Early temples, one long tea afternoon, and the traveller from Lyon I met on day two.",
     author: "Mira, Canada",
@@ -27,8 +27,8 @@ const STORIES: {
   },
   {
     kind: "Guide post",
-    slot: "dest-hanoi",
-    alt: "Turtle Tower on Hoan Kiem Lake in Hanoi under a pink evening sky",
+    slot: "story-hanoi",
+    alt: "Motorbikes parked under a red awning outside a small pho shop in Hanoi",
     title: "Where Hanoi eats after dark",
     excerpt: "Five stalls in the Old Quarter I take every guest to, and what to order at each.",
     author: "Linh, licensed guide",
@@ -36,8 +36,8 @@ const STORIES: {
   },
   {
     kind: "Guide review",
-    slot: "dest-lisbon",
-    alt: "A yellow tram climbing a narrow Lisbon street between pastel buildings",
+    slot: "story-lisbon",
+    alt: "Red rooftops of Alfama and the river, seen from a Lisbon viewpoint",
     title: "Sofia knew every viewpoint",
     excerpt: "Three hours, two miradouros I would never have found, and the best pastel de nata of the trip.",
     author: "Theo, Australia",
