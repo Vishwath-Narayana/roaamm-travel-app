@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CHECK_TIMEOUT_MS, LIVE_HOST, StatusRow } from "../../components/StatusRow";
+import { CHECK_TIMEOUT_MS, LIVE_HOST, SAMPLES, StatusRow, median } from "../../components/StatusRow";
 import { SERVICES } from "../../services";
 import { Faq } from "./Faq";
 import { GUIDES, Guides, money } from "./Guides";
@@ -107,11 +107,21 @@ describe("StatusRow", () => {
 
     const urls = fetchSpy.mock.calls.map((c) => String(c[0]));
     const url = (name: string) => SERVICES.find((s) => s.name === name)!.url;
-    expect(urls).toEqual([url("edge"), url("status")]);
+    // One warm-up plus SAMPLES timed requests per service; never the Core API.
+    expect(urls.filter((u) => u === url("edge"))).toHaveLength(1 + SAMPLES);
+    expect(urls.filter((u) => u === url("status"))).toHaveLength(1 + SAMPLES);
     expect(urls).not.toContain(url("api"));
-    expect(fetchSpy.mock.calls[0][1]).toMatchObject({ mode: "cors" });
-    expect(fetchSpy.mock.calls[1][1]).toMatchObject({ mode: "no-cors" });
+    for (const [input, init] of fetchSpy.mock.calls) {
+      expect(init).toMatchObject({ mode: String(input) === url("edge") ? "cors" : "no-cors" });
+    }
     expect(screen.getByText("Not deployed yet")).toBeInTheDocument();
+    expect(screen.getByText(/measured from your browser/)).toBeInTheDocument();
+  });
+
+  it("reports the median of the timed samples", () => {
+    expect(median([396, 116, 104])).toBe(116);
+    expect(median([575, 104])).toBe(340);
+    expect(median([42])).toBe(42);
   });
 
   it("shows failures and timeouts as unreachable, silently", async () => {
