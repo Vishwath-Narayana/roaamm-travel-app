@@ -141,7 +141,12 @@ function GuideCard({ guide, index }: { guide: (typeof GUIDES)[number]; index: nu
         </output>
       </div>
 
-      <Button disabled variant="secondary" className="guide__book" aria-describedby={BOOKING_NOTE_ID}>
+      <Button
+        disabled
+        variant="secondary"
+        className="guide__book"
+        aria-describedby={BOOKING_NOTE_ID}
+      >
         Book
       </Button>
     </Reveal>
@@ -150,7 +155,12 @@ function GuideCard({ guide, index }: { guide: (typeof GUIDES)[number]; index: nu
 
 export function Guides() {
   return (
-    <section id="guides" className="section cv-auto" aria-labelledby="guides-title" data-simulated-scope>
+    <section
+      id="guides"
+      className="section cv-auto"
+      aria-labelledby="guides-title"
+      data-simulated-scope
+    >
       <div className="container">
         <SectionHead
           className="guides__head"
@@ -173,8 +183,8 @@ export function Guides() {
           Booking opens in a later milestone.
         </p>
         <p className="guides__foot small">
-          <CheckIcon size={14} strokeWidth={2.5} /> Every guide's licence is checked before they
-          can take bookings. These four profiles are simulated.
+          <CheckIcon size={14} strokeWidth={2.5} /> Every guide's licence is checked before they can
+          take bookings. These four profiles are simulated.
         </p>
       </div>
     </section>

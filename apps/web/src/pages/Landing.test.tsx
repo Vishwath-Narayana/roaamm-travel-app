@@ -75,7 +75,8 @@ describe("Landing", () => {
       expect(within(scope as HTMLElement).getByText("Simulated data")).toBeInTheDocument();
     });
     const stats = screen.getByRole("region", { name: "ROAAMM in numbers" });
-    for (const v of ["212k", "1,326", "41", "58k"]) expect(within(stats).getByText(v)).toBeInTheDocument();
+    for (const v of ["212k", "1,326", "41", "58k"])
+      expect(within(stats).getByText(v)).toBeInTheDocument();
   });
 
   it("every simulated block carries a 'Simulated' label", () => {
@@ -102,8 +103,15 @@ describe("Landing", () => {
       expect(document.getElementById(id)).toBeInTheDocument();
     }
     const features = screen.getByRole("region", { name: "Built for travelling alone" });
-    for (const t of ["Meet on your dates", "Licensed local guides", "Real local prices", "Safety built in"]) {
-      expect(within(features).getAllByRole("heading", { level: 3, name: t }).length).toBeGreaterThan(0);
+    for (const t of [
+      "Meet on your dates",
+      "Licensed local guides",
+      "Real local prices",
+      "Safety built in",
+    ]) {
+      expect(
+        within(features).getAllByRole("heading", { level: 3, name: t }).length,
+      ).toBeGreaterThan(0);
     }
     const how = screen.getByRole("region", { name: "Three steps to your first trip" });
     expect(within(how).getAllByRole("listitem")).toHaveLength(3);
@@ -114,7 +122,9 @@ describe("Landing", () => {
     render(<Landing />);
     const search = screen.getByRole("search", { name: /preview/i });
     const submit = within(search).getByRole("button", { name: "Search" });
-    expect(submit).toHaveAccessibleDescription(/opens the demo, search arrives in a later milestone/i);
+    expect(submit).toHaveAccessibleDescription(
+      /opens the demo, search arrives in a later milestone/i,
+    );
     await user.click(submit);
     expect(window.location.pathname).toBe("/demo");
   });
@@ -220,7 +230,9 @@ describe("index.html preloads", () => {
   it("preloads exactly the hero-1 AVIF widths the optimiser produced", async () => {
     const { IMAGES } = await import("../images.gen");
     const html = (await import("../../index.html?raw")).default;
-    const expected = IMAGES["hero-1"].widths.map((w) => `/images/hero-1-${w}.avif ${w}w`).join(", ");
+    const expected = IMAGES["hero-1"].widths
+      .map((w) => `/images/hero-1-${w}.avif ${w}w`)
+      .join(", ");
     expect(html).toContain(`imagesrcset="${expected}"`);
     expect(html).toMatch(/rel="preload"\s+as="font"[\s\S]*inter-tight-latin-wght-normal\.woff2/);
   });

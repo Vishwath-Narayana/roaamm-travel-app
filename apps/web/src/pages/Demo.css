@@ -68,3 +68,20 @@
 .page__back {
   margin-top: var(--space-5);
 }
+
+.demo__section--first {
+  margin-top: 0;
+  margin-bottom: var(--space-8);
+}
+
+.demo__notice,
+.demo__error {
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+}
+
+.demo__error {
+  border-color: var(--sos);
+}

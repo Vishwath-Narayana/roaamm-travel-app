@@ -23,8 +23,8 @@ const ITEMS: { q: string; a: ReactNode }[] = [
       <>
         Only the people in the conversation. Chats use end-to-end encryption with MLS (RFC 9420),
         and calls use SFrame. One honest limit: on the web, the server delivers the JavaScript you
-        run, so you have to trust that code. The{" "}
-        <a href={`${DOCS}/security.md`}>threat model</a> explains it.
+        run, so you have to trust that code. The <a href={`${DOCS}/security.md`}>threat model</a>{" "}
+        explains it.
       </>
     ),
   },
@@ -60,8 +60,8 @@ const ITEMS: { q: string; a: ReactNode }[] = [
     q: "Where is the source code?",
     a: (
       <>
-        All of it is public on <a href={REPO_URL}>GitHub</a>, with the design docs and
-        architecture decision records.
+        All of it is public on <a href={REPO_URL}>GitHub</a>, with the design docs and architecture
+        decision records.
       </>
     ),
   },

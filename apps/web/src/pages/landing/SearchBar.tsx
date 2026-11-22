@@ -53,7 +53,13 @@ export function SearchBar() {
         <span ref={pillRef} className="search__pill" aria-hidden="true" data-on="false" />
         <div className="search__field">
           <label htmlFor={`${id}-where`}>Where</label>
-          <input id={`${id}-where`} name="where" type="text" placeholder="Kyoto, Lisbon, anywhere" autoComplete="off" />
+          <input
+            id={`${id}-where`}
+            name="where"
+            type="text"
+            placeholder="Kyoto, Lisbon, anywhere"
+            autoComplete="off"
+          />
         </div>
         <fieldset className="search__field search__when">
           <legend>When</legend>

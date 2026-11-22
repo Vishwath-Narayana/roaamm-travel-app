@@ -54,8 +54,8 @@ export function Bento() {
         <div className="bento">
           <Reveal className="bento__card bento__card--dark" data-tilt data-glare>
             <p className="bento__promise">
-              Everyone you meet has shown ID. Your chats and calls are end-to-end encrypted, so
-              not even ROAAMM can read them.
+              Everyone you meet has shown ID. Your chats and calls are end-to-end encrypted, so not
+              even ROAAMM can read them.
             </p>
             <p className="bento__small">
               You choose who sees your trips, and you can leave any conversation at any time.
@@ -65,7 +65,13 @@ export function Bento() {
             </Button>
           </Reveal>
 
-          <Reveal variant="scale" delay={1} className="bento__card bento__card--photo" data-tilt data-glare>
+          <Reveal
+            variant="scale"
+            delay={1}
+            className="bento__card bento__card--photo"
+            data-tilt
+            data-glare
+          >
             <Photo
               slot="bento-solo-traveller"
               alt="A traveller with a backpack, seen from behind, looking out over a city"
@@ -74,7 +80,13 @@ export function Bento() {
             <span className="glass-pill glass-pill--dark bento__chip">Made for you</span>
           </Reveal>
 
-          <Reveal delay={2} className="bento__card bento__card--stats" data-simulated-scope data-tilt data-glare>
+          <Reveal
+            delay={2}
+            className="bento__card bento__card--stats"
+            data-simulated-scope
+            data-tilt
+            data-glare
+          >
             <div className="bento__stats-head">
               <h3>Community health</h3>
               <Badge>Simulated data</Badge>

@@ -5,9 +5,14 @@
 # a third-party script we did not ask for. Content blockers block that script,
 # which shows up as "net::ERR_BLOCKED_BY_CLIENT" in the browser console, and the
 # strict CSP planned for M12 would block it as well.
+#
+# The CSP below sets connect-src only (the full strict CSP is M12). The API is
+# where the demo session lives; roaamm-rt and roaamm-status are measured by the
+# live status row.
 
 /*
   Cache-Control: public, max-age=0, must-revalidate, no-transform
+  Content-Security-Policy: connect-src 'self' https://roaamm-api.plinthwell.com https://roaamm-rt.plinthwell.com https://roaamm-status.plinthwell.com
 
 # Vite gives built files content hashes, so they can be cached for a year.
 /assets/*
