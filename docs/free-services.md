@@ -7,7 +7,7 @@
 | # | Service | Used for | Free limit (Nov 2026) | Watch out for |
 |---|---|---|---|---|
 | 1 | **Cloudflare DNS** (`plinthwell.com`, already set up) | Subdomains, Universal SSL | Free | Use first-level subdomains only (`roaamm-api.`, not `api.roaamm.`), because the free certificate covers `*.plinthwell.com` only |
-| 2 | **Cloudflare Workers** | Rust edge Worker, static web assets | 100,000 requests/day, 10 ms CPU per request. Static asset requests are free and unlimited | Going over the limit returns error 1027 until 00:00 UTC |
+| 2 | **Cloudflare Workers** | Rust edge Worker, static web assets, `roaamm-api` proxy to the core (one invocation per API request) | 100,000 requests/day, 10 ms CPU per request. Static asset requests are free and unlimited | Going over the limit returns error 1027 until 00:00 UTC |
 | 3 | **Cloudflare Durable Objects** (SQLite) | Session, Room and KeyPackage DOs, WebSockets | 100,000 requests/day, 5 GB storage per account | When a daily limit is hit, further operations fail. Use hibernation. Check how incoming WebSocket messages are counted in the pricing docs |
 | 4 | **Cloudflare R2** | Encrypted attachments, sealed ID documents | ~10 GB storage, generous operations allowance, no egress fees | Use presigned URLs. Set lifecycle rules (e.g. delete ID documents after 30 days) |
 | 5 | **Cloudflare Realtime (TURN/SFU)** | Call relay fallback, group calls (stretch goal) | First 1,000 GB/month free (shared by TURN and SFU). STUN `stun.cloudflare.com` is free | Short-lived TURN credentials only |
@@ -43,7 +43,7 @@
    - Create a Realtime TURN key.
    - Create an Analytics Engine dataset `roaamm_rt`.
    - In Zero Trust: create the tunnel `roaamm-core`, and an Access application for SSH.
-   - Custom domains: `roaamm.` (web), `roaamm-rt.` (edge), `roaamm-status.` (status), `roaamm-api.` (tunnel public hostname → `http://core:8080`).
+   - Custom domains: `roaamm.` (web), `roaamm-rt.` (edge), `roaamm-status.` (status), `roaamm-api.` (Worker `roaamm-api-proxy` in `edge-api-proxy/` → core on Cloud Run, see [ADR 0003](adr/0003-core-hosting-cloud-run.md)). All four are Worker custom domains: `wrangler deploy` creates the DNS record and certificate, nothing is added by hand.
 3. **Google Cloud:** new project `roaamm`, billing account plus a budget alert at $1. Create an e2-micro in a free-tier US region with a Debian/Ubuntu LTS image and a 30 GB standard disk. **No public firewall rules except SSH**, and close that too once the Cloudflare Access SSH path works. Install Docker and `cloudflared` (run as a service with the tunnel token). Turn on unattended-upgrades.
 4. **Neon:** project `roaamm`, database `roaamm`, role `roaamm_app` (least privilege), pooled connection string in the server's environment. GitHub integration for a branch per pull request.
 5. **Resend:** add the domain `mail.plinthwell.com`, add the DNS records through Cloudflare, create an API key.
