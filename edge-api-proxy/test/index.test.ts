@@ -82,6 +82,41 @@ describe("forwarding", () => {
     }
     expect(sent.headers.get("x-forwarded-host")).toBe("roaamm-api.plinthwell.com");
     expect(sent.headers.get("accept")).toBe("application/json");
+    // Cloudflare's client IP is passed on under our own header name.
+    expect(sent.headers.get("x-roaamm-client-ip")).toBe("203.0.113.9");
+  });
+
+  it("never lets a client choose its own client-IP header", async () => {
+    const seen = stubOrigin(() => new Response("ok"));
+    await worker.fetch(
+      new Request(`${PUBLIC}/health`, { headers: { "x-roaamm-client-ip": "1.2.3.4" } }),
+      env,
+    );
+    expect(seen[0]!.headers.get("x-roaamm-client-ip")).toBeNull();
+    await worker.fetch(
+      new Request(`${PUBLIC}/health`, {
+        headers: { "x-roaamm-client-ip": "1.2.3.4", "cf-connecting-ip": "198.51.100.2" },
+      }),
+      env,
+    );
+    expect(seen[1]!.headers.get("x-roaamm-client-ip")).toBe("198.51.100.2");
+  });
+
+  it("passes Set-Cookie through and never lets it be cached", async () => {
+    const cookie =
+      "__Host-roaamm_session=abc; Path=/; Max-Age=28800; Secure; HttpOnly; SameSite=Lax";
+    stubOrigin(
+      () =>
+        new Response('{"role":"traveller"}', {
+          headers: { "set-cookie": cookie, "cache-control": "public, max-age=600" },
+        }),
+    );
+    const res = await worker.fetch(
+      new Request(`${PUBLIC}/v1/demo/session`, { method: "POST", headers: { origin: WEB_ORIGIN } }),
+      env,
+    );
+    expect(res.headers.get("set-cookie")).toBe(cookie);
+    expect(res.headers.get("cache-control")).toBe("no-store, private");
   });
 
   it("passes the response through and adds Cache-Control: no-store when absent", async () => {
@@ -139,6 +174,7 @@ describe("CORS", () => {
       env,
     );
     expect(allowed.headers.get("access-control-allow-origin")).toBe(WEB_ORIGIN);
+    expect(allowed.headers.get("access-control-allow-credentials")).toBe("true");
     expect(allowed.headers.get("vary")).toBe("Accept-Encoding, Origin");
 
     const denied = await worker.fetch(
@@ -146,6 +182,7 @@ describe("CORS", () => {
       env,
     );
     expect(denied.headers.get("access-control-allow-origin")).toBeNull();
+    expect(denied.headers.get("access-control-allow-credentials")).toBeNull();
   });
 
   it("answers an allowed preflight without calling the origin", async () => {
@@ -166,6 +203,8 @@ describe("CORS", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe(WEB_ORIGIN);
     expect(res.headers.get("access-control-allow-methods")).toContain("POST");
     expect(res.headers.get("access-control-allow-headers")).toContain("Content-Type");
+    expect(res.headers.get("access-control-allow-headers")).toContain("X-Roaamm-Csrf");
+    expect(res.headers.get("access-control-allow-credentials")).toBe("true");
     expect(res.headers.get("vary")).toBe("Origin");
   });
 
@@ -181,6 +220,7 @@ describe("CORS", () => {
     expect(seen).toHaveLength(0);
     expect(res.status).toBe(403);
     expect(res.headers.get("access-control-allow-origin")).toBeNull();
+    expect(res.headers.get("access-control-allow-credentials")).toBeNull();
   });
 });
 

@@ -45,6 +45,7 @@ jobs:
               - 'rust-toolchain.toml'
             core:
               - 'services/core/**'
+              - 'scripts/ci/core-native-smoke.sh'
             api-proxy:
               - 'edge-api-proxy/**'
               - 'pnpm-lock.yaml'
@@ -134,16 +135,11 @@ jobs:
       # Build only, never pushed: proves the native image and Dockerfile work.
       - name: Docker build (native image, no push)
         run: docker build -t roaamm-core:ci .
-      - name: Container answers /health on $PORT
-        run: |
-          docker run -d --name core -e PORT=9090 -p 9090:9090 roaamm-core:ci
-          for _ in $(seq 1 30); do
-            if body=$(curl -fsS http://localhost:9090/health); then break; fi
-            sleep 1
-          done
-          docker logs core
-          echo "$body"
-          test "$body" = '{"status":"ok"}'
+      # The native binary against a throwaway Postgres: proves the driver,
+      # Flyway migrations and JDBC all work in the native image. No secrets.
+      - name: Native container against Postgres
+        working-directory: .
+        run: scripts/ci/core-native-smoke.sh roaamm-core:ci
 
   api-proxy:
     needs: changes

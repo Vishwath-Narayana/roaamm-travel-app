@@ -85,6 +85,7 @@ jobs:
           --max-instances 2
           --min-instances 0
           --allow-unauthenticated
+          --set-secrets=DATABASE_URL=neon-database-url:latest
 
   # roaamm-api.plinthwell.com -> Cloud Run core (docs/adr/0003-core-hosting-cloud-run.md).
   # wrangler bundles the TypeScript itself, so no install or build step.
@@ -138,4 +139,7 @@ jobs:
             # Up to ~3 minutes: a first deploy of the custom domain waits for
             # DNS and the edge certificate.
             check https://roaamm-api.plinthwell.com/health 18
+            # Database through the core. Up to ~5 minutes: a suspended Neon
+            # compute and a cold Cloud Run instance both have to wake up.
+            check https://roaamm-api.plinthwell.com/ready 30
           fi

@@ -21,8 +21,12 @@ RUN ./gradlew --no-daemon nativeCompile
 
 FROM gcr.io/distroless/base-debian13:nonroot@sha256:a08d9054afbaf1af9b90fd02cdc7b32236319b5376d374505a41548d42b0c5db
 COPY --from=build /src/build/native/nativeCompile/roaamm-core /app/roaamm-core
+# Flyway cannot scan classpath resources inside a native image ("unsupported
+# protocol: resource"), so the migrations ship as plain files next to the binary.
+COPY src/main/resources/db/migration /app/db/migration
 # 65532 is the distroless "nonroot" user.
 USER 65532:65532
 ENV PORT=8080
+ENV SPRING_FLYWAY_LOCATIONS=filesystem:/app/db/migration
 EXPOSE 8080
 ENTRYPOINT ["/app/roaamm-core"]

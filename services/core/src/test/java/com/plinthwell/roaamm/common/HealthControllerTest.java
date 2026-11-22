@@ -4,10 +4,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.plinthwell.roaamm.auth.SessionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -16,6 +18,10 @@ class HealthControllerTest {
 
     @Autowired
     private MockMvc mvc;
+
+    // No DataSource exists in this slice: /health answering here proves it never touches the database.
+    @MockitoBean
+    private SessionService sessions;
 
     @Test
     void healthReturnsOk() throws Exception {
