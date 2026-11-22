@@ -53,7 +53,7 @@ flowchart LR
 |---|---|
 | `roaamm.plinthwell.com` | Web app (static, served by Cloudflare) |
 | `roaamm-rt.plinthwell.com` | Rust edge Worker: WebSocket endpoint, key packages, TURN credentials |
-| `roaamm-api.plinthwell.com` | Java core on Cloud Run, through a Cloudflare Worker route ([ADR 0003](adr/0003-core-hosting-cloud-run.md); not set up yet) |
+| `roaamm-api.plinthwell.com` | Java core on Cloud Run, through a Cloudflare Worker route ([ADR 0003](adr/0003-core-hosting-cloud-run.md); live, serves `/health`) |
 | `roaamm-status.plinthwell.com` | System page: architecture, live metrics, load-test report |
 
 All of them are first-level subdomains, so Cloudflare's free Universal SSL certificate covers them. `plinthwell.com` is already on Cloudflare DNS.

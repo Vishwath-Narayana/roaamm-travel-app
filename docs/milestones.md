@@ -4,7 +4,7 @@
 
 | # | Milestone | Delivers | Done when |
 |---|---|---|---|
-| **M0** | Foundation | Public repo, monorepo skeleton (web, edge, crates, core, packages), CI with `ci-ok`, Cloudflare/Google Cloud/Neon accounts, a "hello" app deployed on **all 4 subdomains**, Cloudflare Tunnel to the core, Sentry | `roaamm.`, `roaamm-rt.`, `roaamm-api.` and `roaamm-status.plinthwell.com` all return 200 over TLS from CI deploys |
+| **M0** | Foundation | Public repo, monorepo skeleton (web, edge, crates, core, packages), CI with `ci-ok`, Cloudflare/Google Cloud/Neon accounts, a "hello" app deployed on **all 4 subdomains**, core on Cloud Run behind the `roaamm-api` Worker proxy, Sentry | `roaamm.`, `roaamm-rt.`, `roaamm-api.` and `roaamm-status.plinthwell.com` all return 200 over TLS from CI deploys |
 | **M1** | Design system + shell | Tokens, Tailwind theme, core components (button, card, input, glass nav, toasts), app shell + landing page (from WEB-* designs), ROAAMM wordmark, dark mode, motion rules, accessibility checks | Lighthouse ≥ 90; landing matches the design |
 | **M2** | Accounts | Core: users, passkeys, email codes, Ed25519 JWT + JWKS, refresh rotation, Turnstile; web: sign-up, login, profile; **Try demo** | New user can sign up with a passkey; demo login works; auth tests pass |
 | **M3** | Verification + admin | Mock ID upload (sealed to the admin key, R2), admin queue (ADM-* designs), Verified badge, audit log | Admin approves a user and the badge shows; ID document unreadable on the server |
@@ -22,4 +22,4 @@
 > **ROAAMM**: end-to-end encrypted, real-time travel platform (live at roaamm.plinthwell.com).
 > - Designed and load-tested an edge real-time architecture (Rust/WebAssembly on Cloudflare Workers + Durable Objects) sustaining **50,000 concurrent WebSocket users** with **p95 message delivery of N ms**.
 > - Built MLS (RFC 9420) group E2EE and SFrame-encrypted WebRTC calls with a shared Rust crypto core compiled to WebAssembly.
-> - Java 25 / Spring Boot 4 core (GraalVM native) with passkey auth, behind a zero-open-ports Cloudflare Tunnel; runs entirely on free tiers.
+> - Java 25 / Spring Boot 4 core (GraalVM native) with passkey auth, on Google Cloud Run (scales to zero) behind a Cloudflare Worker; runs entirely on free tiers.

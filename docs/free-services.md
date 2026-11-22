@@ -12,7 +12,7 @@
 | 4 | **Cloudflare R2** | Encrypted attachments, sealed ID documents | ~10 GB storage, generous operations allowance, no egress fees | Use presigned URLs. Set lifecycle rules (e.g. delete ID documents after 30 days) |
 | 5 | **Cloudflare Realtime (TURN/SFU)** | Call relay fallback, group calls (stretch goal) | First 1,000 GB/month free (shared by TURN and SFU). STUN `stun.cloudflare.com` is free | Short-lived TURN credentials only |
 | 6 | **Cloudflare Turnstile** | Bot protection on sign-up and email codes | Free | |
-| 7 | **Cloudflare Tunnel + Zero Trust (Access)** | Expose the Java core with no open ports; SSH through Access | Free (Zero Trust free plan, up to 50 users) | |
+| 7 | **Google Cloud Run** | Java core (native image), scales to zero, reached through the `roaamm-api` Worker proxy ([ADR 0003](adr/0003-core-hosting-cloud-run.md)) | Monthly free allowance of requests, vCPU-seconds and GiB-seconds (**check** current limits) | `--max-instances 2` and a Cloud Billing budget alert. Cold start through the proxy: **UNMEASURED** |
 | 8 | **Workers Analytics Engine** | Latency and throughput metrics for the System page | Free daily allowance (~100k data points written/day, 10k read queries/day) | Sample metrics (e.g. 10%) to stay within the free allowance |
 | 9 | **Google Cloud Compute Engine e2-micro** (always-free tier) | **Fallback only.** The core now runs on Cloud Run ([ADR 0003](adr/0003-core-hosting-cloud-run.md)); this VM plan applies if Cloud Run fails measurement | 1 e2-micro instance per month, free indefinitely (Google says limits may change). As far as known: US regions only (e.g. `us-west1`, `us-central1`, `us-east1`), 1 GB RAM, 30 GB standard disk, limited free network egress | **Check region, disk and egress limits at sign-up.** Needs a card. Set a **budget alert at $1**. Use a GraalVM native image (~100 MB RAM) |
 | 10 | **Neon Postgres** | Core database, a branch per pull request | Free: 100 projects, 1 GB storage per project, 100 compute hours per project per month, autoscaling up to 2 CU | **Suspends after 5 minutes idle, and this can't be turned off on Free.** The first query after that takes ~0.5 s. Writes fail above 1 GB, so keep demo data small |
@@ -42,9 +42,8 @@
    - Create a Turnstile widget for `roaamm.plinthwell.com`.
    - Create a Realtime TURN key.
    - Create an Analytics Engine dataset `roaamm_rt`.
-   - In Zero Trust: create the tunnel `roaamm-core`, and an Access application for SSH.
    - Custom domains: `roaamm.` (web), `roaamm-rt.` (edge), `roaamm-status.` (status), `roaamm-api.` (Worker `roaamm-api-proxy` in `edge-api-proxy/` → core on Cloud Run, see [ADR 0003](adr/0003-core-hosting-cloud-run.md)). All four are Worker custom domains: `wrangler deploy` creates the DNS record and certificate, nothing is added by hand.
-3. **Google Cloud:** new project `roaamm`, billing account plus a budget alert at $1. Create an e2-micro in a free-tier US region with a Debian/Ubuntu LTS image and a 30 GB standard disk. **No public firewall rules except SSH**, and close that too once the Cloudflare Access SSH path works. Install Docker and `cloudflared` (run as a service with the tunnel token). Turn on unattended-upgrades.
+3. **Google Cloud:** new project `roaamm`, billing account plus a budget alert at $1. Enable Cloud Run and Artifact Registry in `us-central1`, and set up Workload Identity Federation for GitHub Actions (no service account keys). The core service `roaamm-core` is deployed by CI ([ADR 0003](adr/0003-core-hosting-cloud-run.md)).
 4. **Neon:** project `roaamm`, database `roaamm`, role `roaamm_app` (least privilege), pooled connection string in the server's environment. GitHub integration for a branch per pull request.
 5. **Resend:** add the domain `mail.plinthwell.com`, add the DNS records through Cloudflare, create an API key.
 6. **Sentry:** three projects (web, edge, core). **Grafana Cloud:** stack + OTLP endpoint and token.
