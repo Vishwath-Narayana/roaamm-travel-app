@@ -1,5 +1,6 @@
 import { SERVICES } from "../services";
 import { MarkIcon } from "../components/icons";
+import { MotionToggle } from "../components/MotionToggle";
 import "./Footer.css";
 
 export const REPO_URL = "https://github.com/Vishwath-Narayana/roaamm-travel-app";
@@ -19,6 +20,7 @@ export function Footer() {
           <p className="footer__note">
             Photos: <a href={CREDITS_URL}>Unsplash</a>
           </p>
+          <MotionToggle />
         </div>
 
         <nav aria-label="Footer" className="footer__links">

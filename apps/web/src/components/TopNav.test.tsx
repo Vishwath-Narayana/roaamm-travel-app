@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TopNav } from "./TopNav";
 
@@ -60,7 +60,10 @@ describe("TopNav", () => {
 
     await user.keyboard("{Escape}");
     expect(btn).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("navigation", { name: "Mobile" })).not.toBeInTheDocument();
+    // The menu shrinks back into the button, then leaves the page.
+    await waitFor(() =>
+      expect(screen.queryByRole("navigation", { name: "Mobile" })).not.toBeInTheDocument(),
+    );
     expect(btn).toHaveFocus();
   });
 

@@ -103,7 +103,8 @@ export function useRouteFocus(path: string): void {
       focusWithoutScroll(target);
       return;
     }
-    window.scrollTo(0, 0);
+    // Instant: smooth scrolling is only for in-page anchor jumps.
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     const h1 = document.querySelector<HTMLElement>("main h1");
     if (h1) focusWithoutScroll(h1);
   }, [path]);

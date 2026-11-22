@@ -10,6 +10,8 @@ import {
   type RefObject,
 } from "react";
 
+import { MOTION_EVENT, isMotionReducedBySite } from "./preference";
+
 // Small motion helpers. No animation library: CSS does the animating, these
 // hooks only decide *when*. Everything respects prefers-reduced-motion.
 
@@ -19,19 +21,34 @@ function reduceQuery(): MediaQueryList | null {
   return typeof window.matchMedia === "function" ? window.matchMedia(REDUCE) : null;
 }
 
-export function prefersReducedMotion(): boolean {
+/** True if the OS asks for reduced motion. */
+export function systemPrefersReducedMotion(): boolean {
   return reduceQuery()?.matches ?? false;
+}
+
+/** True if motion should be reduced: the OS setting or the site's footer switch. */
+export function prefersReducedMotion(): boolean {
+  return systemPrefersReducedMotion() || isMotionReducedBySite();
 }
 
 function subscribeReduce(cb: () => void) {
   const mq = reduceQuery();
   mq?.addEventListener("change", cb);
-  return () => mq?.removeEventListener("change", cb);
+  window.addEventListener(MOTION_EVENT, cb);
+  return () => {
+    mq?.removeEventListener("change", cb);
+    window.removeEventListener(MOTION_EVENT, cb);
+  };
 }
 
-/** True while the visitor asks for reduced motion; updates live. */
+/** True while motion should be reduced (OS setting or footer switch); updates live. */
 export function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(subscribeReduce, prefersReducedMotion, () => false);
+}
+
+/** True while the OS asks for reduced motion; updates live. */
+export function useSystemPrefersReducedMotion(): boolean {
+  return useSyncExternalStore(subscribeReduce, systemPrefersReducedMotion, () => false);
 }
 
 // One IntersectionObserver per rootMargin, shared by every element using it.

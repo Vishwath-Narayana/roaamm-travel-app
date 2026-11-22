@@ -9,12 +9,16 @@
   z-index: 40;
   padding: 12px 12px 0;
   pointer-events: none;
-  transition: transform var(--dur-ui) var(--ease-out);
+  /* Stays put while pages cross-fade (see styles/motion.css). */
+  view-transition-name: site-nav;
+  /* Returns with a spring; leaves a little quicker. */
+  transition: transform var(--dur-content) var(--ease-spring);
 }
 
 /* Slides up out of view while scrolling down. */
 .topnav--hidden {
-  transform: translateY(calc(-100% - 12px));
+  transform: translateY(calc(-100% - 16px));
+  transition: transform var(--dur-ui) var(--ease-in);
 }
 
 .topnav__bar,
@@ -25,6 +29,8 @@
 }
 
 .topnav__bar {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: var(--space-4);
@@ -39,13 +45,25 @@
     box-shadow 250ms var(--ease-out);
 }
 
-/* Solid: glass pill over page content. */
-.topnav--solid .topnav__bar {
+/* Solid: a glass pill over page content. It lives on a pseudo-element whose
+   opacity fades, so the blur itself is never animated. */
+.topnav__bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid var(--hairline);
+  border-radius: inherit;
   background: color-mix(in srgb, var(--bg) 84%, transparent);
-  border-color: var(--hairline);
   box-shadow: 0 8px 24px rgba(11, 11, 15, 0.06);
   backdrop-filter: saturate(160%) blur(16px);
   -webkit-backdrop-filter: saturate(160%) blur(16px);
+  opacity: 0;
+  transition: opacity var(--dur-content) var(--ease-out);
+}
+
+.topnav--solid .topnav__bar::before {
+  opacity: 1;
 }
 
 /* Clear: inside the hero frame, white text on the photo. */
@@ -55,7 +73,7 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .topnav--solid .topnav__bar {
+  .topnav__bar::before {
     background: var(--bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -87,6 +105,7 @@
 
 /* Links sit in a pill group. */
 .topnav__links ul {
+  position: relative;
   display: flex;
   gap: 2px;
   padding: 4px;
@@ -100,6 +119,42 @@
   background: var(--glass-dark);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+.topnav__links li:not(.topnav__indicator) {
+  position: relative;
+  z-index: 1;
+}
+
+/* The active-section pill: one element, revealed over the current link with
+   clip-path (its rounded ends never stretch). Its inset is set from TopNav. */
+.topnav__indicator {
+  position: absolute;
+  inset: 4px 0;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  box-shadow: 0 1px 4px rgba(11, 11, 15, 0.08);
+  opacity: 0;
+  transition:
+    clip-path var(--dur-ui) var(--ease-spring),
+    opacity var(--dur-hover) var(--ease-out);
+}
+
+.topnav__indicator[data-on="true"] {
+  opacity: 1;
+}
+
+.topnav--clear .topnav__indicator {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+.topnav__link[aria-current="true"] {
+  color: var(--ink);
+}
+
+.topnav--clear .topnav__link[aria-current="true"] {
+  color: #ffffff;
 }
 
 .topnav__link {
@@ -198,6 +253,46 @@
 
 .topnav__mobile[hidden] {
   display: none;
+}
+
+/* Opens as a circle growing from the menu button (top right), closes faster. */
+.topnav__mobile {
+  --origin: calc(100% - 36px) -40px;
+  clip-path: circle(150% at var(--origin));
+  transition: clip-path var(--dur-content) var(--ease-out);
+}
+
+.topnav__mobile[data-state="closing"] {
+  clip-path: circle(0% at var(--origin));
+  transition: clip-path calc(var(--dur-content) * 0.4) var(--ease-in);
+}
+
+@starting-style {
+  .topnav__mobile[data-state="open"] {
+    clip-path: circle(0% at var(--origin));
+  }
+}
+
+.topnav__mobile li,
+.topnav__mobile-cta {
+  transition:
+    opacity var(--dur-ui) var(--ease-out),
+    translate var(--dur-ui) var(--ease-out);
+  transition-delay: calc(80ms + var(--i, 3) * 40ms);
+}
+
+.topnav__mobile[data-state="closing"] li,
+.topnav__mobile[data-state="closing"] .topnav__mobile-cta {
+  opacity: 0;
+  transition-delay: 0ms;
+}
+
+@starting-style {
+  .topnav__mobile[data-state="open"] li,
+  .topnav__mobile[data-state="open"] .topnav__mobile-cta {
+    opacity: 0;
+    translate: 0 -8px;
+  }
 }
 
 .topnav__mobile-link {
