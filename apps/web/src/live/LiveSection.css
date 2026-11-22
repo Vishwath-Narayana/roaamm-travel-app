@@ -52,7 +52,7 @@
   white-space: nowrap;
   cursor: pointer;
   overflow: hidden;
-  transition: color var(--dur-1) var(--ease-out);
+  transition: color var(--dur-hover) var(--ease-out);
 }
 
 .live__tab[aria-selected="true"] {

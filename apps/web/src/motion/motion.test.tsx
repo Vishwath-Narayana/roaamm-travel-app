@@ -1,13 +1,13 @@
 import { act, render, screen } from "@testing-library/react";
-import { Reveal } from "./motion";
-import { CountUp } from "./pages/landing/Stats";
+import { Reveal } from ".";
+import { CountUp } from "../pages/landing/Stats";
 import {
   installIntersectionObserver,
   intersect,
   isObserved,
   mockReducedMotion,
   restoreMatchMedia,
-} from "./test/mocks";
+} from "../test/mocks";
 
 describe("Reveal and useReveal", () => {
   beforeAll(() => installIntersectionObserver());
@@ -113,7 +113,7 @@ describe("CountUp accessibility", () => {
 
   it("stats rows read as label and final value only", async () => {
     mockReducedMotion(false);
-    const { Stats } = await import("./pages/landing/Stats");
+    const { Stats } = await import("../pages/landing/Stats");
     render(<Stats />);
     const values = [...document.querySelectorAll("dd")].map(accessibleText);
     expect(values).toEqual(["212k", "1,326", "41", "58k"]);

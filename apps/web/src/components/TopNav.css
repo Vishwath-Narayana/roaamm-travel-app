@@ -9,7 +9,7 @@
   z-index: 40;
   padding: 12px 12px 0;
   pointer-events: none;
-  transition: transform var(--dur-2) var(--ease-out);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
 
 /* Slides up out of view while scrolling down. */
@@ -33,10 +33,10 @@
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
   transition:
-    background-color 250ms var(--ease),
-    border-color 250ms var(--ease),
-    color 250ms var(--ease),
-    box-shadow 250ms var(--ease);
+    background-color 250ms var(--ease-out),
+    border-color 250ms var(--ease-out),
+    color 250ms var(--ease-out),
+    box-shadow 250ms var(--ease-out);
 }
 
 /* Solid: glass pill over page content. */
@@ -112,7 +112,7 @@
   font-size: 0.9375rem;
   font-weight: 500;
   text-decoration: none;
-  transition: background-color var(--duration) var(--ease);
+  transition: background-color var(--dur-hover) var(--ease-out);
 }
 
 .topnav__link:hover {

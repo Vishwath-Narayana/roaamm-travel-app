@@ -18,8 +18,8 @@
   color: var(--ink);
   cursor: pointer;
   transition:
-    background-color var(--duration) var(--ease),
-    opacity var(--duration) var(--ease);
+    background-color var(--dur-hover) var(--ease-out),
+    opacity var(--dur-hover) var(--ease-out);
 }
 
 .circle-btn:hover:not(:disabled) {
@@ -87,7 +87,7 @@
   background: var(--ink);
   transform-origin: left;
   transform: scaleX(max(0.12, var(--progress, 0)));
-  transition: transform var(--dur-1) linear;
+  transition: transform var(--dur-hover) linear;
 }
 
 .dest-track:focus-visible {
@@ -106,7 +106,7 @@
 /* Lift lives on the inner parts so it never fights the reveal transform. */
 .dest-card__media,
 .dest-card__body {
-  transition: transform var(--dur-2) var(--ease-out);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
 
 .dest-card:hover .dest-card__media,
@@ -128,7 +128,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--dur-3) var(--ease-out);
+  transition: transform var(--dur-section) var(--ease-out);
 }
 
 .dest-card:hover .dest-card__media img {
@@ -190,7 +190,7 @@
 .dest-card__arrow {
   margin-left: auto;
   flex: none;
-  transition: transform var(--duration) var(--ease);
+  transition: transform var(--dur-hover) var(--ease-out);
 }
 
 .dest-card:hover .dest-card__arrow {

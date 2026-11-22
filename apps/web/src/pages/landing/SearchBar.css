@@ -27,7 +27,7 @@
   padding: 10px var(--space-4);
   border: 0;
   border-radius: 16px;
-  transition: background-color var(--duration) var(--ease);
+  transition: background-color var(--dur-hover) var(--ease-out);
 }
 
 /* An ink tint works on the light and the (lifted) dark search bar alike. */
@@ -108,7 +108,7 @@
   color: var(--on-ink);
   font-weight: 600;
   cursor: pointer;
-  transition: transform var(--duration) var(--ease);
+  transition: transform var(--dur-hover) var(--ease-out);
 }
 
 .search__submit:hover {

@@ -54,7 +54,7 @@
   .assistant__answer,
   .assistant__chips,
   .assistant__thinking {
-    animation: live-in var(--dur-2) var(--ease-out) both;
+    animation: live-in var(--dur-ui) var(--ease-out) both;
   }
 }
 
@@ -526,7 +526,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: transform var(--dur-1) var(--ease-out);
+  transition: transform var(--dur-hover) var(--ease-out);
 }
 
 .sos-btn:hover {

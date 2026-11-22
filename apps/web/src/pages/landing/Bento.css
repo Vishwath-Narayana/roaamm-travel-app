@@ -124,8 +124,8 @@
 @media (prefers-reduced-motion: no-preference) {
   .meter__dots span.is-on::after {
     transition:
-      opacity var(--dur-1) var(--ease-out),
-      transform var(--dur-2) var(--ease-out);
+      opacity var(--dur-hover) var(--ease-out),
+      transform var(--dur-ui) var(--ease-out);
     /* one by one, meter after meter */
     transition-delay: calc(300ms + var(--m, 0) * 240ms + var(--d, 0) * 60ms);
   }

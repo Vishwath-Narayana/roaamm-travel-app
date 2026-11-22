@@ -25,7 +25,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .toast {
-    animation: toast-in 240ms var(--ease);
+    animation: toast-in 240ms var(--ease-out);
   }
 }
 

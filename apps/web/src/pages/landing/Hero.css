@@ -31,7 +31,7 @@
 
 .hero__slide {
   opacity: 0;
-  transition: opacity 1200ms var(--ease);
+  transition: opacity 1200ms var(--ease-out);
 }
 
 .hero__slide.is-active {
@@ -161,7 +161,7 @@
   cursor: pointer;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: background-color var(--duration) var(--ease);
+  transition: background-color var(--dur-hover) var(--ease-out);
 }
 
 .hero__btn:hover {
@@ -190,7 +190,7 @@
   display: block;
   height: 100%;
   background: #ffffff;
-  transition: width 400ms var(--ease);
+  transition: width 400ms var(--ease-out);
 }
 
 .hero__progress span.is-timed {
@@ -255,13 +255,13 @@
   /* Headline lines rise out of a mask on first load, 90 ms apart. */
   .line-mask__inner {
     display: inline-block;
-    animation: hero-line var(--dur-4) var(--ease-out) both;
+    animation: hero-line var(--dur-hero) var(--ease-out) both;
     animation-delay: 0ms;
   }
 
   /* Everything under the headline follows. */
   .hero__content > :not(h1) {
-    animation: hero-fade var(--dur-3) var(--ease-out) both;
+    animation: hero-fade var(--dur-section) var(--ease-out) both;
     animation-delay: 260ms;
   }
 

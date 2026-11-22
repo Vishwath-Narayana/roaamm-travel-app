@@ -54,7 +54,7 @@
   height: 1.5px;
   margin: -0.75px 0 0 -6px;
   background: var(--ink);
-  transition: transform var(--dur-2) var(--ease-out);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
 
 .faq__icon::after {

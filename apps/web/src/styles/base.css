@@ -256,7 +256,7 @@ picture.photo {
 
 @media (prefers-reduced-motion: no-preference) {
   picture.photo img {
-    transition: opacity var(--dur-2) var(--ease-out);
+    transition: opacity var(--dur-ui) var(--ease-out);
   }
 
   picture.photo img[data-loaded="false"] {
