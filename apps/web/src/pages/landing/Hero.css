@@ -31,11 +31,17 @@
 
 .hero__slide {
   opacity: 0;
-  transition: opacity 1200ms var(--ease-out);
 }
 
 .hero__slide.is-active {
   opacity: 1;
+  z-index: 2;
+}
+
+/* The slide that is leaving stays visible underneath while the new one wipes in. */
+.hero__slide.is-leaving {
+  opacity: 1;
+  z-index: 1;
 }
 
 .hero__photo,
@@ -185,23 +191,32 @@
   overflow: hidden;
 }
 
+/* Fills linearly with the photo timer (transform only) and resets smoothly. */
 .hero__progress span {
   display: block;
   height: 100%;
   background: #ffffff;
-  transition: width 400ms var(--ease-out);
+  transform-origin: left;
+  transition: transform var(--dur-content) var(--ease-out);
 }
 
 .hero__progress span.is-timed {
-  width: 0;
+  transform: scaleX(0);
   animation-name: hero-progress;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
 }
 
 @keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
   to {
-    width: 100%;
+    transform: scaleX(1);
   }
 }
 
@@ -239,33 +254,54 @@
   }
 }
 
-/* ---- Motion (only when the visitor allows it) ---- */
+/* ---- Motion (only when the visitor allows it; see docs/motion.md) ---- */
 @media (prefers-reduced-motion: no-preference) {
-  /* Slow Ken Burns zoom on the active photo; restarts each time a slide
-     becomes active, paused while the hero is off screen. */
-  .hero__slide.is-active .hero__photo img {
-    animation: hero-kenburns 12s var(--ease-out) both;
+  /* Photo change: the new photo wipes in from the right while settling from
+     1.06 to 1; the old one fades and shrinks a touch underneath. */
+  .hero__slide.is-entering {
+    animation: hero-wipe var(--dur-section) var(--ease-in-out) both;
   }
 
-  .hero__frame[data-onscreen="false"] .hero__photo img {
-    animation-play-state: paused;
+  .hero__slide.is-entering .hero__photo img {
+    animation: hero-settle var(--dur-hero) var(--ease-out) both;
   }
 
-  /* Headline lines rise out of a mask on first load, 90 ms apart. */
-  .line-mask__inner {
+  .hero__slide.is-leaving {
+    animation: hero-leave var(--dur-section) var(--ease-out) both;
+  }
+
+  /* First-load intro (once per session). The photo is painted from the first
+     frame (no opacity change, so the LCP image is never held back); it only
+     sharpens and settles. The text follows in order, done within 1.1 s. */
+  .hero--intro .hero__slide.is-active:not(.is-entering) .hero__photo img {
+    animation: hero-photo-in var(--dur-hero) var(--ease-out) both;
+  }
+
+  .hero--intro .line-mask__inner {
     display: inline-block;
-    animation: hero-line var(--dur-hero) var(--ease-out) both;
-    animation-delay: 0ms;
+    animation: hero-line var(--dur-section) var(--ease-out) both;
   }
 
-  /* Everything under the headline follows. */
-  .hero__content > :not(h1) {
-    animation: hero-fade var(--dur-section) var(--ease-out) both;
-    animation-delay: 260ms;
+  .hero--intro .hero__content > .eyebrow {
+    animation: hero-fade var(--dur-content) var(--ease-out) 180ms both;
   }
 
-  .hero__content > .eyebrow {
-    animation-delay: 0ms;
+  .hero--intro .hero__lead {
+    animation: hero-fade var(--dur-content) var(--ease-out) 260ms both;
+  }
+
+  .hero--intro .hero__actions {
+    animation: hero-fade var(--dur-content) var(--ease-out) 340ms both;
+  }
+
+  .hero--intro .hero__bottom {
+    animation: hero-fade var(--dur-content) var(--ease-out) 440ms both;
+  }
+
+  /* The photo counter rolls to its new number. */
+  .hero__count-num {
+    display: inline-block;
+    animation: hero-count var(--dur-ui) var(--ease-out);
   }
 }
 
@@ -276,36 +312,60 @@
   padding-bottom: 0.06em;
 }
 
-@keyframes hero-kenburns {
+@keyframes hero-wipe {
   from {
-    transform: scale(1);
+    clip-path: inset(0 0 0 100%);
   }
   to {
-    transform: scale(1.06);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes hero-settle {
+  from {
+    scale: 1.06;
+  }
+}
+
+@keyframes hero-leave {
+  to {
+    opacity: 0;
+    scale: 0.98;
+  }
+}
+
+@keyframes hero-photo-in {
+  from {
+    filter: blur(10px);
+    scale: 1.08;
   }
 }
 
 @keyframes hero-line {
   from {
-    transform: translateY(105%);
-  }
-  to {
-    transform: none;
+    translate: 0 105%;
   }
 }
 
 @keyframes hero-fade {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    translate: 0 12px;
   }
 }
 
-/* Gentle scroll parallax where scroll-driven animations exist. Browsers
-   without them simply skip it. */
+@keyframes hero-count {
+  from {
+    opacity: 0;
+    translate: 0 60%;
+  }
+}
+
+/* Parallax and a slow ambient zoom, driven by scrolling (runs off the main
+   thread). Browsers without scroll-driven animations get neither. */
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
-    .hero__slides {
+    :root:not([data-motion="reduced"]) .hero__slides {
       animation: hero-parallax linear both;
       animation-timeline: scroll(root);
       animation-range: 0 100vh;
@@ -313,12 +373,12 @@
   }
 }
 
-/* Scaled 10% so moving 4% never uncovers the frame behind the photo. */
+/* Starts at 1.06 so moving down never uncovers the frame behind the photo. */
 @keyframes hero-parallax {
   from {
-    transform: scale(1.1);
+    transform: scale(1.06);
   }
   to {
-    transform: translateY(4%) scale(1.1);
+    transform: translateY(5%) scale(1.16);
   }
 }

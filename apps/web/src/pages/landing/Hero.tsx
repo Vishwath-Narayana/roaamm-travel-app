@@ -2,11 +2,12 @@ import { useEffect, useRef, useState, type FocusEvent } from "react";
 import { Button } from "../../components/Button";
 import { ArrowLeftIcon, ArrowRightIcon, PauseIcon, PlayIcon } from "../../components/icons";
 import { Photo } from "../../components/Photo";
-import { useInView, usePrefersReducedMotion } from "../../motion";
+import { prefersReducedMotion as reducedMotionNow, useInView, usePrefersReducedMotion } from "../../motion";
 import { HERO_SLIDES } from "./data";
 import "./Hero.css";
 
 export const SLIDE_MS = 7000;
+const INTRO_KEY = "roaamm-hero-intro";
 const TAGS = ["ID verified", "Licensed guides", "Safety built in"];
 
 export function Hero() {
@@ -16,6 +17,19 @@ export function Hero() {
   // Pause the slideshow (and the slow zoom) while the hero is off screen.
   const onScreen = useInView(frameRef);
   const [index, setIndex] = useState(0);
+  // The slide that is leaving (it fades and shrinks while the new one wipes in).
+  const [previous, setPrevious] = useState<number | null>(null);
+  // The first-load intro plays once per browser session, never under reduced motion.
+  const [intro] = useState(() => {
+    if (reducedMotionNow()) return false;
+    try {
+      if (window.sessionStorage.getItem(INTRO_KEY)) return false;
+      window.sessionStorage.setItem(INTRO_KEY, "1");
+    } catch {
+      // Storage unavailable: play the intro.
+    }
+    return true;
+  });
   const [paused, setPaused] = useState(false); // pause button
   const [hovering, setHovering] = useState(false); // pointer over the frame
   const [focused, setFocused] = useState(false); // keyboard focus inside the frame
@@ -38,7 +52,10 @@ export function Hero() {
 
   function go(delta: number) {
     setRestReady(true);
-    setIndex((i) => (i + delta + count) % count);
+    setIndex((i) => {
+      setPrevious(i);
+      return (i + delta + count) % count;
+    });
   }
 
   function onBlur(e: FocusEvent<HTMLDivElement>) {
@@ -51,7 +68,7 @@ export function Hero() {
     <section className="hero" aria-labelledby="hero-title">
       <div
         ref={frameRef}
-        className="hero__frame"
+        className={`hero__frame${intro ? " hero--intro" : ""}`}
         data-onscreen={onScreen}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
@@ -63,7 +80,15 @@ export function Hero() {
             i === 0 || restReady ? (
               <div
                 key={s.slot}
-                className={`hero__slide${i === index ? " is-active" : ""}`}
+                className={[
+                  "hero__slide",
+                  i === index && "is-active",
+                  i === previous && i !== index && "is-leaving",
+                  // Only slides that arrive later wipe in; the first one is simply there.
+                  previous !== null && i === index && "is-entering",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 aria-hidden={i !== index}
               >
                 <Photo
@@ -131,7 +156,9 @@ export function Hero() {
               </button>
               <p className="hero__count mono" aria-live={playing ? "off" : "polite"} aria-atomic="true">
                 <span className="visually-hidden">Photo </span>
-                {index + 1}
+                <span key={index} className="hero__count-num">
+                  {index + 1}
+                </span>
                 <span aria-hidden="true">/</span>
                 <span className="visually-hidden"> of </span>
                 {count}
@@ -160,7 +187,8 @@ export function Hero() {
                 style={{
                   animationDuration: `${SLIDE_MS}ms`,
                   animationPlayState: playing ? "running" : "paused",
-                  width: autoplay ? undefined : `${((index + 1) / count) * 100}%`,
+                  // Without autoplay the bar simply shows how far through the set we are.
+                  transform: autoplay ? undefined : `scaleX(${(index + 1) / count})`,
                 }}
                 data-testid="hero-progress"
                 onAnimationEnd={() => go(1)}

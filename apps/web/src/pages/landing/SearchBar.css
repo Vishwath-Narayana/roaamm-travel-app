@@ -30,10 +30,36 @@
   transition: background-color var(--dur-hover) var(--ease-out);
 }
 
-/* An ink tint works on the light and the (lifted) dark search bar alike. */
-.search__field:hover,
-.search__field:focus-within {
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
+/* Hover tints a field; focus is shown by the gliding pill below. An ink tint
+   works on the light and the (lifted) dark search bar alike. */
+@media (hover: hover) and (pointer: fine) {
+  .search__field:hover {
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+}
+
+.search {
+  position: relative;
+}
+
+.search > :not(.search__pill) {
+  position: relative;
+}
+
+.search__pill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    clip-path var(--dur-ui) var(--ease-spring),
+    opacity var(--dur-hover) var(--ease-out);
+}
+
+.search__pill[data-on="true"] {
+  opacity: 1;
 }
 
 .search__field label,
