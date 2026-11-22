@@ -177,6 +177,16 @@
   color: var(--ink);
 }
 
+.guide__amount {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+/* Price changes roll quickly (a control, not a hero number). */
+.guide__amount .odo__strip {
+  transition-duration: var(--dur-content);
+}
+
 .guide__book {
   width: 100%;
   margin-top: var(--space-2);

@@ -49,12 +49,60 @@
 
 /* ---- Entry motion for anything that appears in a panel ---- */
 @media (prefers-reduced-motion: no-preference) {
-  .bubble,
+  /* Messages spring in from their sender's side. */
+  .bubble--them {
+    animation: bubble-them var(--dur-content) var(--ease-spring) both;
+  }
+
+  .bubble--me {
+    animation: bubble-me var(--dur-content) var(--ease-spring) both;
+  }
+
   .result,
   .assistant__answer,
-  .assistant__chips,
   .assistant__thinking {
-    animation: live-in var(--dur-ui) var(--ease-out) both;
+    animation: live-in var(--dur-content) var(--ease-out) both;
+  }
+
+  /* Follow-up chips pop in last, one after another. */
+  .assistant__chips .chip {
+    animation: chip-pop var(--dur-content) var(--ease-spring) both;
+    animation-delay: calc(var(--i, 0) * var(--stagger));
+  }
+
+  /* Match bars fill once their card appears. */
+  .result__bar span {
+    animation: bar-fill var(--dur-section) var(--ease-out) 120ms both;
+  }
+}
+
+@keyframes bubble-them {
+  from {
+    opacity: 0;
+    translate: -16px 6px;
+    scale: 0.96;
+  }
+}
+
+@keyframes bubble-me {
+  from {
+    opacity: 0;
+    translate: 16px 6px;
+    scale: 0.96;
+  }
+}
+
+@keyframes chip-pop {
+  from {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 6px;
+  }
+}
+
+@keyframes bar-fill {
+  from {
+    transform: scaleX(0);
   }
 }
 
@@ -160,6 +208,10 @@
   margin-left: 4px;
 }
 
+.ticks svg {
+  transition: color var(--dur-content) var(--ease-out);
+}
+
 .ticks.is-read svg {
   color: #4ade80;
 }
@@ -179,7 +231,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .typing span {
-    animation: live-typing 1s var(--ease-out) infinite;
+    animation: live-typing 900ms var(--ease-in-out) infinite;
   }
 
   .typing span:nth-child(2) {
@@ -189,17 +241,22 @@
   .typing span:nth-child(3) {
     animation-delay: 300ms;
   }
+
+  /* When playback stops the bars ease back to their resting shape. */
+  .voice:not(.is-playing) .voice__wave span {
+    animation: wave-settle var(--dur-content) var(--ease-out);
+  }
 }
 
+/* A smooth travelling wave (ease-in-out, staggered dots). */
 @keyframes live-typing {
   0%,
-  60%,
   100% {
-    transform: none;
-    opacity: 0.5;
+    translate: 0 1px;
+    opacity: 0.45;
   }
-  30% {
-    transform: translateY(-4px);
+  50% {
+    translate: 0 -3px;
     opacity: 1;
   }
 }
@@ -241,6 +298,12 @@
   .voice.is-playing .voice__wave span {
     animation: live-wave 900ms var(--ease-out) infinite alternate;
     animation-delay: calc(var(--b) * -70ms);
+  }
+}
+
+@keyframes wave-settle {
+  from {
+    transform: scaleY(0.6);
   }
 }
 
@@ -345,9 +408,31 @@
   font-size: 13px;
 }
 
+.result__score {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
 .result__match {
   font-size: 15px;
   font-weight: 600;
+}
+
+.result__bar {
+  width: 56px;
+  height: 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  overflow: hidden;
+}
+
+.result__bar span {
+  display: block;
+  height: 100%;
+  background: var(--verified-fg);
+  transform: scaleX(var(--m, 0));
+  transform-origin: left;
 }
 
 .assistant__chips {
@@ -441,41 +526,46 @@
   flex: none;
 }
 
-.checkin__ring > span:not(.checkin__label) {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 3px;
-  height: 9px;
-  margin: -4.5px 0 0 -1.5px;
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--ink) 15%, transparent);
-}
-
-/* Ticks fill one by one while the check-in timer runs (opacity only). */
-.checkin__ring > span:not(.checkin__label)::after {
-  content: "";
+.checkin__svg {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  background: var(--ink);
-  opacity: 0;
+  width: 100%;
+  height: 100%;
+  rotate: -90deg;
 }
 
-.checkin[data-state="counting"] .checkin__ring > span:not(.checkin__label)::after,
-.checkin[data-state="escalated"] .checkin__ring > span:not(.checkin__label)::after {
-  opacity: 1;
+.checkin__svg circle {
+  fill: none;
+  stroke-width: 5;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .checkin[data-state="counting"] .checkin__ring > span:not(.checkin__label)::after {
-    transition: opacity 120ms linear;
-    transition-delay: calc(var(--t) * 125ms);
+.checkin__track {
+  stroke: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+/* The check-in ring fills with stroke-dashoffset while the timer runs, then
+   flips to the alert colour. */
+.checkin__fill {
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke var(--dur-content) var(--ease-out);
+}
+
+.checkin[data-state="counting"] .checkin__fill {
+  animation: ring-fill linear both;
+}
+
+.checkin[data-state="escalated"] .checkin__fill {
+  stroke-dashoffset: 0;
+  stroke: var(--sos);
+}
+
+@keyframes ring-fill {
+  to {
+    stroke-dashoffset: 0;
   }
-}
-
-.checkin[data-state="escalated"] .checkin__ring > span:not(.checkin__label)::after {
-  background: var(--sos);
 }
 
 .checkin__label {
@@ -537,6 +627,39 @@
 
 .sos-btn:active {
   transform: scale(0.97);
+}
+
+.sos-btn {
+  position: relative;
+  isolation: isolate;
+}
+
+/* A ripple on every press. */
+.sos-btn__ripple {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #d92d20;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="reduced"]) .sos-btn__ripple {
+    animation: sos-ripple var(--dur-section) var(--ease-out);
+  }
+}
+
+@keyframes sos-ripple {
+  from {
+    opacity: 0.45;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 1.6;
+  }
 }
 
 /* Paused section: freeze every looping animation in the stage. */

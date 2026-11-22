@@ -3,9 +3,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The rolling copy is decoration: not selectable (copying a price gives the
+   real value, not the 0-9 strips). */
 .odo__roll {
   display: inline-flex;
   align-items: flex-end;
+  user-select: none;
 }
 
 /* One digit window: exactly one line tall, clipping the strip of 0-9. */

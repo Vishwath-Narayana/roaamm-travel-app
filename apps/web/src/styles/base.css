@@ -263,8 +263,9 @@ picture.photo {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  /* Photos fade in from their blurred placeholder (400 ms), never pop. */
   picture.photo img {
-    transition: opacity var(--dur-ui) var(--ease-out);
+    transition: opacity 400ms var(--ease-out);
   }
 
   picture.photo img[data-loaded="false"] {

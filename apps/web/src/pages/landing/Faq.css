@@ -61,8 +61,13 @@
   transform: rotate(90deg);
 }
 
-.faq__item[data-expanded="true"] .faq__icon::after {
-  transform: rotate(0deg);
+/* The plus turns 45 degrees into a cross. */
+.faq__icon {
+  transition: rotate var(--dur-ui) var(--ease-spring);
+}
+
+.faq__item[data-expanded="true"] .faq__icon {
+  rotate: 45deg;
 }
 
 /* Smooth open: grid rows from 0fr to 1fr. */
@@ -91,11 +96,16 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .faq__answer {
-    transition: grid-template-rows 300ms var(--ease-out);
+    transition: grid-template-rows var(--dur-ui) var(--ease-out);
   }
 
+  /* The text fades in 80 ms after the height starts moving; out at once. */
   .faq__answer p {
-    transition: opacity 300ms var(--ease-out);
+    transition: opacity var(--dur-ui) var(--ease-out);
+  }
+
+  .faq__item[data-expanded="true"] .faq__answer p {
+    transition-delay: 80ms;
   }
 
   .faq__item:not([data-expanded="true"]) .faq__answer p {

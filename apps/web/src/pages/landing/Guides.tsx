@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import { Badge } from "../../components/Badge";
+import { Odometer } from "../../components/Odometer";
 import { Button } from "../../components/Button";
 import { CheckIcon } from "../../components/icons";
 import { avatarGradient } from "../../live/useTimeline";
@@ -129,7 +130,14 @@ function GuideCard({ guide, index }: { guide: (typeof GUIDES)[number]; index: nu
         </div>
         <output className="guide__total" aria-live="polite" data-testid={`total-${index}`}>
           {hours} {hours === 1 ? "hour" : "hours"} · Total{" "}
-          <strong className="mono">{money(guide.currency, guide.rate * hours)}</strong>
+          {/* Digits roll to the new total; the slot is sized for the largest
+              total, so nothing on the line moves. */}
+          <strong className="mono guide__amount">
+            <Odometer
+              value={money(guide.currency, guide.rate * hours)}
+              minChars={money(guide.currency, guide.rate * MAX_HOURS).length}
+            />
+          </strong>
         </output>
       </div>
 

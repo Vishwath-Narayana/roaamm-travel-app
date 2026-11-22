@@ -28,6 +28,7 @@
 }
 
 .live__tabs {
+  position: relative;
   display: flex;
   max-width: 100%;
   gap: 2px;
@@ -55,10 +56,42 @@
   transition: color var(--dur-hover) var(--ease-out);
 }
 
+.live__tab {
+  z-index: 1;
+}
+
 .live__tab[aria-selected="true"] {
-  background: var(--bg);
   color: var(--ink);
+}
+
+/* The selected-tab pill: one element that slides between tabs. */
+.live__indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
   box-shadow: 0 1px 4px rgba(11, 11, 15, 0.08);
+  transition: clip-path var(--dur-ui) var(--ease-spring);
+}
+
+/* New panel content fades in with a 12 px slide. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="reduced"]) .live__enter {
+    animation: live-enter var(--dur-content) var(--ease-out) both;
+  }
+
+  :root:not([data-motion="reduced"]) .live__preview.live__enter {
+    animation-delay: 60ms;
+  }
+}
+
+@keyframes live-enter {
+  from {
+    opacity: 0;
+    translate: 12px 0;
+  }
 }
 
 /* Thin bar under the active tab while its script plays. */
