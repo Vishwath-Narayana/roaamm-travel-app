@@ -115,9 +115,9 @@
   }
 }
 
-/* Keyboard focus gets the same lift as hover. */
-.dest-card:focus-within .dest-card__media,
-.dest-card:focus-within .dest-card__body {
+/* Keyboard focus gets the same lift as hover (not a tap: no sticky state on touch). */
+.dest-card:has(:focus-visible) .dest-card__media,
+.dest-card:has(:focus-visible) .dest-card__body {
   translate: 0 -4px;
 }
 

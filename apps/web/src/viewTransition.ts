@@ -22,10 +22,15 @@ export function withViewTransition(update: () => void): ViewTransition | null {
 /** Theme switch: the new theme spreads as a circle from the toggle button. */
 export function themeTransition(origin: HTMLElement, update: () => void) {
   const root = document.documentElement;
+  // Colours switch in one go: no per-element colour fades during a theme
+  // change (they would lag behind the rest of the page).
+  root.classList.add("theme-switching");
+  const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("theme-switching")));
   root.classList.add("theme-transition");
   const vt = withViewTransition(update);
   if (!vt) {
     root.classList.remove("theme-transition");
+    done();
     return;
   }
   const r = origin.getBoundingClientRect();
@@ -40,5 +45,10 @@ export function themeTransition(origin: HTMLElement, update: () => void) {
       ),
     )
     .catch(() => {});
-  vt.finished.finally(() => root.classList.remove("theme-transition")).catch(() => {});
+  vt.finished
+    .finally(() => {
+      root.classList.remove("theme-transition");
+      done();
+    })
+    .catch(() => {});
 }

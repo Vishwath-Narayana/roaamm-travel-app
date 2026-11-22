@@ -26,37 +26,37 @@
     will-change: opacity, translate;
   }
 
-  .reveal--fade-up:not(.is-visible) {
+  :root:not([data-motion="reduced"]) .reveal--fade-up:not(.is-visible) {
     opacity: 0;
     translate: 0 24px;
   }
 
-  .reveal--fade:not(.is-visible) {
+  :root:not([data-motion="reduced"]) .reveal--fade:not(.is-visible) {
     opacity: 0;
   }
 
-  .reveal--scale:not(.is-visible) {
+  :root:not([data-motion="reduced"]) .reveal--scale:not(.is-visible) {
     opacity: 0;
     scale: 0.96;
   }
 
-  .reveal--slide-left:not(.is-visible) {
+  :root:not([data-motion="reduced"]) .reveal--slide-left:not(.is-visible) {
     opacity: 0;
     translate: -24px 0;
   }
 
-  .reveal--slide-right:not(.is-visible) {
+  :root:not([data-motion="reduced"]) .reveal--slide-right:not(.is-visible) {
     opacity: 0;
     translate: 24px 0;
   }
 
-  .reveal--blur-in:not(.is-visible) {
+  :root:not([data-motion="reduced"]) .reveal--blur-in:not(.is-visible) {
     opacity: 0;
     filter: blur(8px);
   }
 
   /* Lines draw in from the left (scale only). */
-  .reveal--line:not(.is-visible) {
+  :root:not([data-motion="reduced"]) .reveal--line:not(.is-visible) {
     scale: 0 1;
     transform-origin: left;
   }
@@ -72,7 +72,7 @@
     transition-delay: calc(min(var(--i, 0), 10) * var(--stagger));
   }
 
-  .reveal--mask-line:not(.is-visible) .mask-line__inner {
+  :root:not([data-motion="reduced"]) .reveal--mask-line:not(.is-visible) .mask-line__inner {
     opacity: 0;
     translate: 0 0.5em;
   }
@@ -134,6 +134,12 @@ html.theme-transition::view-transition-old(root),
 html.theme-transition::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+}
+
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
 }
 
 html.theme-transition .topnav,

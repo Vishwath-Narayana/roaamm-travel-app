@@ -130,7 +130,7 @@
     transition-delay: calc(300ms + var(--m, 0) * 200ms + var(--d, 0) * 45ms);
   }
 
-  .bento__card--stats:not(.is-visible) .meter__dots span.is-on::after {
+  :root:not([data-motion="reduced"]) .bento__card--stats:not(.is-visible) .meter__dots span.is-on::after {
     opacity: 0;
     scale: 0.2;
   }

@@ -6,6 +6,7 @@ import { Landing } from "../pages/Landing";
 import { Guides } from "../pages/landing/Guides";
 import { installIntersectionObserver, mockReducedMotion, restoreMatchMedia } from "../test/mocks";
 import { Reveal, type RevealVariant } from ".";
+import motionCss from "../styles/motion.css?raw";
 import { readMotionPreference, setMotionReduced } from "./preference";
 
 const VARIANTS: RevealVariant[] = ["fade-up", "fade", "scale", "line", "mask-line", "slide-left", "slide-right", "blur-in"];
@@ -200,5 +201,15 @@ describe("Text never waits for animation", () => {
         .join("");
       expect((el.textContent ?? "").trim() + names).not.toBe("");
     });
+  });
+});
+
+describe("CSS: hidden reveal states respect the footer switch", () => {
+  it("every rule that hides an unrevealed element is skipped under data-motion=reduced", () => {
+    const hiding = motionCss
+      .split("\n")
+      .filter((line) => line.includes(":not(.is-visible)") && line.trim().endsWith("{"));
+    expect(hiding.length).toBeGreaterThan(5);
+    for (const line of hiding) expect(line).toContain(':root:not([data-motion="reduced"])');
   });
 });
