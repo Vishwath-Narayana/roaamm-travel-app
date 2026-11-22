@@ -70,7 +70,7 @@ Not goals: anonymity (the server knows who talks to whom), hiding traffic patter
 - **Rate limits:** Worker Rate Limiting binding (per IP and per user) on login, OTP, sign-up, sending messages and creating rooms. Plus Cloudflare Turnstile on sign-up and OTP.
 - **Secrets:** Wrangler secrets, GitHub Actions encrypted secrets, server environment from a root-only file. Nothing in the repo (gitleaks in CI).
 - **Supply chain:** pinned dependencies, Dependabot, CodeQL, cargo-deny, OWASP Dependency-Check, actions pinned to commit SHAs.
-- **Server:** no open inbound ports (Cloudflare Tunnel). SSH only through Cloudflare Access. Unattended security upgrades. Runs as a non-root container user with a read-only root filesystem.
+- **Server:** the core runs on Google Cloud Run, so there is no VM, OS or SSH of ours to patch or expose. Public traffic arrives through the `roaamm-api` Cloudflare Worker, which allows CORS only from the web origin. Deploys use keyless Workload Identity Federation. Runs as a non-root user in a distroless image.
 - **Mock ID documents:** encrypted in the browser to the **admins' public key** (an X25519 sealed box) before upload to R2. Only admins can view them in the browser. Deleted 30 days after a decision.
 
 ## 7. Threat model (STRIDE summary)

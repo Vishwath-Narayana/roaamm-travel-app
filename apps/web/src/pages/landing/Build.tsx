@@ -26,7 +26,7 @@ const FACTS: { title: string; body: string; status: string; icon: ReactNode }[] 
   },
   {
     title: "Java core",
-    body: "Accounts, verification, trips and bookings run on Java 25 and Spring Boot, compiled native, behind a Cloudflare Tunnel with no open ports.",
+    body: "Accounts, verification, trips and bookings run on Java 25 and Spring Boot, compiled native, on Google Cloud Run (scales to zero) behind a Cloudflare Worker at roaamm-api.plinthwell.com. Today the core serves its health check; accounts land in M2.",
     status: "Building",
     icon: <LayersIcon strokeWidth={1.5} />,
   },

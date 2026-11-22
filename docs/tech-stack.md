@@ -59,7 +59,7 @@
 | Observability | Micrometer + OpenTelemetry Java agent → Grafana Cloud; Sentry | |
 | Build | Gradle (Kotlin DSL), **GraalVM native image** (Spring AOT), Docker multi-stage, distroless or minimal base image | Small memory use (~100 MB), fits the free server |
 | Testing | JUnit 5, AssertJ, **Testcontainers (Postgres)**, Spring Boot test slices, ArchUnit (layering rules) | |
-| Hosting | Google Cloud **e2-micro** (always free), Docker + `cloudflared` (Cloudflare Tunnel) | |
+| Hosting | **Google Cloud Run** (us-central1, scales to zero, max 2 instances) behind the `roaamm-api` Cloudflare Worker proxy | [ADR 0003](adr/0003-core-hosting-cloud-run.md); e2-micro VM is the fallback |
 
 ## 5. Shared packages
 - `packages/design-tokens`: colours, type scale, radii, spacing, motion springs. Outputs CSS variables and a TypeScript object.

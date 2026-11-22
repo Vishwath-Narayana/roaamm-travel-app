@@ -90,32 +90,66 @@ describe("StatusRow", () => {
     }
     render(<StatusRow host="localhost" />);
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(screen.getAllByText("Checked on the live site")).toHaveLength(2);
-    expect(screen.getByText("Not deployed yet")).toBeInTheDocument();
+    expect(screen.getAllByText("Checked on the live site")).toHaveLength(3);
+    expect(screen.queryByText("Not deployed yet")).not.toBeInTheDocument();
   });
 
-  it("on the live site, times the edge and status page but never the Core API", async () => {
+  it("on the live site, times the edge, status page and Core API", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockImplementation(async (input) =>
-        String(input).includes("roaamm-rt")
-          ? new Response(JSON.stringify({ status: "ok" }), { status: 200 })
-          : new Response(null, { status: 200 }),
+        String(input).includes("roaamm-status")
+          ? new Response(null, { status: 200 })
+          : new Response(JSON.stringify({ status: "ok" }), { status: 200 }),
       );
     render(<StatusRow host={LIVE_HOST} />);
-    await waitFor(() => expect(screen.getAllByText(/^Up · \d+ ms$/)).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByText(/^Up · \d+ ms$/)).toHaveLength(3));
 
     const urls = fetchSpy.mock.calls.map((c) => String(c[0]));
     const url = (name: string) => SERVICES.find((s) => s.name === name)!.url;
-    // One warm-up plus SAMPLES timed requests per service; never the Core API.
-    expect(urls.filter((u) => u === url("edge"))).toHaveLength(1 + SAMPLES);
-    expect(urls.filter((u) => u === url("status"))).toHaveLength(1 + SAMPLES);
-    expect(urls).not.toContain(url("api"));
-    for (const [input, init] of fetchSpy.mock.calls) {
-      expect(init).toMatchObject({ mode: String(input) === url("edge") ? "cors" : "no-cors" });
+    // One warm-up plus SAMPLES timed requests per service.
+    for (const name of ["edge", "status", "api"]) {
+      expect(urls.filter((u) => u === url(name))).toHaveLength(1 + SAMPLES);
     }
-    expect(screen.getByText("Not deployed yet")).toBeInTheDocument();
+    for (const [input, init] of fetchSpy.mock.calls) {
+      // Edge and Core API send CORS for the web origin; the status page does not.
+      expect(init).toMatchObject({ mode: String(input) === url("status") ? "no-cors" : "cors" });
+    }
+    expect(screen.queryByText("Not deployed yet")).not.toBeInTheDocument();
     expect(screen.getByText(/measured from your browser/)).toBeInTheDocument();
+  });
+
+  describe("Core API item", () => {
+    const apiItem = () => screen.getByText("roaamm-api.plinthwell.com").closest(".status-row__item")!;
+
+    it("shows Checking while the probe is in flight", () => {
+      vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>(() => {}));
+      render(<StatusRow host={LIVE_HOST} />);
+      expect(apiItem()).toHaveAttribute("data-state", "checking");
+      expect(within(apiItem() as HTMLElement).getByText("Checking")).toBeInTheDocument();
+    });
+
+    it("shows Up with the median time when /health answers ok", async () => {
+      vi.spyOn(globalThis, "fetch").mockImplementation(
+        async () => new Response(JSON.stringify({ status: "ok" }), { status: 200 }),
+      );
+      render(<StatusRow host={LIVE_HOST} />);
+      await waitFor(() => expect(apiItem()).toHaveAttribute("data-state", "up"));
+      expect(within(apiItem() as HTMLElement).getByText(/^Up · \d+ ms$/)).toBeInTheDocument();
+    });
+
+    it("shows Down when /health fails, without a console error", async () => {
+      vi.spyOn(console, "error");
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input) =>
+        String(input).includes("roaamm-api")
+          ? new Response(JSON.stringify({ error: "bad_gateway" }), { status: 502 })
+          : new Response(JSON.stringify({ status: "ok" }), { status: 200 }),
+      );
+      render(<StatusRow host={LIVE_HOST} />);
+      await waitFor(() => expect(apiItem()).toHaveAttribute("data-state", "down"));
+      expect(within(apiItem() as HTMLElement).getByText("Unreachable")).toBeInTheDocument();
+      expect(console.error).not.toHaveBeenCalled();
+    });
   });
 
   it("reports the median of the timed samples", () => {
@@ -135,11 +169,11 @@ describe("StatusRow", () => {
     );
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(<StatusRow host={LIVE_HOST} />);
-    expect(screen.getAllByText("Checking")).toHaveLength(2);
+    expect(screen.getAllByText("Checking")).toHaveLength(3);
     await act(async () => {
       vi.advanceTimersByTime(CHECK_TIMEOUT_MS + 10);
     });
-    await waitFor(() => expect(screen.getAllByText("Unreachable")).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByText("Unreachable")).toHaveLength(3));
     expect(console.error).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
