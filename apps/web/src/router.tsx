@@ -109,9 +109,17 @@ export function useRouteFocus(path: string): void {
   }, [path]);
 }
 
-/** Sets document.title for the current page. */
+const SITE = "https://roaamm.plinthwell.com";
+
+/**
+ * Sets document.title for the current page, and points the canonical link
+ * and og:url at this page (index.html starts with the home page's values).
+ */
 export function usePageTitle(title: string): void {
   useEffect(() => {
     document.title = title === "ROAAMM" ? title : `${title} · ROAAMM`;
+    const url = SITE + normalize(window.location.pathname);
+    document.querySelector('link[rel="canonical"]')?.setAttribute("href", url);
+    document.querySelector('meta[property="og:url"]')?.setAttribute("content", url);
   }, [title]);
 }

@@ -5,7 +5,8 @@
 // Output: apps/web/public/images/<slot>-<width>.{avif,webp,jpg}
 //         apps/web/src/images.gen.ts           (sizes for <picture>, committed)
 //
-// Usage:  node scripts/optimise-images.mjs
+// Usage:  node scripts/optimise-images.mjs              (photos + share images)
+//         node scripts/optimise-images.mjs --share-only (og.jpg and icons only)
 //
 // Budgets (the script fails if one is exceeded):
 //   hero AVIF at 2048 px <= 180 kB, card AVIF <= 60 kB, whole folder <= 4.5 MB.
@@ -67,7 +68,81 @@ async function encode(pipeline, format, maxBytes) {
   throw new Error(`cannot fit ${format} under ${maxBytes / KB} kB`);
 }
 
+// ---------------------------------------------------------------- share images
+
+const PUBLIC = join(ROOT, "apps/web/public");
+const OG_BUDGET = 150 * KB;
+
+/** The ROAAMM mark (route line inside a compass ring) on a full-bleed ink square. */
+function iconSvg(size) {
+  return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="#0B0B0F"/>
+  <g fill="none" stroke="#FAFAFA" stroke-width="1.6" stroke-linecap="round">
+    <circle cx="16" cy="16" r="8"/><path d="M12.4 19.6c1.6-5.2 5.6-2.4 7.2-7.2"/>
+  </g>
+  <circle cx="12.4" cy="19.6" r="1.3" fill="#FAFAFA"/><circle cx="19.6" cy="12.4" r="1.3" fill="#FAFAFA"/>
+</svg>`);
+}
+
+/** Text and shading for the 1200x630 share card, drawn over the hero photo. */
+function ogOverlaySvg() {
+  return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+  <defs>
+    <linearGradient id="shade" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#0B0B0F" stop-opacity="0.82"/>
+      <stop offset="0.55" stop-color="#0B0B0F" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#0B0B0F" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#shade)"/>
+  <g transform="translate(72 64)" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+    <circle cx="20" cy="20" r="17"/><path d="M12 28c3.4-11 11.8-5 15.2-15.2"/>
+  </g>
+  <circle cx="84" cy="92" r="2.6" fill="#FFFFFF"/><circle cx="99.2" cy="76.8" r="2.6" fill="#FFFFFF"/>
+  <text x="130" y="97" fill="#FFFFFF" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+    font-size="34" font-weight="700" letter-spacing="6">ROAAMM</text>
+  <text x="72" y="330" fill="#FFFFFF" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+    font-size="96" font-weight="600" letter-spacing="-3">Travel solo.</text>
+  <text x="72" y="430" fill="#FFFFFF" font-family="Georgia, Times New Roman, serif"
+    font-size="104" font-style="italic">Never alone.</text>
+  <text x="74" y="520" fill="#FFFFFF" fill-opacity="0.9" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+    font-size="30">ID-verified travellers, licensed local guides, safety built in.</text>
+</svg>`);
+}
+
+/** og.jpg (1200x630), apple-touch-icon (180) and manifest icons (192, 512). */
+async function shareImages() {
+  const og = sharp(join(IN, "hero-1.jpg"))
+    .rotate()
+    .resize(1200, 630, { fit: "cover", position: "centre" })
+    .composite([{ input: ogOverlaySvg() }]);
+  // Shared on social sites, so start at high quality and step down to the budget.
+  let buf;
+  let q = 86;
+  for (; q >= 50; q -= 4) {
+    buf = await og.clone().jpeg({ quality: q, mozjpeg: true, progressive: true }).toBuffer();
+    if (buf.length <= OG_BUDGET) break;
+  }
+  if (buf.length > OG_BUDGET) throw new Error("og.jpg does not fit its budget");
+  writeFileSync(join(PUBLIC, "og.jpg"), buf);
+  console.log(`og.jpg 1200x630 ${(buf.length / KB).toFixed(0)}k q${q} (budget ${OG_BUDGET / KB}k)`);
+
+  for (const [file, size] of [
+    ["apple-touch-icon.png", 180],
+    ["icon-192.png", 192],
+    ["icon-512.png", 512],
+  ]) {
+    const png = await sharp(iconSvg(size)).png({ compressionLevel: 9 }).toBuffer();
+    writeFileSync(join(PUBLIC, file), png);
+    console.log(`${file} ${size}x${size} ${(png.length / KB).toFixed(1)}k`);
+  }
+}
+
 async function main() {
+  if (process.argv.includes("--share-only")) {
+    await shareImages();
+    return;
+  }
   const missing = Object.keys(SLOTS).filter((s) => !existsSync(join(IN, `${s}.jpg`)));
   if (missing.length) {
     console.error(`missing originals in design/stock-originals/: ${missing.join(", ")}`);
@@ -129,6 +204,7 @@ async function main() {
       `export type ImageSlot = keyof typeof IMAGES;\n`,
   );
   console.log(`wrote ${MANIFEST.replace(ROOT, "")}`);
+  await shareImages();
 }
 
 main().catch((e) => {
