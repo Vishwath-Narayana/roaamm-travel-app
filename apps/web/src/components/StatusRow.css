@@ -34,7 +34,6 @@
   background: var(--sos);
 }
 
-.status-row__item[data-state="not-deployed"] .status-row__dot,
 .status-row__item[data-state="idle"] .status-row__dot {
   background: transparent;
   border: 1.5px solid var(--muted);

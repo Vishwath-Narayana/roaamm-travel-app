@@ -11,8 +11,7 @@ type State =
   | { kind: "idle" } // not on the live site: nothing is requested
   | { kind: "checking" }
   | { kind: "up"; ms: number }
-  | { kind: "down" }
-  | { kind: "not-deployed" };
+  | { kind: "down" };
 
 const url = (name: string) => SERVICES.find((s) => s.name === name)!.url;
 
@@ -22,6 +21,8 @@ const CHECKS = [
   // The status page is another origin without CORS: an opaque "no-cors" request
   // still proves it answered, without a console error.
   { name: "status", label: "System page", url: url("status"), cors: false },
+  // The core's Worker proxy sends CORS for the web origin only, so its JSON is verified too.
+  { name: "api", label: "Core API", url: url("api"), cors: true },
 ] as const;
 
 /** Timed requests after the warm-up; the median is shown. */
@@ -88,8 +89,6 @@ function label(state: State) {
       return `Up · ${state.ms} ms`;
     case "down":
       return "Unreachable";
-    case "not-deployed":
-      return "Not deployed yet";
   }
 }
 
@@ -120,15 +119,12 @@ export function StatusRow({ host = window.location.hostname }: StatusRowProps) {
     };
   }, [live, near]);
 
-  const rows: { name: string; label: string; host: string; state: State }[] = [
-    ...CHECKS.map((c) => ({ name: c.name, label: c.label, host: new URL(c.url).host, state: states[c.name] })),
-    {
-      name: "api",
-      label: "Core API",
-      host: new URL(url("api")).host,
-      state: { kind: "not-deployed" },
-    },
-  ];
+  const rows = CHECKS.map((c) => ({
+    name: c.name,
+    label: c.label,
+    host: new URL(c.url).host,
+    state: states[c.name],
+  }));
 
   return (
     <div ref={ref} className="status-row" role="group" aria-label="Live system status">
