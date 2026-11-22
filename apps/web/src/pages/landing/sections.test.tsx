@@ -38,8 +38,11 @@ describe("Guides stepper", () => {
       expect(within(card).getByText("Licence checked")).toBeInTheDocument();
       const book = within(card).getByRole("button", { name: "Book" });
       expect(book).toBeDisabled();
-      expect(book).toHaveAccessibleDescription("Opens in a later milestone");
+      expect(book).toHaveAccessibleDescription("Booking opens in a later milestone.");
     }
+    // One shared caption instead of a note under every card.
+    expect(screen.getAllByText("Booking opens in a later milestone.")).toHaveLength(1);
+    expect(screen.queryByText("Opens in a later milestone")).not.toBeInTheDocument();
     expect(screen.getByText("Simulated profiles")).toBeInTheDocument();
   });
 });

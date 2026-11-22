@@ -9,10 +9,12 @@
   list-style: none;
 }
 
+/* A flex column per card: the price block is pushed to the bottom
+   (margin-top: auto) so price, stepper, total and Book line up across a row. */
 .guide {
-  display: grid;
-  align-content: start;
-  justify-items: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-5);
   border: 1px solid var(--hairline);
@@ -75,16 +77,20 @@
   font-size: var(--type-small);
 }
 
+/* Always room for two rows of tags, so one-row cards do not sit higher. */
 .guide__tags {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 6px;
+  min-height: calc(2 * 26px + 6px); /* two rows of 26px tags + gap */
   padding: 0;
   list-style: none;
 }
 
 .guide__tags li {
   padding: 4px 10px;
+  line-height: 18px;
   border-radius: var(--radius-pill);
   background: var(--surface);
   font-size: 12px;
@@ -95,7 +101,7 @@
   display: grid;
   gap: var(--space-2);
   width: 100%;
-  margin-top: var(--space-2);
+  margin-top: auto;
   padding-top: var(--space-4);
   border-top: 1px solid var(--hairline);
 }
@@ -167,9 +173,10 @@
   margin-top: var(--space-2);
 }
 
-.guide__note {
+.guides__booking {
+  margin-top: var(--space-4);
   color: var(--muted);
-  justify-self: center;
+  text-align: center;
 }
 
 .guides__foot {
