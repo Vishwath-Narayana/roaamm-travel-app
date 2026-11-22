@@ -25,12 +25,19 @@
 @media (prefers-reduced-motion: no-preference) {
   .guide {
     transition:
-      opacity 500ms var(--ease-out),
-      transform var(--dur-ui) var(--ease-out);
+      opacity var(--dur-content) var(--ease-out),
+      translate var(--dur-ui) var(--ease-out),
+      transform var(--dur-content) var(--ease-out);
   }
 
+  .guide.is-visible:focus-within {
+    translate: 0 -4px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
   .guide.is-visible:hover {
-    transform: translateY(-4px);
+    translate: 0 -4px;
   }
 }
 
@@ -144,8 +151,10 @@
   cursor: pointer;
 }
 
-.stepper button:hover:not(:disabled) {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .stepper button:hover:not(:disabled) {
+    background: var(--surface);
+  }
 }
 
 .stepper button:disabled {

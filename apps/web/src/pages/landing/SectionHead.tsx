@@ -19,7 +19,7 @@ export function SectionHead({ eyebrow, id, title, lead, aside, className }: Sect
       <Reveal as="p" variant="fade" className="eyebrow">
         {eyebrow}
       </Reveal>
-      <Reveal as="h2" id={id} delay={1}>
+      <Reveal as="h2" id={id} delay={1} variant="mask-line">
         {title}
       </Reveal>
       {lead && (

@@ -529,8 +529,10 @@
   transition: transform var(--dur-hover) var(--ease-out);
 }
 
-.sos-btn:hover {
-  transform: scale(1.03);
+@media (hover: hover) and (pointer: fine) {
+  .sos-btn:hover {
+    transform: scale(1.03);
+  }
 }
 
 .sos-btn:active {

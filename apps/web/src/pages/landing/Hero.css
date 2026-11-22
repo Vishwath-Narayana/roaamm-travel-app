@@ -169,8 +169,10 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
-.hero__btn:hover {
-  background: rgba(255, 255, 255, 0.28);
+@media (hover: hover) and (pointer: fine) {
+  .hero__btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
 }
 
 .hero__btn:focus-visible {

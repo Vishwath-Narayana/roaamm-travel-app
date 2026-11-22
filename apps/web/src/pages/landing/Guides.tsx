@@ -71,7 +71,7 @@ function GuideCard({ guide, index }: { guide: (typeof GUIDES)[number]; index: nu
   const [hours, setHours] = useState(2);
   const titleId = `guide-${index}-name`;
   return (
-    <Reveal as="li" delay={index} className="guide" aria-labelledby={titleId}>
+    <Reveal as="li" delay={index} className="guide" aria-labelledby={titleId} data-tilt data-glare>
       <div className="guide__top">
         <span
           className="guide__avatar"

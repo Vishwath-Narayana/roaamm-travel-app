@@ -63,8 +63,8 @@ export function Stories() {
         />
         <ul className="stories">
           {STORIES.map((s, i) => (
-            <Reveal as="li" key={s.title} delay={i} className="story">
-              <div className="story__media">
+            <Reveal as="li" key={s.title} delay={i} className="story" data-tilt>
+              <div className="story__media" data-glare>
                 <Photo slot={s.slot} alt={s.alt} sizes="(min-width: 900px) 400px, 92vw" />
                 <span className="story__kind">{s.kind}</span>
               </div>

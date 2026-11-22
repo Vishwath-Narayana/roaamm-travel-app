@@ -5,22 +5,27 @@
  */
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Reveal on scroll (see <Reveal> in motion.tsx). Stagger with --i. */
+  /* Reveal on scroll (see <Reveal> in motion/index.tsx). Items in a group are
+     staggered by --i x --stagger. Reveals move with the individual translate
+     and scale properties, so transform stays free for effects like tilt. */
   .reveal {
     transition:
-      opacity 500ms var(--ease-out),
-      transform 500ms var(--ease-out),
+      opacity var(--dur-content) var(--ease-out),
+      translate var(--dur-content) var(--ease-out),
+      scale var(--dur-content) var(--ease-out),
+      filter var(--dur-content) var(--ease-out),
       clip-path var(--dur-section) var(--ease-out);
-    transition-delay: calc(var(--i, 0) * 80ms);
+    transition-delay: calc(min(var(--i, 0), 10) * var(--stagger));
   }
 
-  .reveal:not(.is-visible) {
-    will-change: opacity, transform;
+  /* will-change only while the reveal is actually running. */
+  .reveal.is-revealing {
+    will-change: opacity, translate, clip-path;
   }
 
   .reveal--fade-up:not(.is-visible) {
     opacity: 0;
-    transform: translateY(24px);
+    translate: 0 24px;
   }
 
   .reveal--fade:not(.is-visible) {
@@ -29,11 +34,37 @@
 
   .reveal--scale:not(.is-visible) {
     opacity: 0;
-    transform: scale(0.96);
+    scale: 0.96;
+  }
+
+  .reveal--slide-left:not(.is-visible) {
+    opacity: 0;
+    translate: -24px 0;
+  }
+
+  .reveal--slide-right:not(.is-visible) {
+    opacity: 0;
+    translate: 24px 0;
+  }
+
+  .reveal--blur-in:not(.is-visible) {
+    opacity: 0;
+    filter: blur(8px);
   }
 
   .reveal--line:not(.is-visible) {
     clip-path: inset(0 100% 0 0);
+  }
+
+  /* Headings rise out of a mask: revealed from the bottom edge up while moving
+     up 0.4em. The text stays real text (selectable, read by screen readers). */
+  .reveal--mask-line {
+    clip-path: inset(-0.25em -0.5em -0.25em -0.5em);
+  }
+
+  .reveal--mask-line:not(.is-visible) {
+    clip-path: inset(100% -0.5em -0.25em -0.5em);
+    translate: 0 0.4em;
   }
 }
 
@@ -105,4 +136,131 @@ html.theme-transition main h1 {
   animation: none !important;
   transition-duration: 0s !important;
   transition-delay: 0s !important;
+}
+
+/* ---- Card tilt and glare (motion/tilt.ts) ----
+   --rx/--ry/--gx/--gy are written by the shared ticker while a mouse is over
+   the card. Transform only; the glare is a gradient moved with translate. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="reduced"]) [data-tilt] {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  }
+
+  :root:not([data-motion="reduced"]) [data-tilt][data-tilting] {
+    will-change: transform;
+  }
+
+  :root:not([data-motion="reduced"]) [data-glare] {
+    position: relative;
+    overflow: hidden;
+  }
+
+  :root:not([data-motion="reduced"]) [data-glare]::after {
+    content: "";
+    position: absolute;
+    left: -50%;
+    top: -50%;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.22), transparent);
+    opacity: 0;
+    translate: var(--gx, 50%) var(--gy, 50%);
+    pointer-events: none;
+    transition: opacity var(--dur-content) var(--ease-out);
+  }
+
+  :root:not([data-motion="reduced"]) [data-tilting] [data-glare]::after,
+  :root:not([data-motion="reduced"]) [data-tilting][data-glare]::after {
+    opacity: 1;
+  }
+}
+
+/* ---- Scroll-driven effects (animation-timeline: view()) ----
+   They run off the main thread. Browsers without scroll-driven animations get
+   none of them (the standard reveals still apply), and neither does reduced
+   motion. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Photos drift up to 24 px inside their rounded masks. */
+    :root:not([data-motion="reduced"]) :is(.story__media, .bento__card--photo, .split__media) picture.photo {
+      animation: photo-drift linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+
+    /* The final CTA photo eases from 1.1 to 1 as it scrolls in. */
+    :root:not([data-motion="reduced"]) .final-cta__media picture.photo {
+      animation: cta-settle linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 55%;
+    }
+
+    /* Destination cards scale and fade a little toward the carousel's edges. */
+    :root:not([data-motion="reduced"]) :is(.dest-card__media, .dest-card__body) {
+      animation: edge-fade linear both;
+      animation-timeline: view(inline);
+    }
+
+    /* The "How it works" connector draws itself across the steps. */
+    :root:not([data-motion="reduced"]) .steps__line {
+      transform: scaleX(0);
+      animation: line-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 55%;
+    }
+
+    /* The numbers' dividers grow. */
+    :root:not([data-motion="reduced"]) .stats__rule {
+      animation: line-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 45%;
+    }
+  }
+}
+
+@keyframes photo-drift {
+  from {
+    translate: 0 -12px;
+    scale: 1.06;
+  }
+  to {
+    translate: 0 12px;
+    scale: 1.06;
+  }
+}
+
+@keyframes cta-settle {
+  from {
+    scale: 1.1;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes edge-fade {
+  0% {
+    opacity: 0.55;
+    scale: 0.94;
+  }
+  22%,
+  78% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    opacity: 0.55;
+    scale: 0.94;
+  }
+}
+
+@keyframes line-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }

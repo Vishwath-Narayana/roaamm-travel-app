@@ -130,7 +130,7 @@ export function LiveSection({ headingLevel = "h2", id = "live", className }: Liv
           <Reveal as="p" variant="fade" className="eyebrow">
             See it live
           </Reveal>
-          <Reveal as={Heading} id={`${uid}-title`} delay={1}>
+          <Reveal as={Heading} id={`${uid}-title`} delay={1} variant="mask-line">
             The product, <span className="serif">in motion</span>
           </Reveal>
         </div>

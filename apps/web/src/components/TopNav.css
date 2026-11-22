@@ -170,12 +170,16 @@
   transition: background-color var(--dur-hover) var(--ease-out);
 }
 
-.topnav__link:hover {
-  background: var(--bg);
+@media (hover: hover) and (pointer: fine) {
+  .topnav__link:hover {
+    background: var(--bg);
+  }
 }
 
-.topnav--clear .topnav__link:hover {
-  background: rgba(255, 255, 255, 0.18);
+@media (hover: hover) and (pointer: fine) {
+  .topnav--clear .topnav__link:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
 }
 
 .topnav__actions {
@@ -198,8 +202,10 @@
   cursor: pointer;
 }
 
-.icon-btn:hover {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .icon-btn:hover {
+    background: var(--surface);
+  }
 }
 
 .topnav--clear .icon-btn {
@@ -220,8 +226,10 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
-.topnav--clear .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.28);
+@media (hover: hover) and (pointer: fine) {
+  .topnav--clear .icon-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
 }
 
 /* Over the photo the primary pill turns white. */

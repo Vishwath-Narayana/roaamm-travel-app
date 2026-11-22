@@ -51,7 +51,7 @@ export function Features() {
               <Reveal as="p" variant="fade" className="eyebrow">
                 Features
               </Reveal>
-              <Reveal as="h2" id="features-title" delay={1}>
+              <Reveal as="h2" id="features-title" delay={1} variant="mask-line">
                 Built for travelling <span className="serif">alone</span>
               </Reveal>
               <Reveal as="p" className="lead" delay={2}>
@@ -69,7 +69,7 @@ export function Features() {
               ))}
             </ul>
           </div>
-          <Reveal variant="scale" className="split__media">
+          <Reveal variant="scale" className="split__media" data-tilt data-glare>
             <Photo
               slot="feature-guide"
               alt="A traveller walking down a sunlit cobblestone alley in an old town"

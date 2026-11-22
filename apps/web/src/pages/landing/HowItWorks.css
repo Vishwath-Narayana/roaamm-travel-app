@@ -2,6 +2,15 @@
   margin-bottom: var(--space-7);
 }
 
+/* A connector across the steps (drawn on scroll where supported). */
+.steps__line {
+  height: 2px;
+  margin: 0 var(--space-6) var(--space-5);
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--ink), color-mix(in srgb, var(--ink) 15%, transparent));
+  transform-origin: left;
+}
+
 .steps {
   display: grid;
   gap: var(--gutter);

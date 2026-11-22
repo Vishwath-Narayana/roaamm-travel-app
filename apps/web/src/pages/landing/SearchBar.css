@@ -143,8 +143,10 @@
   transition: transform var(--dur-hover) var(--ease-out);
 }
 
-.search__submit:hover {
-  transform: scale(1.03);
+@media (hover: hover) and (pointer: fine) {
+  .search__submit:hover {
+    transform: scale(1.03);
+  }
 }
 
 .search__note {

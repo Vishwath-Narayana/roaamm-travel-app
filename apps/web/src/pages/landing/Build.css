@@ -72,8 +72,10 @@
   text-decoration: none;
 }
 
-.build__links a:hover {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .build__links a:hover {
+    background: var(--surface);
+  }
 }
 
 .build__status {

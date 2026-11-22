@@ -120,7 +120,15 @@ export function useReveal<T extends Element>(margin = "0px 0px -8% 0px") {
   return [ref, shown] as const;
 }
 
-export type RevealVariant = "fade-up" | "fade" | "scale" | "line";
+export type RevealVariant =
+  | "fade-up"
+  | "fade"
+  | "scale"
+  | "line"
+  | "mask-line"
+  | "slide-left"
+  | "slide-right"
+  | "blur-in";
 
 type RevealProps = HTMLAttributes<HTMLElement> & {
   /** Element to render (keeps list semantics: use "li" inside lists). */
@@ -145,12 +153,23 @@ export function Reveal({
   ...rest
 }: RevealProps) {
   const [ref, shown] = useReveal<HTMLElement>();
+  // "is-revealing" (and with it will-change) lasts only while the reveal runs.
+  const [running, setRunning] = useState(false);
+  const wasShown = useRef(shown);
+  useEffect(() => {
+    if (shown && !wasShown.current) setRunning(true);
+    wasShown.current = shown;
+  }, [shown]);
   return createElement(
     as,
     {
       ...rest,
       ref,
-      className: ["reveal", `reveal--${variant}`, shown && "is-visible", className]
+      onTransitionEnd: (e: React.TransitionEvent<HTMLElement>) => {
+        if (e.target === e.currentTarget) setRunning(false);
+        rest.onTransitionEnd?.(e);
+      },
+      className: ["reveal", `reveal--${variant}`, shown && "is-visible", running && "is-revealing", className]
         .filter(Boolean)
         .join(" "),
       style: { ...style, "--i": delay } as CSSProperties,
@@ -158,32 +177,4 @@ export function Reveal({
     },
     children,
   );
-}
-
-/** Ease-out cubic used for count-ups. */
-const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
-
-/**
- * Counts from 0 to `target` once `run` turns true, over `duration` ms.
- * Returns `target` straight away under reduced motion.
- */
-export function useCountUp(target: number, run: boolean, duration = 1100): number {
-  const [value, setValue] = useState(() => (prefersReducedMotion() ? target : 0));
-  useEffect(() => {
-    if (!run) return;
-    if (prefersReducedMotion()) {
-      setValue(target);
-      return;
-    }
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      setValue(t === 1 ? target : Math.round(target * easeOut(t)));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [run, target, duration]);
-  return value;
 }

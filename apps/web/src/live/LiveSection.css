@@ -106,8 +106,10 @@
   cursor: pointer;
 }
 
-.live__replay:hover {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .live__replay:hover {
+    background: var(--surface);
+  }
 }
 
 /* Fixed height so switching tabs never moves the page. */

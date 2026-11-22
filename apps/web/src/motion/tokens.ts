@@ -44,3 +44,20 @@ export function springEasing(): string {
     ? EASE.spring
     : EASE.springFallback;
 }
+
+// The same damped spring as scripts/gen-spring.mjs (damping ratio 0.72), for
+// JavaScript animations that cannot use the CSS linear() curve directly.
+const ZETA = 0.72;
+const WD = Math.sqrt(1 - ZETA * ZETA);
+const raw = (t: number) => 1 - Math.exp(-ZETA * t) * (Math.cos(WD * t) + (ZETA / WD) * Math.sin(WD * t));
+// Time (in spring units) after which it stays within 0.1% of rest.
+const SETTLE = (() => {
+  let end = 0;
+  for (let t = 0; t < 40; t += 0.01) if (Math.abs(raw(t) - 1) > 0.001) end = t;
+  return end;
+})();
+
+/** Spring progress for p in [0, 1]: 0 at the start, 1 at rest, about 1.038 at its peak. */
+export function springAt(p: number): number {
+  return p >= 1 ? 1 : p <= 0 ? 0 : raw(p * SETTLE);
+}

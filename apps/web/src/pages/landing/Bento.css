@@ -122,17 +122,17 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  /* One by one, meter after meter, each dot popping in on the spring. */
   .meter__dots span.is-on::after {
     transition:
       opacity var(--dur-hover) var(--ease-out),
-      transform var(--dur-ui) var(--ease-out);
-    /* one by one, meter after meter */
-    transition-delay: calc(300ms + var(--m, 0) * 240ms + var(--d, 0) * 60ms);
+      scale var(--dur-content) var(--ease-spring);
+    transition-delay: calc(300ms + var(--m, 0) * 200ms + var(--d, 0) * 45ms);
   }
 
   .bento__card--stats:not(.is-visible) .meter__dots span.is-on::after {
     opacity: 0;
-    transform: scale(0.3);
+    scale: 0.2;
   }
 }
 
