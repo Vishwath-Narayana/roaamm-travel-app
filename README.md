@@ -39,10 +39,10 @@ flowchart LR
     KP["KeyPackage DO"]
     R2[(R2 files)]
     TURN["Realtime TURN"]
-    TUN["Cloudflare Tunnel"]
+    APIW["roaamm-api Worker route"]
   end
 
-  subgraph GCP["Google Cloud e2-micro"]
+  subgraph GCP["Google Cloud Run"]
     CORE["Java core<br/>Spring Boot 4 (native)"]
   end
   NEON[(Neon Postgres)]
@@ -53,7 +53,7 @@ flowchart LR
   GW --> KP
   UI -->|presigned PUT/GET| R2
   UI <-->|WebRTC media| TURN
-  UI -->|HTTPS| TUN --> CORE --> NEON
+  UI -->|HTTPS| APIW --> CORE --> NEON
 ```
 
 | Path | Carries | Runs on |
@@ -114,7 +114,7 @@ final states instantly.
 | Crypto | Rust, OpenMLS (RFC 9420), SFrame (RFC 9605), compiled to WebAssembly |
 | Core | Java 25, Spring Boot 4, virtual threads, GraalVM native image |
 | Data | Neon Postgres, Cloudflare R2 |
-| Delivery | GitHub Actions, Cloudflare Tunnel (no open inbound ports) |
+| Delivery | GitHub Actions, Google Cloud Run with keyless deploys ([ADR 0003](docs/adr/0003-core-hosting-cloud-run.md)) |
 
 Everything runs on free tiers. The only planned payment is one month of Cloudflare Workers Paid (about $5) for the load test. Details: [docs/free-services.md](docs/free-services.md).
 
@@ -148,14 +148,14 @@ pnpm lint
 pnpm typecheck
 pnpm test
 cargo test --workspace
-cd services/core && gradle check
+cd services/core && ./gradlew check
 ```
 
 ## CI/CD
 
-- **`ci`** runs on every pull request. Jobs run only when their paths change: workflow lint (actionlint), secret scan (gitleaks), web (lint, typecheck, tests, build, bundle-size budget), Rust (fmt, clippy, tests, WebAssembly builds, cargo-deny), core (Gradle check). One required check, `ci-ok`, gates merges to `main`.
+- **`ci`** runs on every pull request. Jobs run only when their paths change: workflow lint (actionlint), secret scan (gitleaks), web (lint, typecheck, tests, build, bundle-size budget), Rust (fmt, clippy, tests, WebAssembly builds, cargo-deny), core (Gradle check, native Docker build, `/health` check on `$PORT`; nothing is pushed). One required check, `ci-ok`, gates merges to `main`.
 - **`codeql`** scans JavaScript/TypeScript, Java and Rust weekly and on pull requests.
-- **`deploy`** ships the web app, edge Worker and System page to Cloudflare, builds and pushes the native core image, restarts it on the server with automatic rollback, then smoke-tests every subdomain.
+- **`deploy`** ships the web app, edge Worker and System page to Cloudflare, builds the native core image, pushes it to Artifact Registry and deploys it to Cloud Run with keyless (OIDC) auth, then smoke-tests every subdomain. Each half is switched off until its repository variable (`DEPLOY_ENABLED`, `CORE_DEPLOY_ENABLED`) is `true`.
 - **`release`** publishes SHA-256 hashes of the built web assets on every `v*` tag, for the planned "verify this build" page.
 
 ## Roadmap
