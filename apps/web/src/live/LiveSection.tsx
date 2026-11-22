@@ -74,6 +74,36 @@ export function LiveSection({ headingLevel = "h2", id = "live", className }: Liv
   const [holding, setHolding] = useState(false); // hover or focus: no auto-advance
   const [done, setDone] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+
+  // One indicator slides to the selected tab (clip-path, so its rounded ends
+  // never stretch). It spans the strip's full scroll width, so it also works
+  // when the strip scrolls sideways on phones. Measured after paint and only
+  // once the section is near, so it never forces a layout during page load.
+  useEffect(() => {
+    if (!near) return;
+    const pill = indicatorRef.current;
+    const tab = tabRefs.current[active];
+    const list = pill?.parentElement;
+    if (!pill || !tab || !list) return;
+    let frame = 0;
+    const place = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const width = list.scrollWidth;
+        pill.style.width = `${width}px`;
+        const left = tab.offsetLeft;
+        const right = width - left - tab.offsetWidth;
+        pill.style.clipPath = `inset(0 ${right}px 0 ${left}px round 999px)`;
+      });
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", place);
+    };
+  }, [active, near]);
 
   const playing = visible && !paused && !reduced;
 
@@ -130,7 +160,7 @@ export function LiveSection({ headingLevel = "h2", id = "live", className }: Liv
           <Reveal as="p" variant="fade" className="eyebrow">
             See it live
           </Reveal>
-          <Reveal as={Heading} id={`${uid}-title`} delay={1}>
+          <Reveal as={Heading} id={`${uid}-title`} delay={1} variant="mask-line">
             The product, <span className="serif">in motion</span>
           </Reveal>
         </div>
@@ -139,6 +169,7 @@ export function LiveSection({ headingLevel = "h2", id = "live", className }: Liv
 
       <div className="live__bar">
         <div className="live__tabs" role="tablist" aria-label="Preview">
+          <span ref={indicatorRef} className="live__indicator" aria-hidden="true" />
           {LIVE_TABS.map((t, i) => (
             <button
               key={t.id}
@@ -175,7 +206,10 @@ export function LiveSection({ headingLevel = "h2", id = "live", className }: Liv
               aria-label={paused ? "Play preview" : "Pause preview"}
               onClick={() => setPaused((p) => !p)}
             >
-              {paused ? <PlayIcon size={16} /> : <PauseIcon size={16} />}
+              <span className="icon-swap" aria-hidden="true">
+                <PlayIcon size={16} data-on={paused} />
+                <PauseIcon size={16} data-on={!paused} />
+              </span>
             </button>
             <button type="button" className="live__replay" onClick={() => select(active)}>
               Replay
@@ -191,7 +225,7 @@ export function LiveSection({ headingLevel = "h2", id = "live", className }: Liv
         className="live__stage"
         data-paused={!playing}
       >
-        <div className="live__about">
+        <div key={`about-${active}`} className="live__about live__enter">
           <h3>{title}</h3>
           <p>{body}</p>
           <ul>
@@ -200,7 +234,7 @@ export function LiveSection({ headingLevel = "h2", id = "live", className }: Liv
             ))}
           </ul>
         </div>
-        <div className="live__preview">
+        <div key={`preview-${active}-${runKey}`} className="live__preview live__enter">
           {near ? (
             <Suspense fallback={<div className="live__loading">Loading preview</div>}>
               <Panel key={`${active}-${runKey}`} playing={playing} runKey={runKey} onDone={onDone} />

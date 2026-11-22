@@ -87,6 +87,24 @@ Full design, capacity math, latency budget and failure modes: [docs/system-desig
 | Low-latency calls | Peer-to-peer WebRTC with a relay fallback. This project never claims "zero lag". |
 | End-to-end encrypted | MLS for chat, SFrame for calls. The threat model states the limit openly: in a browser, the server delivers the JavaScript. See [docs/security.md](docs/security.md). |
 
+## Motion and performance
+
+The web app moves like a product site without paying for it in speed: no
+animation or scroll libraries, only CSS (transitions, a generated `linear()`
+spring, scroll-driven `animation-timeline`, View Transitions), the Web
+Animations API and small React hooks. Everything animates on the compositor
+(`transform`, `opacity`, `clip-path`, `filter`), one shared
+`requestAnimationFrame` ticker drives pointer effects, and anything off screen
+pauses. `prefers-reduced-motion` and a footer "Reduce motion" switch both show
+final states instantly.
+
+- Rules, tokens and a checklist for new animations: [docs/motion.md](docs/motion.md)
+- `node scripts/motion-bench.mjs`: scrolls, clicks and drags the built site in
+  Chrome at 1x and 4x CPU and reports frame timing (99% of frames on time,
+  p95 16.8 ms, no long frames).
+- Lighthouse mobile in CI: performance >= 0.9, accessibility >= 0.95, no console
+  errors.
+
 ## Tech stack
 
 | Layer | Choice |

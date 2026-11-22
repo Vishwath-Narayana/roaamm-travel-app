@@ -2,11 +2,17 @@
   margin-bottom: var(--space-7);
 }
 
+/* The top rule (grows on scroll where supported). */
+.stats__rule {
+  height: 1px;
+  background: var(--hairline);
+  transform-origin: left;
+}
+
 /* Four columns separated by hairlines (two on small screens). */
 .stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid var(--hairline);
 }
 
 .stat {

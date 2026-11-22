@@ -192,16 +192,23 @@ export function AssistantPanel({ playing, runKey, onDone }: PanelProps) {
                     <CheckIcon size={12} strokeWidth={3} /> ID verified
                   </span>
                 </div>
-                <span className="result__match mono">{r.match}%</span>
+                <span className="result__score">
+                  <span className="result__match mono">{r.match}%</span>
+                  <span className="result__bar">
+                    <span style={{ "--m": r.match / 100 } as CSSProperties} />
+                  </span>
+                </span>
               </div>
             ) : null,
           )}
         </div>
         {step >= 6 && (
           <div className="assistant__chips">
-            <span className="chip">Only women travellers</span>
-            <span className="chip">Add a guide for Sunday</span>
-            <span className="chip">Show on a map</span>
+            {["Only women travellers", "Add a guide for Sunday", "Show on a map"].map((c, i) => (
+              <span key={c} className="chip" style={{ "--i": i } as CSSProperties}>
+                {c}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -213,46 +220,33 @@ export function AssistantPanel({ playing, runKey, onDone }: PanelProps) {
 /* ---------------------------------------------------------------- Safety */
 
 const ROUTE = "M30 190 C 70 190, 80 140, 120 140 S 170 90, 210 90 S 260 40, 300 40";
-const TICKS = 24;
 
 export function SafetyPanel({ playing, runKey, onDone }: PanelProps) {
   const { step, done, reduced } = useTimeline(SAFETY_STEPS, playing, runKey);
   useDone(done, onDone);
-  const routeRef = useRef<SVGPathElement>(null);
-  const dotRef = useRef<SVGGElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const toast = useOptionalToast();
   const [sent, setSent] = useState(false);
+  const [ripples, setRipples] = useState(0);
+  const walking = step === 0 && !reduced;
 
-  // Move the live-location dot along the route (transform only).
+  // The dot follows the route with SVG <animateMotion> (no JavaScript frame
+  // loop); it pauses whenever the preview pauses or leaves the screen.
   useEffect(() => {
-    const path = routeRef.current;
-    const dot = dotRef.current;
-    if (!path || !dot || typeof path.getTotalLength !== "function") return;
-    const total = path.getTotalLength();
-    const place = (t: number) => {
-      const p = path.getPointAtLength(total * t);
-      dot.setAttribute("transform", `translate(${p.x} ${p.y})`);
-    };
-    if (step >= 1 || reduced) {
-      place(1);
-      return;
-    }
-    if (!playing) return;
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / SAFETY_STEPS[0]);
-      place(t);
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [step, playing, reduced, runKey]);
+    const svg = svgRef.current;
+    if (!svg || typeof svg.pauseAnimations !== "function") return;
+    if (playing) svg.unpauseAnimations();
+    else svg.pauseAnimations();
+  }, [playing, walking]);
 
-  useEffect(() => setSent(false), [runKey]);
+  useEffect(() => {
+    setSent(false);
+    setRipples(0);
+  }, [runKey]);
 
   function sos() {
     setSent(true);
+    setRipples((n) => n + 1);
     toast?.show("Your contacts were notified (simulated)");
   }
 
@@ -266,27 +260,42 @@ export function SafetyPanel({ playing, runKey, onDone }: PanelProps) {
         SOS button alerts them with your location.
       </p>
       <div className="safety" data-phase={phase} aria-hidden="true">
-        <svg className="safety__map" viewBox="0 0 330 230" role="presentation">
+        {/* Keyed by run so each replay starts the route from the beginning. */}
+        <svg key={runKey} ref={svgRef} className="safety__map" viewBox="0 0 330 230" role="presentation">
           <g className="safety__streets">
             <path d="M0 60 H330 M0 120 H330 M0 175 H330 M60 0 V230 M150 0 V230 M245 0 V230" />
             <path d="M0 20 L330 210 M40 230 L300 0" />
           </g>
-          <path ref={routeRef} d={ROUTE} className="safety__route" />
+          <path d={ROUTE} className="safety__route" />
           <circle cx="300" cy="40" r="7" className="safety__dest" />
-          <g ref={dotRef} className="safety__dot" transform="translate(30 190)">
-            <circle r="14" className="safety__pulse" />
-            <circle r="6" />
-          </g>
+          {walking ? (
+            <g className="safety__dot">
+              <circle r="14" className="safety__pulse" />
+              <circle r="6" />
+              <animateMotion dur={`${SAFETY_STEPS[0]}ms`} path={ROUTE} fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1" keyTimes="0;1" keyPoints="0;1" />
+            </g>
+          ) : (
+            <g className="safety__dot" transform="translate(300 40)">
+              <circle r="14" className="safety__pulse" />
+              <circle r="6" />
+            </g>
+          )}
         </svg>
         <div className="safety__side">
           <div className="checkin" data-state={phase}>
             <div className="checkin__ring">
-              {Array.from({ length: TICKS }, (_, i) => (
-                <span
-                  key={i}
-                  style={{ "--t": i, transform: `rotate(${(360 / TICKS) * i}deg) translateY(-34px)` } as CSSProperties}
+              {/* Fills with stroke-dashoffset, then flips to the alert colour. */}
+              <svg viewBox="0 0 84 84" className="checkin__svg" role="presentation">
+                <circle cx="42" cy="42" r="34" className="checkin__track" />
+                <circle
+                  cx="42"
+                  cy="42"
+                  r="34"
+                  pathLength={100}
+                  className="checkin__fill"
+                  style={{ animationDuration: `${SAFETY_STEPS[1]}ms` } as CSSProperties}
                 />
-              ))}
+              </svg>
               <span className="checkin__label">
                 {phase === "walking" ? "On route" : phase === "counting" ? "Check in?" : "Missed"}
               </span>
@@ -301,6 +310,7 @@ export function SafetyPanel({ playing, runKey, onDone }: PanelProps) {
       </div>
       <div className="safety__sos">
         <button type="button" className="sos-btn" onClick={sos}>
+          {ripples > 0 && <span key={ripples} className="sos-btn__ripple" aria-hidden="true" />}
           <PinIcon size={18} strokeWidth={2} /> SOS
         </button>
         <p className="small" aria-live="polite">

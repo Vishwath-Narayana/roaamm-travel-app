@@ -1,0 +1,40 @@
+.odo {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The rolling copy is decoration: not selectable (copying a price gives the
+   real value, not the 0-9 strips). */
+.odo__roll {
+  display: inline-flex;
+  align-items: flex-end;
+  user-select: none;
+}
+
+/* One digit window: exactly one line tall, clipping the strip of 0-9. */
+.odo__col {
+  display: inline-block;
+  height: 1.1em;
+  line-height: 1.1em;
+  overflow: hidden;
+}
+
+.odo__strip {
+  display: flex;
+  flex-direction: column;
+  translate: 0 calc(var(--d, 0) * -1.1em);
+  transition: translate var(--dur-hero) var(--ease-out);
+  transition-delay: calc(min(var(--i, 0), 8) * 40ms);
+}
+
+.odo__strip > span,
+.odo__char {
+  display: block;
+  height: 1.1em;
+  line-height: 1.1em;
+}
+
+.odo__char {
+  display: inline-block;
+  white-space: pre;
+}

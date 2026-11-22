@@ -1,20 +1,34 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Badge } from "../../components/Badge";
 import { ArrowLeftIcon, ArrowRightIcon } from "../../components/icons";
 import { Photo } from "../../components/Photo";
 import { Link } from "../../router";
 import { prefersReducedMotion, Reveal } from "../../motion";
+import { onTick } from "../../motion/ticker";
+import { DUR, springAt, springEasing } from "../../motion/tokens";
 import { DESTINATIONS } from "./data";
 import { SectionHead } from "./SectionHead";
 import "./Destinations.css";
 
 /** Pixels a press must move before it counts as a drag (and not a click). */
 const DRAG_THRESHOLD = 6;
+/** Momentum keeps this share of its speed per 60 Hz frame. */
+const FRICTION = 0.94;
+/** Below this speed (px/ms) momentum stops and the track settles on a card. */
+const MIN_SPEED = 0.05;
+/** How much of a drag past either end is shown (rubber band). */
+const EDGE_RESISTANCE = 0.3;
 
 export function Destinations() {
   const trackRef = useRef<HTMLUListElement>(null);
   const barRef = useRef<HTMLSpanElement>(null);
-  const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
+  const drag = useRef<{
+    x: number;
+    left: number;
+    moved: boolean;
+    samples: { t: number; x: number }[];
+  } | null>(null);
+  const stopMotion = useRef<(() => void) | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -47,10 +61,66 @@ export function Destinations() {
     t.scrollBy({ left: dir * distance, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }
 
-  // Drag to scroll with a mouse. Touch and trackpads already scroll natively.
+  /** Nearest card's resting scroll position (matches the CSS scroll-snap points). */
+  function nearestCardLeft(t: HTMLUListElement, from: number) {
+    const inset = parseFloat(getComputedStyle(t).scrollPaddingInlineStart) || 0;
+    const max = t.scrollWidth - t.clientWidth;
+    let best = from;
+    let bestDist = Infinity;
+    for (const li of t.querySelectorAll<HTMLElement>(":scope > li")) {
+      const left = Math.min(max, Math.max(0, li.offsetLeft - inset));
+      const d = Math.abs(left - from);
+      if (d < bestDist) [best, bestDist] = [left, d];
+    }
+    return best;
+  }
+
+  /** Glides to the nearest card on the spring, then hands back to scroll-snap. */
+  function settle(t: HTMLUListElement) {
+    const from = t.scrollLeft;
+    const to = nearestCardLeft(t, from);
+    const start = performance.now();
+    stopMotion.current?.();
+    stopMotion.current = onTick((now) => {
+      const p = Math.min(1, (now - start) / DUR.content);
+      t.scrollLeft = from + (to - from) * springAt(p);
+      if (p < 1) return true;
+      stopMotion.current = null;
+      setDragging(false); // scroll-snap returns, already aligned
+      return false;
+    });
+  }
+
+  /** Momentum after a fling: speed decays with friction, then settle. */
+  function fling(t: HTMLUListElement, speed: number) {
+    let v = speed; // px per ms, positive scrolls right
+    stopMotion.current?.();
+    stopMotion.current = onTick((_now, dt) => {
+      const max = t.scrollWidth - t.clientWidth;
+      const next = t.scrollLeft + v * dt;
+      t.scrollLeft = Math.min(max, Math.max(0, next));
+      v *= Math.pow(FRICTION, dt / 16.7);
+      if (Math.abs(v) > MIN_SPEED && next > 0 && next < max) return true;
+      stopMotion.current = null;
+      settle(t);
+      return false;
+    });
+  }
+
+  useEffect(() => () => stopMotion.current?.(), []);
+
+  // Drag to scroll with a mouse (touch and trackpads already scroll natively),
+  // with momentum on release and a rubber band past either end.
   function onPointerDown(e: PointerEvent<HTMLUListElement>) {
     if (e.pointerType !== "mouse" || e.button !== 0) return;
-    drag.current = { x: e.clientX, left: e.currentTarget.scrollLeft, moved: false };
+    stopMotion.current?.();
+    stopMotion.current = null;
+    drag.current = {
+      x: e.clientX,
+      left: e.currentTarget.scrollLeft,
+      moved: false,
+      samples: [{ t: performance.now(), x: e.clientX }],
+    };
   }
 
   function onPointerMove(e: PointerEvent<HTMLUListElement>) {
@@ -58,23 +128,65 @@ export function Destinations() {
     if (!d) return;
     const dx = e.clientX - d.x;
     if (!d.moved && Math.abs(dx) < DRAG_THRESHOLD) return;
+    const t = e.currentTarget;
     if (!d.moved) {
       d.moved = true;
       setDragging(true); // turns off scroll-snap while dragging
-      e.currentTarget.setPointerCapture(e.pointerId);
+      t.setPointerCapture(e.pointerId);
     }
-    e.currentTarget.scrollLeft = d.left - dx;
+    const now = performance.now();
+    d.samples.push({ t: now, x: e.clientX });
+    while (d.samples.length > 2 && now - d.samples[0].t > 100) d.samples.shift();
+
+    const max = t.scrollWidth - t.clientWidth;
+    const target = d.left - dx;
+    t.scrollLeft = Math.min(max, Math.max(0, target));
+    // Past an end: show a fraction of the overshoot, like a rubber band.
+    const over = target < 0 ? -target : target > max ? max - target : 0;
+    t.style.translate = over ? `${over * EDGE_RESISTANCE}px 0` : "";
   }
 
   function endDrag(e: PointerEvent<HTMLUListElement>) {
-    if (!drag.current) return;
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    const d = drag.current;
+    if (!d) return;
+    const t = e.currentTarget;
+    if (t.hasPointerCapture(e.pointerId)) t.releasePointerCapture(e.pointerId);
     // Keep the flag one tick so the click that ends a drag is swallowed.
-    const moved = drag.current.moved;
     setTimeout(() => {
       drag.current = null;
     }, 0);
-    if (moved) setDragging(false); // scroll-snap returns and settles on a card
+    if (!d.moved) return;
+
+    // Spring back from the rubber band.
+    if (t.style.translate) {
+      const shift = t.style.translate;
+      t.style.translate = "";
+      if (!prefersReducedMotion() && t.animate) {
+        t.animate([{ translate: shift }, { translate: "0 0" }], { duration: DUR.ui, easing: springEasing() });
+      }
+    }
+    if (prefersReducedMotion()) {
+      setDragging(false); // scroll-snap settles instantly
+      return;
+    }
+    const first = d.samples[0];
+    const last = d.samples[d.samples.length - 1];
+    const speed = last.t > first.t ? -(last.x - first.x) / (last.t - first.t) : 0;
+    if (Math.abs(speed) > MIN_SPEED) fling(t, speed);
+    else settle(t);
+  }
+
+  // Keyboard: arrows move one card, Home and End jump to the ends.
+  function onKeyDown(e: KeyboardEvent<HTMLUListElement>) {
+    const t = e.currentTarget;
+    if (e.target !== t) return; // links inside cards keep their own keys
+    const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
+    if (e.key === "ArrowRight") step(1);
+    else if (e.key === "ArrowLeft") step(-1);
+    else if (e.key === "Home") t.scrollTo({ left: 0, behavior });
+    else if (e.key === "End") t.scrollTo({ left: t.scrollWidth, behavior });
+    else return;
+    e.preventDefault();
   }
 
   return (
@@ -127,6 +239,7 @@ export function Destinations() {
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
+        onKeyDown={onKeyDown}
         onClickCapture={(e) => {
           if (drag.current?.moved) {
             e.preventDefault();
@@ -137,8 +250,8 @@ export function Destinations() {
         data-near-root
       >
         {DESTINATIONS.map((d, i) => (
-          <Reveal as="li" key={d.slot} delay={i} className="dest-card" data-simulated-scope>
-            <div className="dest-card__media">
+          <Reveal as="li" key={d.slot} delay={i} className="dest-card" data-simulated-scope data-tilt>
+            <div className="dest-card__media" data-glare>
               <Photo slot={d.slot} alt={d.alt} sizes="(min-width: 900px) 340px, 78vw" />
               <span className="dest-card__country">{d.country}</span>
             </div>

@@ -157,6 +157,14 @@ kbd,
   font-family: var(--font-mono);
 }
 
+/* No snaps: interactive elements fade colour, background, border and opacity
+   changes by default. Zero specificity, so components can set their own. */
+:where(a, button, summary, input, select, textarea, [role="tab"], label, .chip) {
+  transition-property: color, background-color, border-color, opacity, text-decoration-color;
+  transition-duration: var(--dur-hover);
+  transition-timing-function: var(--ease-out);
+}
+
 /* One focus ring everywhere: 2px solid ink, 2px offset. */
 :focus-visible {
   outline: 2px solid var(--ink);
@@ -255,11 +263,127 @@ picture.photo {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  /* Photos fade in from their blurred placeholder (400 ms), never pop. */
   picture.photo img {
-    transition: opacity var(--dur-2) var(--ease-out);
+    transition: opacity 400ms var(--ease-out);
   }
 
   picture.photo img[data-loaded="false"] {
     opacity: 0;
   }
+}
+
+/* Text links: a faint underline at rest (so links stay recognisable), and a
+   full one that draws in from the left on hover or focus and leaves to the
+   right. Only scaleX moves. */
+:where(main, footer) a:not([class]) {
+  position: relative;
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 3px;
+}
+
+:where(main, footer) a:not([class])::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--dur-ui) var(--ease-out);
+  pointer-events: none;
+}
+
+:where(main, footer) a:not([class]):focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(main, footer) a:not([class]):hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+/* Two icons stacked in one button that cross-morph (theme sun/moon, play/pause). */
+.icon-swap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.icon-swap > * {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--dur-hover) var(--ease-out),
+    rotate var(--dur-ui) var(--ease-spring),
+    scale var(--dur-ui) var(--ease-spring),
+    clip-path var(--dur-ui) var(--ease-out);
+}
+
+.icon-swap > [data-on="false"] {
+  opacity: 0;
+  scale: 0.6;
+  rotate: -90deg;
+  clip-path: circle(0% at 50% 50%);
+}
+
+.icon-swap > [data-on="true"] {
+  opacity: 1;
+  scale: 1;
+  rotate: 0deg;
+  clip-path: circle(75% at 50% 50%);
+}
+
+/* Round icon buttons (theme, menu, carousel arrows, hero controls): lift on
+   hover, press down and spring back, and the arrow glyph nudges its way. */
+:where(.icon-btn, .circle-btn, .hero__btn) {
+  transition:
+    translate var(--dur-ui) var(--ease-spring),
+    scale var(--dur-ui) var(--ease-spring),
+    background-color var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    opacity var(--dur-hover) var(--ease-out);
+}
+
+:where(.icon-btn, .circle-btn, .hero__btn) svg {
+  transition: translate var(--dur-ui) var(--ease-spring);
+}
+
+:where(.icon-btn, .circle-btn, .hero__btn):focus-visible:not(:disabled) {
+  translate: 0 -1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.icon-btn, .circle-btn, .hero__btn):hover:not(:disabled) {
+    translate: 0 -1px;
+  }
+
+  :where(.circle-btn, .hero__btn)[aria-label^="Next"]:hover:not(:disabled) svg {
+    translate: 3px 0;
+  }
+
+  :where(.circle-btn, .hero__btn)[aria-label^="Previous"]:hover:not(:disabled) svg {
+    translate: -3px 0;
+  }
+}
+
+:where(.circle-btn, .hero__btn)[aria-label^="Next"]:focus-visible svg {
+  translate: 3px 0;
+}
+
+:where(.circle-btn, .hero__btn)[aria-label^="Previous"]:focus-visible svg {
+  translate: -3px 0;
+}
+
+:where(.icon-btn, .circle-btn, .hero__btn):active:not(:disabled) {
+  scale: 0.92;
+  translate: 0 0;
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    translate var(--dur-press) var(--ease-out);
 }

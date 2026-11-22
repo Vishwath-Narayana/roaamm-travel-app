@@ -27,23 +27,55 @@
   padding: 10px var(--space-4);
   border: 0;
   border-radius: 16px;
-  transition: background-color var(--duration) var(--ease);
+  transition: background-color var(--dur-hover) var(--ease-out);
 }
 
-/* An ink tint works on the light and the (lifted) dark search bar alike. */
-.search__field:hover,
-.search__field:focus-within {
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
+/* Hover tints a field; focus is shown by the gliding pill below. An ink tint
+   works on the light and the (lifted) dark search bar alike. */
+@media (hover: hover) and (pointer: fine) {
+  .search__field:hover {
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+}
+
+.search {
+  position: relative;
+}
+
+.search > :not(.search__pill) {
+  position: relative;
+}
+
+.search__pill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    clip-path var(--dur-ui) var(--ease-spring),
+    opacity var(--dur-hover) var(--ease-out);
+}
+
+.search__pill[data-on="true"] {
+  opacity: 1;
 }
 
 .search__field label,
 .search__field legend {
+  transition: color var(--dur-hover) var(--ease-out);
   padding: 0;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.search__field:focus-within label,
+.search__field:focus-within legend {
+  color: var(--ink);
 }
 
 /* legend does not sit inside the grid gap like a label does */
@@ -108,11 +140,13 @@
   color: var(--on-ink);
   font-weight: 600;
   cursor: pointer;
-  transition: transform var(--duration) var(--ease);
+  transition: transform var(--dur-hover) var(--ease-out);
 }
 
-.search__submit:hover {
-  transform: scale(1.03);
+@media (hover: hover) and (pointer: fine) {
+  .search__submit:hover {
+    transform: scale(1.03);
+  }
 }
 
 .search__note {

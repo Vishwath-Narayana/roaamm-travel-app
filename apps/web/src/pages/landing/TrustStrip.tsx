@@ -12,7 +12,7 @@ const ITEMS = [
 export function TrustStrip() {
   return (
     <div className="container trust-wrap">
-      <Reveal as="ul" variant="line" className="trust" aria-label="Built in">
+      <Reveal as="ul" variant="fade" className="trust" aria-label="Built in">
         {ITEMS.map((item, i) => (
           <Reveal as="li" key={item.label} variant="fade" delay={i + 2}>
             {item.icon}

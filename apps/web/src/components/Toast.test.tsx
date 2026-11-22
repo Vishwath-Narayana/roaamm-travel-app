@@ -1,5 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
-import { ToastProvider, useToast, DEFAULT_TOAST_MS } from "./Toast";
+import { ToastProvider, useToast, DEFAULT_TOAST_MS, TOAST_EXIT_MS } from "./Toast";
 
 function Trigger({ duration }: { duration?: number }) {
   const { show } = useToast();
@@ -29,6 +29,9 @@ describe("Toast", () => {
     act(() => vi.advanceTimersByTime(DEFAULT_TOAST_MS - 1));
     expect(region).toHaveTextContent("Saved");
     act(() => vi.advanceTimersByTime(1));
+    // It now plays a short exit animation before it is removed.
+    expect(region.querySelector(".toast--leaving")).toHaveAttribute("aria-hidden", "true");
+    act(() => vi.advanceTimersByTime(TOAST_EXIT_MS));
     expect(region).not.toHaveTextContent("Saved");
   });
 
@@ -43,6 +46,7 @@ describe("Toast", () => {
     expect(screen.getByText("Saved")).toBeInTheDocument();
 
     act(() => screen.getByRole("button", { name: "Dismiss notification" }).click());
+    act(() => vi.advanceTimersByTime(TOAST_EXIT_MS));
     expect(screen.queryByText("Saved")).not.toBeInTheDocument();
   });
 

@@ -8,7 +8,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test-setup.ts"],
-    // Let the token-sync test read tokens.css as raw text.
-    css: { include: [/tokens\.css/] },
+    // Let tests read tokens.css and motion.css as raw text.
+    css: { include: [/tokens\.css/, /motion\.css/] },
   },
 });

@@ -1,4 +1,4 @@
-import { useId, type FormEvent } from "react";
+import { useId, useRef, type FocusEvent, type FormEvent } from "react";
 import { SearchIcon } from "../../components/icons";
 import { navigate } from "../../router";
 import "./SearchBar.css";
@@ -11,6 +11,30 @@ export function SearchBar() {
   const id = useId();
   const noteId = `${id}-note`;
 
+  const pillRef = useRef<HTMLSpanElement>(null);
+
+  // One highlight pill glides to whichever field has focus (clip-path, so its
+  // rounded ends never stretch); it fades out when focus leaves the form.
+  function onFocusIn(e: FocusEvent<HTMLFormElement>) {
+    const field = (e.target as HTMLElement).closest<HTMLElement>(".search__field");
+    const pill = pillRef.current;
+    if (!field || !pill) return;
+    const form = e.currentTarget.getBoundingClientRect();
+    const r = field.getBoundingClientRect();
+    const top = Math.round(r.top - form.top);
+    const right = Math.round(form.right - r.right);
+    const bottom = Math.round(form.bottom - r.bottom);
+    const left = Math.round(r.left - form.left);
+    pill.style.clipPath = `inset(${top}px ${right}px ${bottom}px ${left}px round 999px)`;
+    pill.dataset.on = "true";
+  }
+
+  function onFocusOut(e: FocusEvent<HTMLFormElement>) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null) && pillRef.current) {
+      pillRef.current.dataset.on = "false";
+    }
+  }
+
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     navigate("/demo");
@@ -18,7 +42,15 @@ export function SearchBar() {
 
   return (
     <div className="search-wrap container">
-      <form className="search" role="search" aria-label="Find travellers (preview)" onSubmit={onSubmit}>
+      <form
+        className="search"
+        role="search"
+        aria-label="Find travellers (preview)"
+        onSubmit={onSubmit}
+        onFocus={onFocusIn}
+        onBlur={onFocusOut}
+      >
+        <span ref={pillRef} className="search__pill" aria-hidden="true" data-on="false" />
         <div className="search__field">
           <label htmlFor={`${id}-where`}>Where</label>
           <input id={`${id}-where`} name="where" type="text" placeholder="Kyoto, Lisbon, anywhere" autoComplete="off" />

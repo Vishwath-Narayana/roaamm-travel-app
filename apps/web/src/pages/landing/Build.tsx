@@ -64,7 +64,7 @@ export function Build() {
           />
           <ul className="build__facts">
             {FACTS.map((f, i) => (
-              <Reveal as="li" key={f.title} delay={i} className="fact">
+              <Reveal as="li" key={f.title} delay={i} className="fact" data-tilt data-glare>
                 <div className="fact__top">
                   <span className="fact__icon">{f.icon}</span>
                   <Badge>{f.status}</Badge>

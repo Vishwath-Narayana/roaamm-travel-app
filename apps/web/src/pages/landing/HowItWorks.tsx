@@ -36,9 +36,10 @@ export function HowItWorks() {
             </>
           }
         />
+        <div className="steps__line" aria-hidden="true" />
         <ol className="steps">
           {STEPS.map((s, i) => (
-            <Reveal as="li" key={s.title} delay={i} className="step">
+            <Reveal as="li" key={s.title} delay={i} className="step" data-tilt data-glare>
               <div className="step__top">
                 <span className="step__num mono" aria-hidden="true">
                   {String(i + 1).padStart(2, "0")}

@@ -1,5 +1,6 @@
 import { Badge } from "../../components/Badge";
-import { Reveal, useCountUp, useReveal } from "../../motion";
+import { Odometer } from "../../components/Odometer";
+import { Reveal, useReveal } from "../../motion";
 import { SectionHead } from "./SectionHead";
 import "./Stats.css";
 
@@ -11,29 +12,12 @@ const STATS = [
   { value: "58k", label: "trips planned" },
 ];
 
-/** "1,326" -> 1326 with a thousands separator; "212k" -> 212 with suffix "k". */
-function parse(value: string) {
-  const m = value.match(/^([\d,]+)(.*)$/);
-  if (!m) return { n: 0, suffix: value, comma: false };
-  return { n: Number(m[1].replace(/,/g, "")), suffix: m[2], comma: m[1].includes(",") };
-}
-
-/**
- * Counts up once when it scrolls into view. The final value is always in the
- * DOM (visually hidden) so screen readers and tests read the real number;
- * the animated digits are aria-hidden.
- */
+/** Rolls to its value once it scrolls into view (instantly under reduced motion). */
 export function CountUp({ value }: { value: string }) {
   const [ref, shown] = useReveal<HTMLSpanElement>();
-  const { n, suffix, comma } = parse(value);
-  const current = useCountUp(n, shown);
-  const text = (comma ? current.toLocaleString("en-US") : String(current)) + suffix;
   return (
     <span ref={ref} className="count-up">
-      <span className="visually-hidden">{value}</span>
-      <span aria-hidden="true" data-testid="count-anim">
-        {text}
-      </span>
+      <Odometer value={value} run={shown} />
     </span>
   );
 }
@@ -57,6 +41,7 @@ export function Stats() {
           }
           aside={<Badge>Simulated data</Badge>}
         />
+        <div className="stats__rule" aria-hidden="true" />
         <dl className="stats">
           {STATS.map((s, i) => (
             <Reveal key={s.label} delay={i} className="stat">

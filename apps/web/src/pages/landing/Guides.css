@@ -25,12 +25,20 @@
 @media (prefers-reduced-motion: no-preference) {
   .guide {
     transition:
-      opacity 500ms var(--ease-out),
-      transform var(--dur-2) var(--ease-out);
+      opacity var(--dur-content) var(--ease-out),
+      translate var(--dur-ui) var(--ease-out),
+      transform var(--dur-content) var(--ease-out);
   }
 
+  /* Keyboard focus only: a tap on the stepper must not leave the card lifted. */
+  .guide.is-visible:has(:focus-visible) {
+    translate: 0 -4px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
   .guide.is-visible:hover {
-    transform: translateY(-4px);
+    translate: 0 -4px;
   }
 }
 
@@ -144,8 +152,10 @@
   cursor: pointer;
 }
 
-.stepper button:hover:not(:disabled) {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .stepper button:hover:not(:disabled) {
+    background: var(--surface);
+  }
 }
 
 .stepper button:disabled {
@@ -166,6 +176,16 @@
 
 .guide__total strong {
   color: var(--ink);
+}
+
+.guide__amount {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+/* Price changes roll quickly (a control, not a hero number). */
+.guide__amount .odo__strip {
+  transition-duration: var(--dur-content);
 }
 
 .guide__book {
