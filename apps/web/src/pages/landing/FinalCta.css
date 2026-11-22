@@ -40,7 +40,7 @@
   padding: var(--space-8) var(--space-5);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-hero);
-  background: var(--bg);
+  background: var(--raised);
   box-shadow: var(--shadow-elevated);
   text-align: center;
 }
