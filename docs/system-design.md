@@ -9,7 +9,7 @@ The design splits the system by what each part needs most:
 | Path | What travels on it | Needs | Runs on |
 |---|---|---|---|
 | **Fast path (real-time)** | Chat messages, receipts, typing indicators, online status, call setup, live location updates | Very low latency, global reach, many open connections | **Cloudflare Workers + Durable Objects, written in Rust (WebAssembly)** on hundreds of edge locations |
-| **Steady path (business)** | Accounts, passkeys, ID verification, trips, discovery, guides, bookings, payments, admin, reports | Correctness, transactions, relational data | **Java 25 / Spring Boot 4**, GraalVM native image, on a Google Cloud e2-micro server, reached through Cloudflare Tunnel, with **Neon Postgres** |
+| **Steady path (business)** | Accounts, passkeys, ID verification, trips, discovery, guides, bookings, payments, admin, reports | Correctness, transactions, relational data | **Java 25 / Spring Boot 4**, GraalVM native image, on **Google Cloud Run** (scales to zero, [ADR 0003](adr/0003-core-hosting-cloud-run.md)), reached through Cloudflare, with **Neon Postgres** |
 
 The fast path **never waits on the steady path**. The edge checks login tokens on its own (Ed25519 signature, public key cached at the edge), so chat keeps working even if the Java server is down.
 
@@ -28,10 +28,10 @@ flowchart LR
     R2[(R2<br/>encrypted files)]
     TURN["Realtime TURN/SFU"]
     AE[(Analytics Engine<br/>latency metrics)]
-    TUN["Cloudflare Tunnel"]
+    APIW["roaamm-api route<br/>(Worker proxy)"]
   end
 
-  subgraph GCP["Google Cloud e2-micro"]
+  subgraph GCP["Google Cloud Run (us-central1)"]
     CORE["Java core<br/>Spring Boot 4 (native)"]
   end
   NEON[(Neon Postgres)]
@@ -44,7 +44,7 @@ flowchart LR
   UI -->|presigned PUT/GET| R2
   UI <-->|WebRTC media<br/>P2P or relay| TURN
   GW --> AE
-  UI -->|HTTPS roaamm-api| TUN --> CORE --> NEON
+  UI -->|HTTPS roaamm-api| APIW --> CORE --> NEON
 ```
 
 ## 2. Domains
@@ -53,7 +53,7 @@ flowchart LR
 |---|---|
 | `roaamm.plinthwell.com` | Web app (static, served by Cloudflare) |
 | `roaamm-rt.plinthwell.com` | Rust edge Worker: WebSocket endpoint, key packages, TURN credentials |
-| `roaamm-api.plinthwell.com` | Java core, through Cloudflare Tunnel (the server has no open inbound ports) |
+| `roaamm-api.plinthwell.com` | Java core on Cloud Run, through a Cloudflare Worker route ([ADR 0003](adr/0003-core-hosting-cloud-run.md); not set up yet) |
 | `roaamm-status.plinthwell.com` | System page: architecture, live metrics, load-test report |
 
 All of them are first-level subdomains, so Cloudflare's free Universal SSL certificate covers them. `plinthwell.com` is already on Cloudflare DNS.
@@ -179,15 +179,15 @@ Full detail in doc 6.
   - Read-heavy public data is cached at the edge: trip discovery by city and date (cached 30 s), guide listings, public profiles.
   - Login tokens are checked at the edge, so there's no session lookup on the core.
   - Writes and uncached reads that reach the core: about 150–300 requests/s.
-- **Demo deployment:** one e2-micro server. We **measure its real limit** with k6 and publish it.
+- **Demo deployment:** Cloud Run, at most 2 instances, scaling to zero. We **measure its real limit** (and cold starts) with k6 and publish it.
 - **Scale-out plan, documented:**
-  - The core is stateless, so run N copies (Cloudflare Tunnel accepts several connector replicas, or use a load balancer).
+  - The core is stateless, so run N copies (raise Cloud Run `--max-instances`).
   - Neon autoscaling with a read replica.
   - Connection pooling (Neon's built-in pooler).
   - The math shows about 4–6 small instances covering peak.
 
 ### 5.4 Edge ↔ core
-- Browser → `roaamm-api` → Cloudflare → **Tunnel** → core. TLS all the way; the server exposes no ports.
+- Browser → `roaamm-api` → Cloudflare (Worker route) → Cloud Run → core. TLS all the way; there is no server of ours to patch or expose.
 - Edge → core (for example, checking that a user may create a room with someone): HTTPS to `roaamm-api` with a **service token**, plus short-lived caching of the answer.
 - Core → edge (for example, "user X is blocked, close their rooms"): calls a Worker admin endpoint authenticated with a signed request.
 
@@ -195,8 +195,8 @@ Full detail in doc 6.
 | Failure | Effect | What we do |
 |---|---|---|
 | Durable Object restarts or moves | Sockets drop | Client reconnects with exponential backoff plus random jitter, then resumes from the last seen `seq`. Nothing is lost (messages were stored before the ack). |
-| Java core or server down | No logins, bookings or trip edits | Chat, calls and SOS on the edge keep working until tokens expire. UI shows a "some features unavailable" banner. Health check alert. |
-| Neon wakes from idle | First query ~0.5 s slower | Warm-up ping before demo hours. The UI shows loading skeletons. |
+| Java core down | No logins, bookings or trip edits | Chat, calls and SOS on the edge keep working until tokens expire. UI shows a "some features unavailable" banner. Health check alert. |
+| Core or Neon cold after idle | First request slower (Cloud Run cold start and Neon wake-up are both **unmeasured**, see ADR 0003) | Warm-up ping before demo hours. The UI shows loading skeletons. |
 | Free-tier daily limit reached | Further operations of that type fail until midnight UTC | Alert at 70% of quota, clear error banner in the UI, the demo is light on traffic by design, the load test runs only during the paid month. |
 | Everyone reconnecting at once after an outage | Spike of new connections | Random jitter on backoff, a connection rate limit in the Worker, Session DOs start cheaply. |
 | Abuse or spam | Load and cost | Per-user and per-IP rate limits in the Worker, Cloudflare Turnstile on sign-up, 64 KB frame limit, attachments uploaded only through presigned R2 URLs (max 10 MB), report and block. |

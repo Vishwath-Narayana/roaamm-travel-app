@@ -118,15 +118,27 @@ jobs:
       run:
         working-directory: services/core
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: "9.1.0"
-      - run: gradle check -PjavaVersion=25
+      # Also validates the checked-in Gradle wrapper jar.
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - run: ./gradlew check
+      # Build only, never pushed: proves the native image and Dockerfile work.
+      - name: Docker build (native image, no push)
+        run: docker build -t roaamm-core:ci .
+      - name: Container answers /health on $PORT
+        run: |
+          docker run -d --name core -e PORT=9090 -p 9090:9090 roaamm-core:ci
+          for _ in $(seq 1 30); do
+            if body=$(curl -fsS http://localhost:9090/health); then break; fi
+            sleep 1
+          done
+          docker logs core
+          echo "$body"
+          test "$body" = '{"status":"ok"}'
 
   ci-ok:
     # The single required status check for branch protection.

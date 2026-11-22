@@ -6,7 +6,8 @@ spring:
       enabled: true
 
 server:
-  port: 8080
+  # Cloud Run sets PORT; 8080 is the local default.
+  port: ${PORT:8080}
   shutdown: graceful
 
 management:

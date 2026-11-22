@@ -8,16 +8,12 @@ plugins {
 group = "com.plinthwell"
 version = "0.0.0"
 
-// Production targets Java 25 (LTS). CI sets -PjavaVersion=25; override locally if needed.
-val javaVersion = (findProperty("javaVersion") as String? ?: "25").toInt()
-
+// Java 25 (LTS) through a Gradle toolchain: the build uses a JDK 25 whatever
+// JDK runs Gradle itself.
 java {
-    sourceCompatibility = JavaVersion.toVersion(javaVersion)
-    targetCompatibility = JavaVersion.toVersion(javaVersion)
-}
-
-tasks.withType<JavaCompile> {
-    options.release.set(javaVersion)
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
 }
 
 repositories {
@@ -25,9 +21,9 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

@@ -1,8 +1,28 @@
-# Runtime image only. CI builds the native binary first (gradle nativeCompile)
-# on an Ubuntu runner, so the runtime must have a compatible glibc.
-FROM ubuntu:26.04
-RUN useradd --system --uid 10001 --no-create-home roaamm
-COPY build/native/nativeCompile/roaamm-core /app/roaamm-core
-USER 10001
+# ROAAMM core: Spring Boot 4 compiled to a GraalVM native image.
+#
+#   docker build -t roaamm-core services/core
+#   docker run --rm -p 8080:8080 -e PORT=8080 roaamm-core
+#
+# Stage 1 builds with the Gradle wrapper inside GraalVM (Java 25), so the
+# build needs nothing installed on the host. Stage 2 is a minimal distroless
+# image (glibc, no shell) that runs the binary as a non-root user.
+# Cloud Run sets $PORT; application.yml reads it (default 8080).
+# Fallback if native ever breaks: build with `./gradlew bootJar` and run the
+# jar on eclipse-temurin:25-jre (see docs/adr/0003-core-hosting-cloud-run.md).
+
+FROM ghcr.io/graalvm/native-image-community:25@sha256:0d936f32bb8acb5bc60c41b33e05f064d7a6aaf36b726538296c54949bd4a3c0 AS build
+WORKDIR /src
+# Wrapper and build scripts first, so the Gradle download is cached.
+COPY gradlew settings.gradle.kts build.gradle.kts ./
+COPY gradle gradle
+RUN ./gradlew --no-daemon --version
+COPY src src
+RUN ./gradlew --no-daemon nativeCompile
+
+FROM gcr.io/distroless/base-debian13:nonroot@sha256:a08d9054afbaf1af9b90fd02cdc7b32236319b5376d374505a41548d42b0c5db
+COPY --from=build /src/build/native/nativeCompile/roaamm-core /app/roaamm-core
+# 65532 is the distroless "nonroot" user.
+USER 65532:65532
+ENV PORT=8080
 EXPOSE 8080
 ENTRYPOINT ["/app/roaamm-core"]
