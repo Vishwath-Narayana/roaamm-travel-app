@@ -1,4 +1,12 @@
+/*
+ * Buttons. Tactile but quiet: a 1 px lift and a fill that sweeps in from the
+ * left on hover, a quick press (scale .97, 90 ms) that springs back on
+ * release, and a focus ring that fades and scales in. Only transform-family
+ * properties, opacity and clip-path move. See docs/motion.md.
+ */
 .btn {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -14,11 +22,86 @@
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
+  --sweep: transparent;
+  --ring: var(--ink);
   transition:
-    background-color var(--dur-hover) var(--ease-out),
-    border-color var(--dur-hover) var(--ease-out),
+    translate var(--dur-ui) var(--ease-spring),
+    scale var(--dur-ui) var(--ease-spring),
+    opacity var(--dur-hover) var(--ease-out),
     color var(--dur-hover) var(--ease-out),
-    transform var(--dur-hover) var(--ease-out);
+    border-color var(--dur-hover) var(--ease-out);
+}
+
+/* The fill that sweeps in: revealed with clip-path, never a repaint. */
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--sweep);
+  clip-path: inset(0 100% 0 0 round 999px);
+  transition: clip-path var(--dur-ui) var(--ease-out);
+}
+
+/* Focus ring: fades and scales in instead of popping. */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 2px solid var(--ring);
+  border-radius: inherit;
+  opacity: 0;
+  scale: 1.06;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-hover) var(--ease-out),
+    scale var(--dur-ui) var(--ease-spring);
+}
+
+.btn:focus-visible {
+  /* Transparent outline keeps a visible ring in Windows high-contrast mode. */
+  outline: 2px solid transparent;
+}
+
+.btn:focus-visible::after {
+  opacity: 1;
+  scale: 1;
+}
+
+.btn:focus-visible:not(:disabled) {
+  translate: 0 -1px;
+}
+
+.btn:focus-visible:not(:disabled)::before {
+  clip-path: inset(0 0 0 0 round 999px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled):not([data-loading]) {
+    translate: 0 -1px;
+  }
+
+  .btn:hover:not(:disabled):not([data-loading])::before {
+    clip-path: inset(0 0 0 0 round 999px);
+  }
+
+  .btn:hover .btn__arrow {
+    translate: 4px 0;
+  }
+}
+
+.btn:focus-visible .btn__arrow {
+  translate: 4px 0;
+}
+
+/* Press: quick down, spring back (the release uses the .btn transition). */
+.btn:active:not(:disabled) {
+  scale: 0.97;
+  translate: 0 0;
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    translate var(--dur-press) var(--ease-out);
 }
 
 .btn--lg {
@@ -27,22 +110,58 @@
   font-size: 1rem;
 }
 
+.btn__label {
+  transition: opacity var(--dur-hover) var(--ease-out);
+}
+
 .btn__arrow {
   flex: none;
-  transition: transform var(--dur-hover) var(--ease-out);
+  transition: translate var(--dur-ui) var(--ease-spring);
 }
 
-.btn:hover .btn__arrow {
-  transform: translateX(4px);
+/* Loading: the label fades and a spinner fades in on top; the size never changes. */
+.btn__spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0;
+  scale: 0.6;
+  transition:
+    opacity var(--dur-hover) var(--ease-out),
+    scale var(--dur-ui) var(--ease-spring);
 }
 
+.btn[data-loading] {
+  cursor: progress;
+}
+
+.btn[data-loading] .btn__label,
+.btn[data-loading] .btn__arrow {
+  opacity: 0;
+}
+
+.btn[data-loading] .btn__spinner {
+  opacity: 1;
+  scale: 1;
+  animation: btn-spin 700ms linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Variants: colours, plus the colour the hover fill sweeps in. */
 .btn--primary {
   background: var(--ink);
   color: var(--on-ink);
-}
-
-.btn--primary:hover {
-  background: color-mix(in srgb, var(--ink) 86%, var(--bg));
+  --sweep: color-mix(in srgb, var(--ink) 82%, var(--bg));
 }
 
 .btn--secondary {
@@ -50,29 +169,21 @@
   border-color: var(--hairline);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 14%, transparent);
   color: var(--ink);
-}
-
-.btn--secondary:hover {
-  background: var(--surface);
+  --sweep: var(--surface);
 }
 
 .btn--ghost {
   background: transparent;
   color: var(--ink);
-}
-
-.btn--ghost:hover {
-  background: var(--surface);
+  --sweep: var(--surface);
 }
 
 /* Over photos: always white and ink, whatever the theme. */
 .btn--inverse {
   background: #ffffff;
   color: #0b0b0f;
-}
-
-.btn--inverse:hover {
-  background: #ececee;
+  --sweep: #e9e9ec;
+  --ring: #ffffff;
 }
 
 /* Glass over photos. Dark-tinted so white text passes AA on bright photos. */
@@ -82,10 +193,8 @@
   color: #ffffff;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-}
-
-.btn--glass:hover {
-  background: rgba(11, 11, 15, 0.62);
+  --sweep: rgba(11, 11, 15, 0.35);
+  --ring: #ffffff;
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -96,15 +205,7 @@
   }
 }
 
-.btn--inverse:focus-visible,
-.btn--glass:focus-visible {
-  outline-color: #ffffff;
-}
-
-.btn:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
+/* Disabled fades (opacity is transitioned above), it never jumps. */
 .btn:disabled {
   cursor: not-allowed;
   opacity: 0.5;

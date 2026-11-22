@@ -3,9 +3,20 @@
   gap: var(--space-2);
 }
 
+/* The label lifts slightly and darkens while its input has focus. */
 .field__label {
+  justify-self: start;
   font-size: 0.875rem;
   font-weight: 600;
+  color: var(--muted);
+  transition:
+    color var(--dur-hover) var(--ease-out),
+    translate var(--dur-ui) var(--ease-spring);
+}
+
+.field:focus-within .field__label {
+  color: var(--ink);
+  translate: 0 -2px;
 }
 
 .field__input {
@@ -16,11 +27,15 @@
   background: var(--bg);
   /* Visible boundary against the page (non-text contrast) */
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 45%, transparent);
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    box-shadow var(--dur-hover) var(--ease-out);
 }
 
 .field__input:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
+  border-color: var(--ink);
 }
 
 .field__hint {
@@ -37,4 +52,22 @@
 .field--error .field__input {
   border-color: var(--sos);
   box-shadow: inset 0 0 0 1px var(--sos);
+}
+
+/* An error shakes the field once (3 px, 240 ms); never under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="reduced"]) .field--error .field__input {
+    animation: field-shake var(--dur-ui) var(--ease-out);
+  }
+}
+
+@keyframes field-shake {
+  20%,
+  60% {
+    translate: -3px 0;
+  }
+  40%,
+  80% {
+    translate: 3px 0;
+  }
 }

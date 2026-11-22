@@ -32,7 +32,10 @@ function ThemeToggle() {
         });
       }}
     >
-      {theme === "dark" ? <SunIcon size={20} /> : <MoonIcon size={20} />}
+      <span className="icon-swap" aria-hidden="true">
+        <SunIcon size={20} data-on={theme === "dark"} />
+        <MoonIcon size={20} data-on={theme !== "dark"} />
+      </span>
     </button>
   );
 }

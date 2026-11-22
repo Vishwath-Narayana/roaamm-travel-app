@@ -17,9 +17,6 @@
   background: var(--bg);
   color: var(--ink);
   cursor: pointer;
-  transition:
-    background-color var(--dur-hover) var(--ease-out),
-    opacity var(--dur-hover) var(--ease-out);
 }
 
 .circle-btn:hover:not(:disabled) {

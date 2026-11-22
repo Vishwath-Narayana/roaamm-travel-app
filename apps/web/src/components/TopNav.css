@@ -173,6 +173,8 @@
 .topnav--clear .topnav__cta {
   background: #ffffff;
   color: #0b0b0f;
+  --sweep: #e9e9ec;
+  --ring: #ffffff;
 }
 
 .topnav--clear :focus-visible {

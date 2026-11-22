@@ -23,16 +23,30 @@
   pointer-events: auto;
 }
 
+/* In: a spring from below. Out: quicker, easing away. */
 @media (prefers-reduced-motion: no-preference) {
-  .toast {
-    animation: toast-in 240ms var(--ease-out);
+  :root:not([data-motion="reduced"]) .toast {
+    animation: toast-in var(--dur-content) var(--ease-spring) both;
+  }
+
+  :root:not([data-motion="reduced"]) .toast--leaving {
+    animation: toast-out calc(var(--dur-content) * 0.6) var(--ease-in) both;
   }
 }
 
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    translate: 0 16px;
+    scale: 0.96;
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    translate: 0 8px;
+    scale: 0.98;
   }
 }
 

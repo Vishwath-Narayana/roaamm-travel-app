@@ -175,7 +175,10 @@ export function LiveSection({ headingLevel = "h2", id = "live", className }: Liv
               aria-label={paused ? "Play preview" : "Pause preview"}
               onClick={() => setPaused((p) => !p)}
             >
-              {paused ? <PlayIcon size={16} /> : <PauseIcon size={16} />}
+              <span className="icon-swap" aria-hidden="true">
+                <PlayIcon size={16} data-on={paused} />
+                <PauseIcon size={16} data-on={!paused} />
+              </span>
             </button>
             <button type="button" className="live__replay" onClick={() => select(active)}>
               Replay
