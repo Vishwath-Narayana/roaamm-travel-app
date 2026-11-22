@@ -55,8 +55,8 @@ export function Features() {
                 Built for travelling <span className="serif">alone</span>
               </Reveal>
               <Reveal as="p" className="lead" delay={2}>
-                Everything a solo trip needs, in one place: people to meet, someone local to
-                show you around, and a safety net that is always on.
+                Everything a solo trip needs, in one place: people to meet, someone local to show
+                you around, and a safety net that is always on.
               </Reveal>
             </div>
             <ul className="features-grid">
@@ -80,7 +80,12 @@ export function Features() {
         </div>
 
         <div className="spotlights">
-          <Reveal as="section" id="safety" aria-labelledby="safety-title" className="card spotlight">
+          <Reveal
+            as="section"
+            id="safety"
+            aria-labelledby="safety-title"
+            className="card spotlight"
+          >
             <h3 id="safety-title">Safety, built in</h3>
             <CheckList
               items={[

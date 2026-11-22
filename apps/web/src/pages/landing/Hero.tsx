@@ -2,7 +2,11 @@ import { useEffect, useRef, useState, type FocusEvent } from "react";
 import { Button } from "../../components/Button";
 import { ArrowLeftIcon, ArrowRightIcon, PauseIcon, PlayIcon } from "../../components/icons";
 import { Photo } from "../../components/Photo";
-import { prefersReducedMotion as reducedMotionNow, useInView, usePrefersReducedMotion } from "../../motion";
+import {
+  prefersReducedMotion as reducedMotionNow,
+  useInView,
+  usePrefersReducedMotion,
+} from "../../motion";
 import { HERO_SLIDES } from "./data";
 import "./Hero.css";
 
@@ -151,10 +155,19 @@ export function Hero() {
             data-playing={playing}
           >
             <div className="hero__buttons">
-              <button type="button" className="hero__btn" aria-label="Previous photo" onClick={() => go(-1)}>
+              <button
+                type="button"
+                className="hero__btn"
+                aria-label="Previous photo"
+                onClick={() => go(-1)}
+              >
                 <ArrowLeftIcon size={18} />
               </button>
-              <p className="hero__count mono" aria-live={playing ? "off" : "polite"} aria-atomic="true">
+              <p
+                className="hero__count mono"
+                aria-live={playing ? "off" : "polite"}
+                aria-atomic="true"
+              >
                 <span className="visually-hidden">Photo </span>
                 <span key={index} className="hero__count-num">
                   {index + 1}
@@ -163,7 +176,12 @@ export function Hero() {
                 <span className="visually-hidden"> of </span>
                 {count}
               </p>
-              <button type="button" className="hero__btn" aria-label="Next photo" onClick={() => go(1)}>
+              <button
+                type="button"
+                className="hero__btn"
+                aria-label="Next photo"
+                onClick={() => go(1)}
+              >
                 <ArrowRightIcon size={18} />
               </button>
               {!reducedMotion && (
@@ -194,9 +212,7 @@ export function Hero() {
                 onAnimationEnd={() => go(1)}
               />
             </div>
-            <p className="hero__credit">
-              Photo: {slide.credit} / Unsplash
-            </p>
+            <p className="hero__credit">Photo: {slide.credit} / Unsplash</p>
           </div>
         </div>
       </div>

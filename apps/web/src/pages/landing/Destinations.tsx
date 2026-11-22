@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
 import { Badge } from "../../components/Badge";
 import { ArrowLeftIcon, ArrowRightIcon } from "../../components/icons";
 import { Photo } from "../../components/Photo";
@@ -162,7 +169,10 @@ export function Destinations() {
       const shift = t.style.translate;
       t.style.translate = "";
       if (!prefersReducedMotion() && t.animate) {
-        t.animate([{ translate: shift }, { translate: "0 0" }], { duration: DUR.ui, easing: springEasing() });
+        t.animate([{ translate: shift }, { translate: "0 0" }], {
+          duration: DUR.ui,
+          easing: springEasing(),
+        });
       }
     }
     if (prefersReducedMotion()) {
@@ -250,7 +260,14 @@ export function Destinations() {
         data-near-root
       >
         {DESTINATIONS.map((d, i) => (
-          <Reveal as="li" key={d.slot} delay={i} className="dest-card" data-simulated-scope data-tilt>
+          <Reveal
+            as="li"
+            key={d.slot}
+            delay={i}
+            className="dest-card"
+            data-simulated-scope
+            data-tilt
+          >
             <div className="dest-card__media" data-glare>
               <Photo slot={d.slot} alt={d.alt} sizes="(min-width: 900px) 340px, 78vw" />
               <span className="dest-card__country">{d.country}</span>

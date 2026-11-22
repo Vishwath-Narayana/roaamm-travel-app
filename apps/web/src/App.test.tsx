@@ -79,6 +79,24 @@ describe("App routing", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Travel solo.");
   });
 
+  it("routes /app/<role> to that role's dashboard, protected by the session", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: "unauthenticated" }), { status: 401 }),
+    );
+    renderAt("/app/guide");
+    // No session: sent to the demo page.
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Try the demo" }),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/demo");
+    vi.restoreAllMocks();
+  });
+
+  it("shows a 404 for an unknown dashboard role", () => {
+    renderAt("/app/root");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Page not found");
+  });
+
   it("has a skip link to the main landmark", () => {
     renderAt("/");
     expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#main");

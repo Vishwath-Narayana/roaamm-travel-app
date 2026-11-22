@@ -39,7 +39,8 @@ const STORIES: {
     slot: "story-lisbon",
     alt: "Red rooftops of Alfama and the river, seen from a Lisbon viewpoint",
     title: "Sofia knew every viewpoint",
-    excerpt: "Three hours, two miradouros I would never have found, and the best pastel de nata of the trip.",
+    excerpt:
+      "Three hours, two miradouros I would never have found, and the best pastel de nata of the trip.",
     author: "Theo, Australia",
     meta: "Booked 3 hours",
     stars: 5,

@@ -1,6 +1,12 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CHECK_TIMEOUT_MS, LIVE_HOST, SAMPLES, StatusRow, median } from "../../components/StatusRow";
+import {
+  CHECK_TIMEOUT_MS,
+  LIVE_HOST,
+  SAMPLES,
+  StatusRow,
+  median,
+} from "../../components/StatusRow";
 import { SERVICES } from "../../services";
 import { Faq } from "./Faq";
 import { GUIDES, Guides, money } from "./Guides";
@@ -120,7 +126,8 @@ describe("StatusRow", () => {
   });
 
   describe("Core API item", () => {
-    const apiItem = () => screen.getByText("roaamm-api.plinthwell.com").closest(".status-row__item")!;
+    const apiItem = () =>
+      screen.getByText("roaamm-api.plinthwell.com").closest(".status-row__item")!;
 
     it("shows Checking while the probe is in flight", () => {
       vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>(() => {}));
@@ -164,7 +171,9 @@ describe("StatusRow", () => {
       (_input, init) =>
         new Promise((_resolve, reject) => {
           // Never answers: only the 3 s abort ends it.
-          init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError")),
+          );
         }),
     );
     vi.useFakeTimers({ shouldAdvanceTime: true });
