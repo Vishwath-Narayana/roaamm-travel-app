@@ -49,55 +49,42 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm dlx wrangler@4 deploy
 
+  # Java core on Google Cloud Run (docs/adr/0003-core-hosting-cloud-run.md).
+  # Off until the repository variable CORE_DEPLOY_ENABLED is set to 'true'.
+  # Keyless: GitHub OIDC -> Workload Identity Federation, no service account keys.
   core:
     if: vars.CORE_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: production
     permissions:
+      id-token: write
       contents: read
-      packages: write
+    env:
+      IMAGE: ${{ vars.GCP_IMAGE_REPO }}/core:${{ github.sha }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: graalvm/setup-graalvm@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          java-version: "25"
-          distribution: graalvm
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: "9.1.0"
-      - name: Native build
-        working-directory: services/core
-        run: gradle nativeCompile -PjavaVersion=25
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v7
-        with:
-          context: services/core
-          push: true
-          tags: |
-            ghcr.io/vishwath-narayana/roaamm-core:${{ github.sha }}
-            ghcr.io/vishwath-narayana/roaamm-core:latest
-      - name: Deploy over Cloudflare Access SSH
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      - name: Build image (native, see services/core/Dockerfile)
+        run: docker build -t "$IMAGE" services/core
+      - name: Push image to Artifact Registry
         env:
-          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
-          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-          IMAGE_TAG: ${{ github.sha }}
+          REGION: ${{ vars.GCP_REGION }}
         run: |
-          curl -fsSL -o cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
-          chmod +x cloudflared
-          install -m 600 /dev/null key
-          printf '%s\n' "$SSH_KEY" > key
-          ssh -i key \
-            -o StrictHostKeyChecking=accept-new \
-            -o "ProxyCommand=./cloudflared access ssh --hostname $SSH_HOST --id $CF_ACCESS_CLIENT_ID --secret $CF_ACCESS_CLIENT_SECRET" \
-            "$SSH_USER@$SSH_HOST" "/opt/roaamm/deploy.sh $IMAGE_TAG"
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker push "$IMAGE"
+      - name: Deploy to Cloud Run
+        run: >-
+          gcloud run deploy roaamm-core
+          --image "$IMAGE"
+          --region ${{ vars.GCP_REGION }}
+          --project ${{ vars.GCP_PROJECT_ID }}
+          --max-instances 2
+          --min-instances 0
+          --allow-unauthenticated
 
   smoke:
     needs: [edge-web-status, core]
