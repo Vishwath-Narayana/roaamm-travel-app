@@ -29,7 +29,7 @@ e2-micro VM reached through Cloudflare Tunnel.
   nothing deploys.
 
 ### Public URL: `roaamm-api.plinthwell.com` through Cloudflare
-Documented here, **not applied yet**. Cloud Run answers on its own
+Applied on 2026-11-22; see **Applied** below for how it works now. Cloud Run answers on its own
 `https://roaamm-core-<hash>-uc.a.run.app` URL and checks the `Host` header, so a
 plain proxied CNAME to `run.app` does not work unless the Host header is
 rewritten. A Worker route does that on the free plan:
@@ -54,6 +54,44 @@ rewritten. A Worker route does that on the free plan:
 
 Each request then costs one Worker invocation (free plan: 100,000 a day),
 which is well above demo traffic.
+
+## Applied (2026-11-22)
+`roaamm-api.plinthwell.com` is now served by the Worker **`roaamm-api-proxy`**
+(`edge-api-proxy/`), deployed by the `api-proxy` job in
+`.github/workflows/deploy.yml`, which finishes before `smoke`.
+
+- **Route:** a Worker custom domain (`[[routes]]` with `custom_domain = true`).
+  Cloudflare creates the DNS record and the edge certificate itself, so the
+  manual `AAAA 100::` record from step 1 above is not needed.
+- **Origin:** `ORIGIN` is a plain wrangler var
+  (`https://roaamm-core-563817708822.us-central1.run.app`); it is public, not a
+  secret.
+- **Forwarding:** method, path, query and body go to `ORIGIN`. The request is
+  re-addressed to the `run.app` hostname, so Cloud Run sees its own `Host`;
+  the public name goes in `X-Forwarded-Host`, plus `X-Forwarded-Proto`.
+  `cf-*`, `cdn-loop` and `x-real-ip` are not forwarded. Redirects are passed
+  back, not followed.
+- **Response:** passed through as is. `Cache-Control: no-store` is added only
+  when the origin set none.
+- **CORS** is owned by the proxy: only `https://roaamm.plinthwell.com` is
+  allowed (same rule as the edge `/health`), preflights are answered without
+  calling the core, and any `Access-Control-*` header from the core is dropped.
+- **Failure:** if the core cannot be reached or does not answer within 20 s
+  (`ORIGIN_TIMEOUT_MS`), the proxy returns `502` with
+  `{"error":"bad_gateway","message":"The API is unavailable."}`, never the
+  underlying error.
+- **No logging** of bodies or headers.
+- Written in TypeScript, not Rust like `edge/`: it is ~100 lines of header
+  handling, wrangler bundles it with no build step (no `worker-build`, no
+  Rust toolchain in the deploy job), and it tests with plain Vitest.
+- **Cold start through the proxy: UNMEASURED.** The proxy adds one Worker hop
+  in front of the Cloud Run cold start described under "Not measured yet".
+  Neither the hop nor the combined first-request latency has been measured.
+
+Cloud Run's own domain mappings were not used. They are listed for
+us-central1 but are still Preview and not recommended for production by
+Google (latency issues), need domain verification, and do not work behind a
+proxied (orange-cloud) Cloudflare record without extra care.
 
 ## Rejected
 - **e2-micro VM + Cloudflare Tunnel.** Always on, so it is our job to patch
