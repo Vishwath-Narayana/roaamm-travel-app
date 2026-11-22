@@ -3,6 +3,7 @@ package com.plinthwell.roaamm.auth;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,8 +13,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+// ResponseEntity<?> hides the body types from Spring AOT, so the native image
+// needs them named here for Jackson to read and write the records.
 @RestController
 @RequestMapping("/v1")
+@RegisterReflectionForBinding({AuthController.Me.class, AuthController.DemoSessionRequest.class})
 public class AuthController {
 
     public record DemoSessionRequest(String role) {}

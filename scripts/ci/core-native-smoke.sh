@@ -55,4 +55,14 @@ code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:9090/v1/d
   -H "Content-Type: application/json" -d '{"role":"guide"}')
 test "$code" = 403
 
-echo "native smoke ok: /health, /ready, demo session, /v1/me, CSRF"
+code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:9090/v1/demo/session \
+  -H "Origin: $WEB" -H "X-Roaamm-Csrf: 1" -H "Content-Type: application/json" -d '{"role":"root"}')
+test "$code" = 400
+
+code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:9090/v1/logout \
+  -H "Origin: $WEB" -H "X-Roaamm-Csrf: 1" -H "Cookie: __Host-roaamm_session=$token")
+test "$code" = 204
+code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9090/v1/me -H "Cookie: __Host-roaamm_session=$token")
+test "$code" = 401
+
+echo "native smoke ok: /health, /ready, demo session, /v1/me, bad role, CSRF, logout"

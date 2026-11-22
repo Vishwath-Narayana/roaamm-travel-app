@@ -90,6 +90,22 @@ Flyway uses a transaction-scoped advisory lock, which is safe through Neon's
 pooled (PgBouncer) endpoint. Migrations run at startup, so a revision that
 cannot reach the database fails to start and Cloud Run keeps the previous one.
 
+### Native image
+The core stays a GraalVM native image (no JRE fallback needed). Flyway, the
+Postgres driver, HikariCP and `JdbcClient` work in it, proven in CI by
+`scripts/ci/core-native-smoke.sh` (native binary + throwaway Postgres). Two
+native-only fixes were needed:
+- Flyway cannot scan classpath resources in a native image ("unsupported
+  protocol: resource"). The image ships the SQL files at `/app/db/migration`
+  and sets `SPRING_FLYWAY_LOCATIONS=filesystem:/app/db/migration`; JVM tests
+  still read them from the classpath.
+- Controllers returning `ResponseEntity<?>` hide their body types from Spring
+  AOT, so the DTO records are registered with `@RegisterReflectionForBinding`.
+
+Measured in that CI-style smoke (local Postgres, no network): process start to
+first `/health`, migrations included, about 0.7 s. This is **not** the Cloud
+Run + Neon cold start below.
+
 `GET /health` never touches the database. `GET /ready` runs `SELECT 1` and
 returns `{"status":"ok"}` or `503`.
 

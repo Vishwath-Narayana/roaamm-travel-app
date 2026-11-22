@@ -37,8 +37,26 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> unexpected(Exception e) {
-        log.error("unhandled error: {}", e.getClass().getName());
+        log.error("unhandled error: {}", causeChain(e));
         return body(HttpStatus.INTERNAL_SERVER_ERROR, "internal_error");
+    }
+
+    /** Class names of the cause chain (and the top frame), never messages: they can hold secrets. */
+    static String causeChain(Throwable t) {
+        StringBuilder sb = new StringBuilder();
+        for (Throwable c = t; c != null && sb.length() < 2000; c = c.getCause() == c ? null : c.getCause()) {
+            if (!sb.isEmpty()) {
+                sb.append(" <- ");
+            }
+            sb.append(c.getClass().getName());
+            StackTraceElement[] st = c.getStackTrace();
+            // The root cause gets a few frames: enough to find the failing call.
+            int frames = c.getCause() == null ? Math.min(12, st.length) : Math.min(1, st.length);
+            for (int i = 0; i < frames; i++) {
+                sb.append(i == 0 ? " at " : " / ").append(st[i].getClassName()).append('.').append(st[i].getMethodName());
+            }
+        }
+        return sb.toString();
     }
 
     private static ResponseEntity<Map<String, String>> body(HttpStatus status, String code) {
