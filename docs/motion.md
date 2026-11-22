@@ -58,3 +58,64 @@ through `@supports`.
   remove it when it ends.
 - **No scroll hijacking.** Normal browser scrolling; `scroll-behavior: smooth`
   only for in-page anchor links, and not under reduced motion.
+
+## Where things move
+
+| Effect | Where | How | Reduced motion |
+|---|---|---|---|
+| Reveal on scroll | Headings, cards, steps, stats | `<Reveal variant>` on one shared IntersectionObserver; `translate`/`scale`/`opacity`; headings rise through a static mask | Shown at once |
+| Hero intro | First load, once per session | Photo sharpens from a slight blur and 1.08 scale (never hidden, so LCP is unaffected); text follows in order within 1.1 s | Skipped |
+| Hero photos | Every 7 s while on screen | New photo wipes in (`clip-path`) and settles 1.06 to 1; old fades to 0.98; progress bar `scaleX` | No autoplay |
+| Parallax, zoom, drift | Hero, story/bento/feature photos, CTA photo | `animation-timeline: scroll()` / `view()` behind `@supports` (off the main thread) | Off |
+| Nav | Scrolling | Hides down, springs back up; solid layer fades its opacity; one indicator slides to the section in view | Instant |
+| Page and theme changes | `/`, `/demo`, 404, theme toggle | View Transitions: cross-fade and 12 px rise, shared page-title glide; circular theme reveal | Instant |
+| Buttons and links | Everywhere | Lift, `clip-path` fill sweep, press .97 and spring back, focus ring scales in; underline draws in | Instant |
+| Carousel | Destinations | Inertial mouse drag on the shared ticker, spring settle, rubber-band edges, edge fade by `view(inline)` | Plain snap |
+| Card tilt and glare | Cards (mouse only) | One page-wide pointer listener, one rAF ticker, CSS variables, `transform` | Off |
+| Numbers | Stats, guide totals | Odometer columns (`translate`), one accessible value | Final value at once |
+| Live previews | "See it live", `/demo` | Scripted panels; spring bubbles, `animateMotion`, ring `stroke-dashoffset`; pause off screen | Final state |
+
+## Properties that are not compositor-only (and why they are allowed)
+
+An audit of every `@keyframes` and `transition` in `apps/web/src`:
+
+| Property | Where | Why it is acceptable |
+|---|---|---|
+| `color`, `background-color`, `border-color`, `text-decoration-color` | Hover and focus fades on small controls | Short (180 ms) colour fades on small elements, only on interaction; they avoid hard snaps |
+| `grid-template-rows` | FAQ open and close | The one allowed layout animation (height trick); 240 ms, one item at a time |
+| `stroke-dashoffset`, `stroke` | Safety preview check-in ring | Explicitly wanted; an 84 px SVG, paused when off screen |
+| `clip-path` (interactions only) | Button fill sweep, nav/tab/search indicators, hero photo wipe, mobile menu | Small areas, only on interaction or a photo change every 7 s. Never animated during scrolling: the heading reveal moved from an animated `clip-path` to a static mask plus `translate` after the benchmark showed it cost frames |
+| `filter` | Hero intro (once per session), `blur-in` reveal (unused on the page) | One-off; `blur-in` is opt-in and documented as costly |
+
+## How to add an animation (checklist)
+
+1. **Does it need to move?** Fewer, better animations. If it does not help someone understand a change, skip it.
+2. **Pick tokens, not numbers.** An easing (`--ease-out` for entrances, `--ease-in` for exits, `--ease-spring` for small controls) and a duration from the table. In JavaScript use `src/motion/tokens.ts`.
+3. **Compositor only.** `transform` (or `translate`/`scale`/`rotate`), `opacity`, `filter`, `clip-path`. Prefer the individual `translate`/`scale` properties: `transform` is used by the card tilt.
+4. **Scroll-linked?** Use `animation-timeline: scroll()` or `view()` inside `@supports`, never a scroll listener that writes styles.
+5. **Pointer-driven?** Subscribe to the shared ticker (`src/motion/ticker.ts`); never start your own `requestAnimationFrame` loop.
+6. **Reduced motion.** Put it inside `@media (prefers-reduced-motion: no-preference)` and `:root:not([data-motion="reduced"])`, or check `prefersReducedMotion()` in JavaScript. The final state must be visible without it.
+7. **Hover.** Inside `@media (hover: hover) and (pointer: fine)`, with a matching `:focus-visible` style.
+8. **Pause off screen.** Ambient or looping motion stops when out of view (`useInView`) or when the tab is hidden.
+9. **Text stays in the DOM.** Animate wrappers, never insert text with JavaScript. Animated copies (odometers) are `aria-hidden`, with one real value for assistive tech.
+10. **Measure.** `pnpm --filter @roaamm/web build && node scripts/motion-bench.mjs`, and Lighthouse. Keep >= 95% on-time frames and p95 <= 25 ms at 4x CPU.
+
+## Benchmark
+
+`node scripts/motion-bench.mjs` (after a build) opens the site in Chrome
+(puppeteer-core), scrolls top to bottom with real wheel input at about
+1500 px/s, clicks every "See it live" tab, opens and closes FAQ items and
+drags the carousel, recording every frame. "On time" means within one 60 Hz
+frame (16.7 ms, plus 0.8 ms timer jitter). Headless Chrome, 1440x900, on an
+Apple Silicon Mac; timing varies by machine, so compare runs on the same one.
+
+| Run | Profile | On time | p95 frame | Worst long frame | Long frames | Layout shift |
+|---|---|---|---|---|---|---|
+| Before (M1.7) | desktop (1x CPU) | 99.1% | 16.8 ms | 289 ms | 7 | 0.0044 |
+| Before (M1.7) | 4x CPU throttle | 99.3% | 16.8 ms | 205 ms | 3 | 0.0044 |
+| During M1.8 (heading reveal animating `clip-path`) | 4x CPU throttle | 94.6% (scroll: 87.5%) | 33.3 ms | 63 ms | 1 | 0.0024 |
+| After (M1.8) | desktop (1x CPU) | 99.2% | 16.8 ms | 0 ms | 0 | 0.0024 |
+| After (M1.8) | 4x CPU throttle | 99.1% | 16.8 ms | 0 ms | 0 | 0.0024 |
+
+After, by phase (on time / p95): scrolling 98.3% / 16.8 ms (97.9% at 4x),
+tabs, FAQ and carousel drag 100% / 16.7 ms.
