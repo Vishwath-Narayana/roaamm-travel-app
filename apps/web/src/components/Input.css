@@ -27,9 +27,7 @@
   background: var(--bg);
   /* Visible boundary against the page (non-text contrast) */
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 45%, transparent);
-  transition:
-    border-color var(--dur-hover) var(--ease-out),
-    box-shadow var(--dur-hover) var(--ease-out);
+  transition: border-color var(--dur-hover) var(--ease-out);
 }
 
 .field__input:focus-visible {

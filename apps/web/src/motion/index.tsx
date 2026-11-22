@@ -175,6 +175,8 @@ export function Reveal({
       style: { ...style, "--i": delay } as CSSProperties,
       "data-reveal": shown ? "shown" : "hidden",
     },
-    children,
+    // mask-line: a static mask on the element, and an inner wrapper that rises
+    // through it (translate and opacity only, so it stays on the compositor).
+    variant === "mask-line" ? createElement("span", { className: "mask-line__inner" }, children) : children,
   );
 }
