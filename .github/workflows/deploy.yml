@@ -86,30 +86,56 @@ jobs:
           --min-instances 0
           --allow-unauthenticated
 
+  # roaamm-api.plinthwell.com -> Cloud Run core (docs/adr/0003-core-hosting-cloud-run.md).
+  # wrangler bundles the TypeScript itself, so no install or build step.
+  api-proxy:
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Deploy api proxy
+        working-directory: edge-api-proxy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm dlx wrangler@4 deploy
+
   smoke:
-    needs: [edge-web-status, core]
-    if: always() && !cancelled() && (needs.edge-web-status.result == 'success' || needs.core.result == 'success')
+    needs: [edge-web-status, core, api-proxy]
+    if: >-
+      always() && !cancelled() && (needs.edge-web-status.result == 'success'
+      || needs.core.result == 'success' || needs.api-proxy.result == 'success')
     runs-on: ubuntu-latest
     env:
       EDGE_RESULT: ${{ needs.edge-web-status.result }}
       CORE_RESULT: ${{ needs.core.result }}
+      API_PROXY_RESULT: ${{ needs.api-proxy.result }}
     steps:
       - name: Health checks
         run: |
           set -e
-          urls=""
-          if [ "$EDGE_RESULT" = "success" ]; then
-            urls="https://roaamm.plinthwell.com/health.json https://roaamm-rt.plinthwell.com/health https://roaamm-status.plinthwell.com/health.json"
-          fi
-          if [ "$CORE_RESULT" = "success" ]; then
-            urls="$urls https://roaamm-api.plinthwell.com/health"
-          fi
-          for url in $urls; do
+          # check URL ATTEMPTS: retry every 10 s.
+          check() {
             ok=0
-            for _ in 1 2 3 4 5 6; do
-              if curl -fsS --max-time 10 "$url" > /dev/null; then ok=1; break; fi
+            for _ in $(seq 1 "$2"); do
+              if curl -fsS --max-time 10 "$1" > /dev/null; then ok=1; break; fi
               sleep 10
             done
-            if [ "$ok" != 1 ]; then echo "FAILED: $url"; exit 1; fi
-            echo "ok: $url"
-          done
+            if [ "$ok" != 1 ]; then echo "FAILED: $1"; exit 1; fi
+            echo "ok: $1"
+          }
+          if [ "$EDGE_RESULT" = "success" ]; then
+            check https://roaamm.plinthwell.com/health.json 6
+            check https://roaamm-rt.plinthwell.com/health 6
+            check https://roaamm-status.plinthwell.com/health.json 6
+          fi
+          if [ "$API_PROXY_RESULT" = "success" ] || [ "$CORE_RESULT" = "success" ]; then
+            # Up to ~3 minutes: a first deploy of the custom domain waits for
+            # DNS and the edge certificate.
+            check https://roaamm-api.plinthwell.com/health 18
+          fi
