@@ -1,0 +1,15 @@
+# roaamm-api-proxy: forwards roaamm-api.plinthwell.com to the Java core on
+# Cloud Run (docs/adr/0003-core-hosting-cloud-run.md, "Applied").
+name = "roaamm-api-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Public Cloud Run URL of the core. Not a secret.
+ORIGIN = "https://roaamm-core-563817708822.us-central1.run.app"
+# Give up on the origin after this long and answer 502.
+ORIGIN_TIMEOUT_MS = "20000"
+
+[[routes]]
+pattern = "roaamm-api.plinthwell.com"
+custom_domain = true
