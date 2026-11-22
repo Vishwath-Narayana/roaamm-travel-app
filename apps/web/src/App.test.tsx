@@ -48,6 +48,20 @@ describe("App routing", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Travel solo.");
   });
 
+  it("points the canonical link and og:url at the current page", () => {
+    document.head.innerHTML =
+      '<link rel="canonical" href="https://roaamm.plinthwell.com/"><meta property="og:url" content="https://roaamm.plinthwell.com/">';
+    renderAt("/demo");
+    expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      "https://roaamm.plinthwell.com/demo",
+    );
+    expect(document.querySelector('meta[property="og:url"]')).toHaveAttribute(
+      "content",
+      "https://roaamm.plinthwell.com/demo",
+    );
+  });
+
   it("navigate() renders the matching page and ignores a trailing slash", () => {
     renderAt("/");
     act(() => navigate("/demo/"));

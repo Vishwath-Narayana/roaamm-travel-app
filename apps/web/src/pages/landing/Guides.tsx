@@ -48,6 +48,9 @@ export const GUIDES = [
   },
 ] as const;
 
+/** One shared caption under the grid explains every disabled Book button. */
+const BOOKING_NOTE_ID = "guides-booking-note";
+
 export const MIN_HOURS = 1;
 export const MAX_HOURS = 4;
 
@@ -67,7 +70,6 @@ function initials(name: string) {
 function GuideCard({ guide, index }: { guide: (typeof GUIDES)[number]; index: number }) {
   const [hours, setHours] = useState(2);
   const titleId = `guide-${index}-name`;
-  const noteId = `guide-${index}-note`;
   return (
     <Reveal as="li" delay={index} className="guide" aria-labelledby={titleId}>
       <div className="guide__top">
@@ -131,12 +133,9 @@ function GuideCard({ guide, index }: { guide: (typeof GUIDES)[number]; index: nu
         </output>
       </div>
 
-      <Button disabled variant="secondary" className="guide__book" aria-describedby={noteId}>
+      <Button disabled variant="secondary" className="guide__book" aria-describedby={BOOKING_NOTE_ID}>
         Book
       </Button>
-      <p id={noteId} className="guide__note small">
-        Opens in a later milestone
-      </p>
     </Reveal>
   );
 }
@@ -162,6 +161,9 @@ export function Guides() {
             <GuideCard key={g.name} guide={g} index={i} />
           ))}
         </ul>
+        <p id={BOOKING_NOTE_ID} className="guides__booking small">
+          Booking opens in a later milestone.
+        </p>
         <p className="guides__foot small">
           <CheckIcon size={14} strokeWidth={2.5} /> Every guide's licence is checked before they
           can take bookings. These four profiles are simulated.

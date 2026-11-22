@@ -13,6 +13,9 @@
   --on-ink: var(--bg);
   color-scheme: light;
 
+  /* Floating cards (search bar, final CTA): the page colour in light mode,
+     a lifted surface in dark mode where a shadow alone cannot separate them. */
+  --raised: var(--bg);
   /* Inverted card (dark card in light mode, raised surface in dark mode) */
   --inverse-bg: var(--ink);
   --inverse-fg: var(--bg);
@@ -102,6 +105,8 @@
     --sos: #F97066;
     --inverse-bg: var(--surface);
     --inverse-fg: var(--ink);
+    --raised: var(--surface);
+    --shadow-elevated: 0 20px 50px rgba(0, 0, 0, 0.55);
     color-scheme: dark;
   }
 }
@@ -117,6 +122,8 @@
   --sos: #F97066;
   --inverse-bg: var(--surface);
   --inverse-fg: var(--ink);
+  --raised: var(--surface);
+  --shadow-elevated: 0 20px 50px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
 }
 

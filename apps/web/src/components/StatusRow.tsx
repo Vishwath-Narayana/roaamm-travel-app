@@ -24,11 +24,20 @@ const CHECKS = [
   { name: "status", label: "System page", url: url("status"), cors: false },
 ] as const;
 
+/** Timed requests after the warm-up; the median is shown. */
+export const SAMPLES = 3;
+
+export function median(values: number[]): number {
+  const sorted = [...values].sort((x, y) => x - y);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
 /**
- * Times one request in the browser. Never throws: any failure, timeout or
- * unexpected body counts as unreachable.
+ * One request with a 3 s timeout. Resolves to the time it took in ms, or null
+ * on any failure (network, timeout, bad status or unexpected body). Never throws.
  */
-export async function checkService(target: string, cors: boolean): Promise<State> {
+async function probe(target: string, cors: boolean): Promise<number | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CHECK_TIMEOUT_MS);
   const start = performance.now();
@@ -39,18 +48,34 @@ export async function checkService(target: string, cors: boolean): Promise<State
       credentials: "omit",
       signal: controller.signal,
     });
-    const ms = Math.round(performance.now() - start);
+    const ms = performance.now() - start;
     if (cors) {
-      if (!res.ok) return { kind: "down" };
+      if (!res.ok) return null;
       const body = (await res.json()) as { status?: string };
-      if (body.status !== "ok") return { kind: "down" };
+      if (body.status !== "ok") return null;
     }
-    return { kind: "up", ms };
+    return ms;
   } catch {
-    return { kind: "down" };
+    return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Measures a service from the browser. The first request also pays for DNS,
+ * TLS and connection setup, so it is a warm-up and is not counted; then
+ * SAMPLES requests run one after another and the median is reported.
+ */
+export async function checkService(target: string, cors: boolean): Promise<State> {
+  if ((await probe(target, cors)) === null) return { kind: "down" };
+  const times: number[] = [];
+  for (let i = 0; i < SAMPLES; i++) {
+    const ms = await probe(target, cors);
+    if (ms === null) return { kind: "down" };
+    times.push(ms);
+  }
+  return { kind: "up", ms: Math.round(median(times)) };
 }
 
 function label(state: State) {
@@ -117,11 +142,11 @@ export function StatusRow({ host = window.location.hostname }: StatusRowProps) {
           </span>
         </div>
       ))}
-      {!live && (
-        <p className="status-row__note small">
-          Response times are measured from your browser on {LIVE_HOST}.
-        </p>
-      )}
+      <p className="status-row__note small">
+        {live
+          ? `Median of ${SAMPLES} requests after a warm-up, measured from your browser.`
+          : `Response times are measured from your browser on ${LIVE_HOST}.`}
+      </p>
     </div>
   );
 }

@@ -10,7 +10,29 @@
       name="description"
       content="ROAAMM: meet ID-verified solo travellers on your dates, book licensed local guides by the hour, and travel with built-in safety tools."
     />
+    <link rel="canonical" href="https://roaamm.plinthwell.com/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Share previews (Open Graph and Twitter / X). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ROAAMM" />
+    <meta property="og:title" content="ROAAMM: Travel solo. Never alone." />
+    <meta
+      property="og:description"
+      content="Meet ID-verified solo travellers on your dates, book licensed local guides by the hour, and travel with built-in safety tools. A portfolio project; all data is simulated."
+    />
+    <meta property="og:url" content="https://roaamm.plinthwell.com/" />
+    <meta property="og:image" content="https://roaamm.plinthwell.com/og.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="A hiker crossing a golden mountain meadow, with the ROAAMM wordmark and the words Travel solo. Never alone."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
     <!-- First hero photo (the LCP image on the landing page). -->
     <link
       rel="preload"
@@ -31,6 +53,12 @@
     <title>ROAAMM</title>
   </head>
   <body>
+    <noscript>
+      <p style="max-width: 40rem; margin: 4rem auto; padding: 0 1rem; font: 18px/1.6 system-ui, sans-serif">
+        ROAAMM needs JavaScript to run. Please turn it on, or read about the project on
+        <a href="https://github.com/Vishwath-Narayana/roaamm-travel-app">GitHub</a>.
+      </p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

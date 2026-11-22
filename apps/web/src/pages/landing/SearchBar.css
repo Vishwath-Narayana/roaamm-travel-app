@@ -15,7 +15,7 @@
   padding: var(--space-2);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-card);
-  background: var(--bg);
+  background: var(--raised);
   box-shadow: 0 12px 32px rgba(11, 11, 15, 0.1);
 }
 
@@ -30,9 +30,10 @@
   transition: background-color var(--duration) var(--ease);
 }
 
+/* An ink tint works on the light and the (lifted) dark search bar alike. */
 .search__field:hover,
 .search__field:focus-within {
-  background: var(--surface);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
 }
 
 .search__field label,

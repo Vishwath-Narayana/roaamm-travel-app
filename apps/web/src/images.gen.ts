@@ -155,6 +155,42 @@ export const IMAGES = {
     "width": 960,
     "height": 1200,
     "placeholder": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAAAwBACdASoUABkAPuFep02opSOiMAwBEBwJYgC7L9SBm83+xs1D1AF65oAA3M1LsGRPxvnv26dk/vhkx4vsr4Eb58juJCBCYzOFB7j0f+tSQF1S8XNKrRiK6ha9Un4kAcObQXvoKpZdgC8xHhnb5+ftvfzMAAAA"
+  },
+  "story-kyoto": {
+    "widths": [
+      480,
+      960
+    ],
+    "jpegWidths": [
+      480
+    ],
+    "width": 960,
+    "height": 720,
+    "placeholder": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAAAQBACdASoUAA8APu1iqk2ppaQiMAgBMB2JZQC26MgDA1zwBf87pwDVmAD+8tnINSoeBTdMR++cF5ILHqvDkFrt34WvbhF3gI76UzVBTdz4EmHgbLgAAA=="
+  },
+  "story-hanoi": {
+    "widths": [
+      480,
+      960
+    ],
+    "jpegWidths": [
+      480
+    ],
+    "width": 960,
+    "height": 720,
+    "placeholder": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAQBACdASoUAA8APu1orU2ppqSiMAgBMB2JZACdAGtpPyTQt0pLrIYZAAD+/Qpd/eZvA17OuqGQwYA2ndOZU9VhODITdrM+aOLGWWedjFfLY531+fubEnmOqde8kI7nBhfeKud9jj+u6AAA"
+  },
+  "story-lisbon": {
+    "widths": [
+      480,
+      960
+    ],
+    "jpegWidths": [
+      480
+    ],
+    "width": 960,
+    "height": 720,
+    "placeholder": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAACQBACdASoUAA8APu1iqU2ppaOiMAgBMB2JaACdMoLT9A40DkSMMVIxgxh9QgAA3UgD5yYObuAAixb5m797v7IM45pVjrwFeAapVglUUAF6xSHMUkAAAA=="
   }
 } as const;
 

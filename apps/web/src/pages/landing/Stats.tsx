@@ -61,7 +61,7 @@ export function Stats() {
           {STATS.map((s, i) => (
             <Reveal key={s.label} delay={i} className="stat">
               <dt>{s.label}</dt>
-              <dd data-simulated aria-label={s.value}>
+              <dd data-simulated>
                 <CountUp value={s.value} />
               </dd>
             </Reveal>
