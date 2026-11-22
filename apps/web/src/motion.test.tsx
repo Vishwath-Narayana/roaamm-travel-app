@@ -87,3 +87,36 @@ describe("CountUp", () => {
     expect(screen.getByTestId("count-anim")).toHaveTextContent(/^212k$/);
   });
 });
+
+/** The text a screen reader can reach: everything except aria-hidden parts. */
+function accessibleText(el: Element): string {
+  const clone = el.cloneNode(true) as Element;
+  clone.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove());
+  return (clone.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
+describe("CountUp accessibility", () => {
+  beforeAll(() => installIntersectionObserver());
+  afterEach(() => restoreMatchMedia());
+
+  it("exposes only the final value, never the animated digits", () => {
+    mockReducedMotion(false);
+    const { container } = render(<CountUp value="212k" />);
+    const root = container.querySelector(".count-up")!;
+    // Before it animates, the visible digits say 0k...
+    expect(screen.getByTestId("count-anim")).toHaveTextContent("0k");
+    expect(screen.getByTestId("count-anim")).toHaveAttribute("aria-hidden", "true");
+    // ...but assistive tech only ever gets the real number, once.
+    expect(accessibleText(root)).toBe("212k");
+    expect(root.getAttribute("aria-label")).toBeNull();
+  });
+
+  it("stats rows read as label and final value only", async () => {
+    mockReducedMotion(false);
+    const { Stats } = await import("./pages/landing/Stats");
+    render(<Stats />);
+    const values = [...document.querySelectorAll("dd")].map(accessibleText);
+    expect(values).toEqual(["212k", "1,326", "41", "58k"]);
+    document.querySelectorAll("dd").forEach((dd) => expect(dd.getAttribute("aria-label")).toBeNull());
+  });
+});
