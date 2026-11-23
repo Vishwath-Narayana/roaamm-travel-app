@@ -233,7 +233,7 @@
 /* Over the photo the primary pill turns white. */
 .topnav--clear .topnav__cta {
   background: #ffffff;
-  color: #0b0b0f;
+  color: var(--on-photo-chip);
   --sweep: #e9e9ec;
   --ring: #ffffff;
 }
