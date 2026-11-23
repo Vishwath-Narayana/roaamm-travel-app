@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ACTION_TEXT, audit, type AuditRow } from "../../api/admin";
 import { navigate } from "../../router";
-import { Chip, DataTable, ErrorState, Loading, Pager, fmtDateTime, relTime, useAdminData, type Column } from "../ui";
+import { Chip, DataTable, ErrorState, Loading, PageHead, Pager, WIDE_QUERY, fmtDate, fmtDateTime, relTime, useAdminData, useMedia, type Column } from "../ui";
 
 const SIZE = 20; // fixed by the API
 
@@ -41,20 +41,23 @@ export function SubjectChip({ entry }: { entry: AuditRow }) {
 
 export function Audit() {
   const [page, setPage] = useState(0);
+  // Below 1280 px the time moves to the tooltip, so the subject can show in full.
+  const wide = useMedia(WIDE_QUERY);
   const { state, reload } = useAdminData(`audit:${page}`, (s) => audit(page, s));
   const rows = state.data?.items;
 
+  // The subject's short id is not in the row: the subject's drawer shows it.
   const columns: Column<AuditRow>[] = [
-    { key: "action", header: "Action", primary: true, cell: (a) => <span className="adm-cell__text">{ACTION_TEXT[a.action] ?? a.action}</span> },
-    { key: "admin", header: "Admin", wide: true, cell: (a) => a.admin ?? "Deleted account" },
+    { key: "action", header: "Action", primary: true, size: 30, cell: (a) => <span className="adm-cell__text">{ACTION_TEXT[a.action] ?? a.action}</span> },
+    { key: "admin", header: "Admin", size: 16, wide: true, cell: (a) => a.admin ?? "Deleted account" },
     {
       key: "subject",
       header: "Subject",
+      size: 36,
       cell: (a) => (
         <span className="adm-subject">
           <SubjectChip entry={a} />
           <span className="adm-subject__name">{a.target ?? "Deleted"}</span>
-          <span className="mono adm-subject__id">{shortId(a.targetId)}</span>
         </span>
       ),
     },
@@ -62,9 +65,10 @@ export function Audit() {
       key: "when",
       header: "When",
       end: true,
+      size: wide ? 18 : 16,
       cell: (a) => (
         <time dateTime={a.createdAt} title={fmtDateTime(a.createdAt)} className="adm-num">
-          {fmtDateTime(a.createdAt)}
+          {wide ? fmtDateTime(a.createdAt) : fmtDate(a.createdAt)}
         </time>
       ),
     },
@@ -72,12 +76,7 @@ export function Audit() {
 
   return (
     <div className="adm-page">
-      <header className="adm-page__head">
-        <div>
-          <h1>Audit log</h1>
-          <p className="adm-page__lead">Every admin decision, newest first. This log can't be edited or deleted.</p>
-        </div>
-      </header>
+      <PageHead title="Audit log" lead="Every admin decision, newest first. This log can't be edited or deleted." />
       <div className="adm-card adm-card--flush">
         {state.kind === "error" && !state.data ? (
           <ErrorState message={state.message} onRetry={reload} />
@@ -95,7 +94,7 @@ export function Audit() {
               }}
               phone={(a) => ({
                 title: ACTION_TEXT[a.action] ?? a.action,
-                pill: (
+                aside: (
                   <time className="adm-row__time" dateTime={a.createdAt}>
                     {relTime(a.createdAt)}
                   </time>

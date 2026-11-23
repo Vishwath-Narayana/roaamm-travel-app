@@ -8,7 +8,7 @@ import { MoveMenu, moveTargets } from "./MoveMenu";
 import { Palette } from "./Palette";
 import { applicationSteps } from "./screens/Guides";
 import { subjectHref } from "./screens/Audit";
-import { Chip, Empty, ErrorState, Pager, Pill, Timeline, cleanTitle, relTime } from "./ui";
+import { Chip, Empty, ErrorState, Pager, Pill, Timeline, VerifiedMark, cleanTitle, relTime } from "./ui";
 
 const app = (over: Partial<Application> = {}): Application => ({
   id: "g1",
@@ -32,12 +32,17 @@ describe("pills and chips", () => {
       <>
         <Pill status="in_review" />
         <Pill status="rejected" />
-        <Chip tone="sample">Sample</Chip>
+        <Chip tone="info">Lisbon</Chip>
+        <VerifiedMark verified />
+        <VerifiedMark verified={false} />
       </>,
     );
     expect(screen.getByText("In review")).toHaveClass("adm-pill--in_review");
     expect(screen.getByText("Rejected")).toBeInTheDocument();
-    expect(screen.getByText("Sample")).toHaveClass("adm-chip--sample");
+    expect(screen.getByText("Lisbon")).toHaveClass("adm-chip--info");
+    // Verified is an icon, not a chip, but it still has a name.
+    expect(screen.getByRole("img", { name: "Verified" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Not verified" })).toBeInTheDocument();
   });
 });
 
@@ -148,6 +153,11 @@ describe("MoveMenu", () => {
     expect(button).toHaveFocus();
     await user.keyboard("{ArrowDown}{ArrowUp}{Enter}");
     expect(onMove).toHaveBeenCalledWith("rejected");
+  });
+
+  it("says the demo is read-only even on a decided application", () => {
+    render(<MoveMenu status="approved" label="Done" readOnly onMove={() => {}} />);
+    expect(screen.getByRole("button", { name: /Decided/ })).toHaveAccessibleDescription("Demo is read-only");
   });
 
   it("keeps its label for the demo admin, explains itself and never opens", async () => {

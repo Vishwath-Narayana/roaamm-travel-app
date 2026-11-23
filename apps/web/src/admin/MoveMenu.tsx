@@ -14,9 +14,11 @@ export function moveTargets(status: AppStatus): MoveTarget[] {
 }
 
 /**
- * A "Move to…" menu button (WAI-ARIA menu button): Enter, Space or ArrowDown
- * opens it, arrow keys move, Escape closes and returns focus. The keyboard
- * way to move a Kanban card; there is no drag and drop.
+ * The ⋯ "Move to…" menu button (WAI-ARIA menu button): an icon-only ghost
+ * button, 32 px (44 px tap area on phones). Enter, Space or ArrowDown opens
+ * it, arrow keys move, Escape closes and returns focus. The keyboard way to
+ * move a Kanban card; there is no drag and drop. In the demo it is disabled
+ * with "Demo is read-only"; a decided application says decisions are final.
  */
 export function MoveMenu({
   status,
@@ -79,13 +81,13 @@ export function MoveMenu({
     }
   }
 
-  const reason = final ? FINAL_LABEL : readOnly ? READ_ONLY_LABEL : null;
+  const reason = readOnly ? READ_ONLY_LABEL : final ? FINAL_LABEL : null;
   return (
     <div className="adm-menu">
       <button
         ref={buttonRef}
         type="button"
-        className="adm-btn adm-btn--secondary"
+        className="adm-icon-btn adm-more"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
@@ -97,8 +99,9 @@ export function MoveMenu({
         {...unavailable(reason)}
       >
         <MoreIcon size={16} />
-        <span className="adm-btn__label">{final ? "Decided" : "Move to…"}</span>
-        <span className="visually-hidden">: {label}</span>
+        <span className="visually-hidden">
+          {final ? "Decided" : "Move to…"}: {label}
+        </span>
       </button>
       {open && (
         <div id={menuId} role="menu" aria-label={`Move ${label} to`} className="adm-menu__list" onKeyDown={onMenuKey}>

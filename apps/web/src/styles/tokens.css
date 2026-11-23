@@ -164,10 +164,12 @@
   --ui-facts-label: 112px;
   --ui-search-min: 240px;
   --ui-tip-max: 240px;
-  --ui-cell-max: 240px;
 
   /* Sizes */
   --ui-control-h: 32px;
+  /* Icon-only buttons that stay 32 px on phones too (top bar, row menus);
+     their tap area grows to 44 px there. */
+  --ui-icon-btn: 32px;
   --ui-row-head: 40px;
   --ui-row: 48px;
   --ui-row-phone: 64px;
@@ -182,8 +184,6 @@
   --ui-dot: 6px;
   --ui-check: 16px;
   --ui-step: 24px;
-  --ui-notch-w: 2px;
-  --ui-notch-h: 16px;
   --ui-handle-w: 36px;
   --ui-handle-h: 4px;
   --ui-banner-phone: 40px;

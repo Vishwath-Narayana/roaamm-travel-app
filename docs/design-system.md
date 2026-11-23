@@ -12,7 +12,7 @@ this document, it is not allowed.
 |---|---|---|
 | `node scripts/check-tokens.mjs` | Admin CSS: any raw hex, `rgb()`/`hsl()` or named colour; any raw `px` outside a media query; padding, margin and gap not from the spacing scale; font size, line height, weight, tracking or radius not from their scale; an undefined `var()`. Site CSS: its raw hex and raw px counts may not grow past `scripts/token-baseline.json`. | CI, `web` job |
 | `node scripts/check-contrast.mjs` | Any token pair below its minimum, in either theme (table below), and a stale table in this file. | CI, `web` job |
-| `node scripts/check-ui-tokens.mjs` | In headless Chrome (the same harness and API stub as the console check), on all 21 admin screens and states (demo, real admin, empty, error, drawers, palette, phone menu) at 390, 768 and 1440 px, light and dark: page-level horizontal overflow, clipped or spilling text, an icon that renders at 0 px, a tap target under 44 x 44 px on phone (counting the transparent hit area), layout shift above 0.01, and any computed font size and line height pair, weight, padding, gap, radius or border width that is off the scale. | CI, `web` job |
+| `node scripts/check-ui-tokens.mjs` | In headless Chrome (the same harness and API stub as the console check), on all 24 admin screens and states (demo, real admin, empty, error, drawers, palette, phone menu, a second Verification tab) at 390, 768 and 1440 px, light and dark: page-level horizontal overflow, clipped or spilling text, an icon that renders at 0 px, a tap target under 44 x 44 px on phone (counting the transparent hit area), layout shift above 0.01, any computed font size and line height pair, weight, padding, gap, radius or border width that is off the scale; not exactly one h1; a drag handle or other small pill-shaped bar outside a dialog from 768 px; KPI numbers in one row on different baselines (phone); the top-bar avatar not ending on the content edge; any Sample chip. Then, on the six table screens at 768, 1024 and 1440 px, it clicks every tab and filter option and fails if any header cell moves, and fails if an Audit Subject cell is clipped at 1024 or 1440 px. | CI, `web` job |
 
 The marketing pages predate this system. Their stylesheets are ratcheted, not
 strict: the counts in `scripts/token-baseline.json` can only go down
@@ -41,7 +41,7 @@ opaque blocks.
 | `--ui-text` | `#0a0a0a` | `#fafafa` | Primary text |
 | `--ui-text-2` | `#525252` | `#b3b3b3` | Secondary text |
 | `--ui-text-3` | `#6b6b6b` | `#8c8c8c` | Tertiary text, placeholders, meta lines |
-| `--ui-primary` | `#0a0a0a` | `#fafafa` | Primary button fill, active nav notch |
+| `--ui-primary` | `#0a0a0a` | `#fafafa` | Primary button fill, tooltip fill |
 | `--ui-on-primary` | `#ffffff` | `#0a0a0a` | Text on `--ui-primary` |
 | `--ui-focus` | `#2563eb` | `#60a5fa` | Focus ring |
 | `--ui-backdrop` | `rgb(0 0 0 / 0.32)` | `rgb(0 0 0 / 0.64)` | Behind drawers, sheets and the palette |
@@ -195,16 +195,15 @@ Every other size token, for completeness:
 | `--ui-palette` | 560 px | Command palette width |
 | `--ui-menu-min` | 192 px | Popover menu minimum width |
 | `--ui-kanban-col-min` | 264 px | Kanban column minimum width |
-| `--ui-kanban-card-min` | 148 px | Kanban card minimum height |
+| `--ui-kanban-card-min` | 148 px | Width of the scope chip placeholder while the session loads |
+| `--ui-icon-btn` | 32 px | Icon-only buttons that stay 32 px on phones: the top bar's buttons and avatar, the ⋯ row menu (44 px tap area on phones) |
 | `--ui-facts-label` | 112 px | Label column of a drawer's fact list |
 | `--ui-search-min` | 240 px | Search field and the top-bar search button |
 | `--ui-tip-max` | 240 px | Tooltip maximum width |
-| `--ui-cell-max` | 240 px | A subject cell's maximum width in a table |
 | `--ui-avatar` / `--ui-logo` | 24 / 32 px | Initials avatar / logo mark (both 1:1) |
 | `--ui-dot` | 6 px | Status dot |
 | `--ui-check` | 16 px | Checkbox |
 | `--ui-step` | 24 px | Timeline marker |
-| `--ui-notch-w` / `--ui-notch-h` | 2 / 16 px | Active nav notch |
 | `--ui-handle-w` / `--ui-handle-h` | 36 / 4 px | Bottom-sheet drag handle |
 | `--ui-banner-phone` | 40 px | Maximum height of the phone demo banner |
 | `--ui-skeleton-h` | 12 px | Loading placeholder bar |
@@ -235,10 +234,11 @@ Every interactive element shows a 2 px ring (`--ui-focus-w`) with a 2 px offset
 (`--ui-focus-offset`) on `:focus-visible`, in `--ui-focus`. The ring is at least
 3:1 against every surface it can sit on (table above).
 
-Two documented exceptions, both still a 2 px `--ui-focus` ring: the command
-palette's search field sits flush with the palette's rounded edge, so its ring
-is drawn inside the field (offset -2 px) instead of being clipped; and a kanban
-card's title button covers the whole card, so the ring is drawn around the card.
+Two documented exceptions: the command palette's search field holds focus the
+whole time the palette is open and sits flush with its rounded edge, so the
+field's divider turns `--ui-focus` instead of drawing a square ring inside a
+round panel; and a kanban card's title button covers the whole card, so the
+2 px ring is drawn around the card.
 Opening a drawer, sheet or the palette moves focus to the dialog itself, or to
 the field marked `data-autofocus` (the palette input, a reject note), so no ring
 shows before anything is used.
@@ -250,15 +250,25 @@ Avatars and the logo mark are 1:1 (`aspect-ratio: 1`, fixed width and height,
 (the compass ring and route from the favicon) at 32 x 32 px. KPI cards in one
 row share one height (grid rows stretch), and every row inside a KPI card has
 a fixed height whether its data has arrived or not, so nothing moves when it
-does. Kanban cards share a minimum height (`--ui-kanban-card-min`).
+does. On phones the KPI cards use short labels (one line in a half-width
+card) so every number in a row sits on the same baseline.
 
 ## Components
 
 **Pill** (status): 20 px high, 8 px side padding, full radius, caption text
 (500), a 6 px dot in the status colour, tint fill. Always has text; colour is
-only a hint. **Chip** (role, sample, city): same, 6 px radius, no dot.
+only a hint. **Chip** (role, city, audit subject type): same, 6 px radius,
+no dot. There is no Sample chip: the demo banner is the one place that says
+the data is simulated. **Verified** is not a chip: a 16 px check in
+`--ui-success`, or a muted dash for "not verified", each with an accessible
+name.
 
-**Count badge**: 16 px high, label text (600), neutral tint.
+**Count badge**: 16 px high, label text (600), neutral tint. It looks the same
+on a selected tab or segment.
+
+**Icon button**: 32 px (`--ui-icon-btn`) square, transparent, 16 px glyph. The
+⋯ menu on board cards and list rows is one; for the demo admin it is disabled
+with the tooltip "Demo is read-only".
 
 **Button**: 32 px (40 on phone), 8 px radius, 12 px side padding, dense text
 (500). Primary (`--ui-primary`), secondary (card fill and border), ghost, and
@@ -266,27 +276,48 @@ danger (danger tint and text).
 
 **Segmented control and tabs**: a `--ui-track` well with 4 px padding; the
 active segment is a soft raised pill (card fill, `--ui-border-raised`, the card
-shadow in light mode). Never a solid black block.
+shadow in light mode). Never a solid black block. Below 1024 px every tab row
+and segmented control fills the row with equal segments (as wide as the search
+field below it); if the widest label does not fit, the row scrolls sideways,
+fades only the edge that has more, and keeps the selected option in view.
 
 **Table**: one component (`DataTable`) for every list, so every table follows
 the same alignment rule: the first column starts at the card padding (20 px).
-One column (the row header) absorbs the spare width and truncates with an
-ellipsis; cells never wrap. Below 1280 px, low-priority columns step aside, a
-subject cell is capped at `--ui-cell-max` (240 px) and row menu buttons show
-their icon only (the label stays for screen readers).
+Each screen has one fixed column template (`table-layout: fixed` and a
+`<colgroup>`): every column has a share of the width, and the checkbox, ⋯ and
+chevron columns are fixed. The data never sizes a column, so no header moves
+when a tab, filter or page changes. A screen with bulk actions reserves its
+checkbox column on every tab, even where the checkboxes are not shown. Cells
+never wrap; text that really does not fit ends in an ellipsis. Below 1280 px,
+low-priority columns are not rendered.
 Header row 40 px, rows 48 px, caption text in the header, dense text in cells.
 Rows that open a drawer have a hover fill, a pointer cursor and a trailing
 chevron. Tables with bulk actions show a checkbox column on every row; for the
 demo admin those checkboxes are shown but disabled, with a tooltip.
 
-**Phone list row**: replaces the table below 768 px. Line 1: name or title
-(body, 500) with the status pill on the right. Line 2: at most two items
-separated by a dot (caption, tertiary). A trailing chevron. 64 to 72 px high.
+**Phone list row**: replaces the table below 768 px. Line 1: the name or title
+(body, 500) on the whole line (a time may sit at its end). Line 2: the status
+pill, then at most two items separated by a dot (caption, tertiary). A
+trailing chevron. 64 to 72 px high.
+
+**Kanban**: column headers are a neutral card surface with a coloured status
+dot, the title and a count. Cards hold the title with the ⋯ menu, "applicant ·
+date" and the city chips (no status pill: the column says it); about 112 px
+with a one-line title.
 
 **Drawer and sheet**: one component. Desktop and tablet: a 480 px panel on the
 right. Phone: a full-height bottom sheet with 16 px top corners, a drag handle
-(drag down to close) and a sticky action bar that respects the safe-area
-insets. The phone menu is the same sheet, with 44 px rows.
+(drag down to close; rendered only on phones) and a sticky action bar that
+respects the safe-area insets. The phone menu is the same sheet, with 44 px
+rows. A detail drawer opens with a summary: a 40 px avatar or icon, the name
+(the dialog's heading), the status pill and three key facts; details and the
+timeline follow.
+
+**Page title**: exactly one h1 per page. From 768 px it heads the page; below
+768 px the top bar's title is the h1. Below 640 px the page lead is kept for
+screen readers only.
+
+**Sidebar**: the active item is marked by its highlighted background alone.
 
 **Demo banner**: the one page-level read-only indicator. Desktop: a calm
 bordered strip. Below 1024 px: the short form on one line that never wraps (a

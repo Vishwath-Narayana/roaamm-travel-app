@@ -62,10 +62,11 @@ export function NavGroups({
   );
 }
 
+/** Which accounts this console reads. "Simulated" is said once, in the demo banner. */
 export function ScopeChip({ isDemo }: { isDemo: boolean }) {
   return (
     <span className={`adm-scope adm-scope--${isDemo ? "demo" : "real"}`}>
-      {isDemo ? "Demo (simulated)" : "Real accounts"}
+      {isDemo ? "Demo accounts" : "Real accounts"}
     </span>
   );
 }

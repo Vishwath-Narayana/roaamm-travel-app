@@ -16,6 +16,7 @@ import { BulkBar, BulkResults } from "../BulkBar";
 import { READ_ONLY_LABEL, useAdmin } from "../context";
 import { openDetail } from "../params";
 import { Tabs } from "../Tabs";
+import { shortId } from "./Audit";
 import {
   Chip,
   Count,
@@ -23,6 +24,7 @@ import {
   Drawer,
   ErrorState,
   Loading,
+  PageHead,
   Pager,
   Pill,
   Scroller,
@@ -32,6 +34,7 @@ import {
   Timeline,
   adminErrorMessage,
   fmtDate,
+  initials,
   unavailable,
   useAdminData,
   useApiError,
@@ -87,11 +90,14 @@ export function Verification() {
 
   const counts = state.data?.counts;
   const idBase = useId();
+  // One column template for all three tabs (the checkbox column is reserved
+  // on Verified and Rejected too), so switching tabs moves no header.
   const columns: Column<AdminRequest>[] = [
     {
       key: "person",
       header: "Person",
       primary: true,
+      size: 30,
       cell: (r) => (
         <>
           <span className="adm-cell__text">{r.userDisplayName}</span>
@@ -99,21 +105,19 @@ export function Verification() {
         </>
       ),
     },
-    { key: "doc", header: "Document", cell: docText },
-    { key: "ref", header: "Sample ref", wide: true, cell: (r) => <span className="mono adm-ref">{r.sampleRef}</span> },
-    { key: "submitted", header: "Submitted", cell: (r) => <span className="adm-num">{fmtDate(r.createdAt)}</span> },
-    { key: "status", header: "Status", cell: (r) => <Pill status={r.status} /> },
-    { key: "decided", header: "Decided", wide: true, cell: (r) => <span className="adm-num">{r.decidedAt ? fmtDate(r.decidedAt) : "—"}</span> },
+    { key: "doc", header: "Document", size: 16, cell: docText },
+    { key: "ref", header: "Sample ref", size: 16, wide: true, cell: (r) => <span className="mono adm-ref">{r.sampleRef}</span> },
+    { key: "submitted", header: "Submitted", size: 14, cell: (r) => <span className="adm-num">{fmtDate(r.createdAt)}</span> },
+    { key: "status", header: "Status", size: 12, cell: (r) => <Pill status={r.status} /> },
+    { key: "decided", header: "Decided", size: 12, wide: true, cell: (r) => <span className="adm-num">{r.decidedAt ? fmtDate(r.decidedAt) : "—"}</span> },
   ];
 
   return (
     <div className="adm-page">
-      <header className="adm-page__head">
-        <div>
-          <h1>Verification</h1>
-          <p className="adm-page__lead">Simulated ID checks: a document type and a sample reference. No real ID is ever collected.</p>
-        </div>
-      </header>
+      <PageHead
+        title="Verification"
+        lead="Simulated ID checks: a document type and a sample reference. No real ID is ever collected."
+      />
       <div className="adm-card adm-card--flush">
         <div className="adm-toolbar">
           <Scroller>
@@ -153,6 +157,7 @@ export function Verification() {
                 rows={rows}
                 busy={state.kind === "loading"}
                 onOpen={(r) => openDetail(r.id)}
+                checkColumn
                 selection={
                   tab === "pending"
                     ? {
@@ -281,23 +286,42 @@ function VerificationDrawer({ id, onClose, onChanged }: { id: string; onClose: (
   ) : undefined;
 
   return (
-    <Drawer title={r ? r.userDisplayName : "Verification request"} onClose={onClose} footer={footer}>
+    <Drawer
+      title={r ? r.userDisplayName : "Verification request"}
+      label="Verification request"
+      summary={
+        r && {
+          lead: (
+            <span className="adm-avatar adm-avatar--lg" aria-hidden="true">
+              {initials(r.userDisplayName)}
+            </span>
+          ),
+          pill: <Pill status={r.status} />,
+          facts: [
+            ["Role", roleText(r)],
+            ["Submitted", <span className="adm-num">{fmtDate(r.createdAt)}</span>],
+            ["Decided", <span className="adm-num">{r.decidedAt ? fmtDate(r.decidedAt) : "—"}</span>],
+          ],
+        }
+      }
+      onClose={onClose}
+      footer={footer}
+    >
       {state.kind === "error" && !r && <ErrorState message={state.message} onRetry={reload} />}
       {!r && state.kind === "loading" && <SkeletonBlock lines={6} />}
       {r && (
         <>
-          <div className="adm-chips-row">
-            <Pill status={r.status} />
-            <Chip>{roleText(r)}</Chip>
-          </div>
-          <dl className="adm-facts">
-            <dt>Document</dt>
-            <dd>{docText(r)} (simulated)</dd>
-            <dt>Sample ref</dt>
-            <dd className="mono adm-ref">{r.sampleRef}</dd>
-            <dt>Submitted</dt>
-            <dd className="adm-num">{fmtDate(r.createdAt)}</dd>
-          </dl>
+          <section className="adm-section">
+            <SectionLabel>Details</SectionLabel>
+            <dl className="adm-facts">
+              <dt>Document</dt>
+              <dd>{docText(r)} (simulated)</dd>
+              <dt>Sample ref</dt>
+              <dd className="mono adm-ref">{r.sampleRef}</dd>
+              <dt>Request id</dt>
+              <dd className="mono adm-ref">{shortId(r.id)}</dd>
+            </dl>
+          </section>
           <section className="adm-section">
             <SectionLabel>Timeline</SectionLabel>
             <Timeline label="Verification timeline" steps={steps} />
