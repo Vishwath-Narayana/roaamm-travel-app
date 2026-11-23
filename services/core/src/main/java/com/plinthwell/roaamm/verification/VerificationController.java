@@ -6,7 +6,10 @@ import com.plinthwell.roaamm.auth.SessionCookie;
 import com.plinthwell.roaamm.auth.SessionService;
 import com.plinthwell.roaamm.passkey.PasskeyException;
 import jakarta.servlet.http.HttpServletRequest;
+import com.plinthwell.roaamm.audit.AuditLog;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RegisterReflectionForBinding({
     VerificationController.SubmitRequest.class, VerificationController.DecisionRequest.class,
     VerificationController.MyStatus.class, VerificationController.AdminRequestView.class,
-    VerificationController.AuditView.class, VerificationService.Page.class
+    VerificationController.AuditView.class, VerificationController.EventView.class,
+    VerificationController.QueueView.class, VerificationController.BulkDecisionRequest.class,
+    VerificationController.BulkDecisionView.class, VerificationService.RowResult.class,
+    VerificationService.Page.class
 })
 public class VerificationController {
 
@@ -29,6 +35,25 @@ public class VerificationController {
     public record SubmitRequest(String docType) {}
 
     public record DecisionRequest(String decision, String reason) {}
+
+    /** Up to 25 ids, one decision, one shared note (the rejection reason). */
+    public record BulkDecisionRequest(List<String> ids, String decision, String note) {}
+
+    public record BulkDecisionView(String decision, int succeeded, int failed,
+            List<VerificationService.RowResult> results) {
+        static BulkDecisionView of(String decision, List<VerificationService.RowResult> results) {
+            int ok = (int) results.stream().filter(VerificationService.RowResult::ok).count();
+            return new BulkDecisionView(decision, ok, results.size() - ok, results);
+        }
+    }
+
+    public record EventView(String action, String admin, Instant at) {
+        static EventView of(AuditLog.Event e) {
+            return new EventView(e.action(), e.adminDisplayName(), e.createdAt());
+        }
+    }
+
+    public record QueueView(List<AdminRequestView> items, int page, boolean hasMore, Map<String, Long> counts) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record MyStatus(String status, String docType, String sampleRef, String reason, Instant createdAt,
@@ -43,14 +68,21 @@ public class VerificationController {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AdminRequestView(UUID id, String userDisplayName, String userRole, String docType, String sampleRef,
-            String status, String reason, Instant createdAt, Instant decidedAt, String decidedBy) {
+            String status, String reason, Instant createdAt, Instant decidedAt, String decidedBy,
+            List<EventView> history) {
         static AdminRequestView of(VerificationRepository.Request r) {
+            return of(r, null);
+        }
+
+        static AdminRequestView of(VerificationRepository.Request r, List<EventView> history) {
             return new AdminRequestView(r.id(), r.userDisplayName(), r.userRole(), r.docType(), r.sampleRef(),
-                    r.status(), r.reason(), r.createdAt(), r.decidedAt(), r.decidedByName());
+                    r.status(), r.reason(), r.createdAt(), r.decidedAt(), r.decidedByName(), history);
         }
     }
 
-    public record AuditView(UUID id, String admin, String action, UUID targetId, String target, Instant createdAt) {}
+    /** {@code targetType}: verification, guide_application or user. */
+    public record AuditView(UUID id, String admin, String action, String targetType, UUID targetId, String target,
+            Instant createdAt) {}
 
     private final VerificationService service;
     private final SessionService sessions;
@@ -71,16 +103,24 @@ public class VerificationController {
     }
 
     @GetMapping("/v1/admin/verification")
-    public VerificationService.Page<AdminRequestView> queue(@RequestParam(defaultValue = "pending") String status,
-            @RequestParam(defaultValue = "0") int page, HttpServletRequest request) {
-        var p = service.queue(current(request), status, page);
-        return new VerificationService.Page<>(p.items().stream().map(AdminRequestView::of).toList(), p.page(),
-                p.hasMore());
+    public QueueView queue(@RequestParam(defaultValue = "pending") String status,
+            @RequestParam(required = false) String q, @RequestParam(defaultValue = "0") int page,
+            HttpServletRequest request) {
+        var p = service.queue(current(request), status, q, page);
+        return new QueueView(p.items().stream().map(AdminRequestView::of).toList(), p.page(), p.hasMore(),
+                p.counts());
     }
 
     @GetMapping("/v1/admin/verification/{id}")
     public AdminRequestView detail(@PathVariable UUID id, HttpServletRequest request) {
-        return AdminRequestView.of(service.detail(current(request), id));
+        var d = service.detail(current(request), id);
+        return AdminRequestView.of(d.request(), d.history().stream().map(EventView::of).toList());
+    }
+
+    @PostMapping("/v1/admin/verification/bulk-decision")
+    public BulkDecisionView bulk(@RequestBody BulkDecisionRequest body, HttpServletRequest request) {
+        return BulkDecisionView.of(body.decision(),
+                service.bulkDecide(current(request), body.ids(), body.decision(), body.note()));
     }
 
     @PostMapping("/v1/admin/verification/{id}/decision")
@@ -92,11 +132,13 @@ public class VerificationController {
     @GetMapping("/v1/admin/audit")
     public VerificationService.Page<AuditView> audit(@RequestParam(defaultValue = "0") int page,
             HttpServletRequest request) {
-        var p = service.audit(current(request), page);
-        return new VerificationService.Page<>(p.items().stream()
-                .map(a -> new AuditView(a.id(), a.adminDisplayName(), a.action(), a.targetId(), a.targetDisplayName(),
-                        a.createdAt()))
-                .toList(), p.page(), p.hasMore());
+        var rows = service.audit(current(request), page);
+        int size = service.auditPageSize();
+        boolean more = rows.size() > size;
+        return new VerificationService.Page<>((more ? rows.subList(0, size) : rows).stream()
+                .map(a -> new AuditView(a.id(), a.adminDisplayName(), a.action(), a.targetType(), a.targetId(),
+                        a.targetDisplayName(), a.createdAt()))
+                .toList(), com.plinthwell.roaamm.common.Page.page(page), more);
     }
 
     private SessionService.Current current(HttpServletRequest request) {
