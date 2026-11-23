@@ -58,8 +58,10 @@ export function Dashboard({ role }: { role: Role }) {
     getMe().then(
       (me) => {
         if (cancelled) return;
+        // A recovery-code sign-in must add a passkey first.
+        if (me.needsNewPasskey) navigate("/account", { replace: true });
         // Signed in as another role: go to that role's dashboard.
-        if (me.role !== role) navigate(dashboardPath(me.role), { replace: true });
+        else if (me.role !== role) navigate(dashboardPath(me.role), { replace: true });
         else setState({ kind: "ready", me });
       },
       (e: unknown) => {
@@ -132,12 +134,23 @@ export function Dashboard({ role }: { role: Role }) {
         <div className="dash__title">
           <h1>{LABEL[role]} dashboard</h1>
           <p className="page__lead">
-            Signed in as demo {role}
-            {role === "admin" && " (read-only)"}
+            {state.me.isDemo ? (
+              <>
+                Signed in as demo {role}
+                {role === "admin" && " (read-only)"}
+              </>
+            ) : (
+              <>Signed in as {state.me.displayName}</>
+            )}
           </p>
         </div>
         <div className="dash__actions">
           <Badge>Simulated data</Badge>
+          {!state.me.isDemo && (
+            <Button href="/account" variant="ghost">
+              Account
+            </Button>
+          )}
           <Button
             variant="secondary"
             loading={signingOut}

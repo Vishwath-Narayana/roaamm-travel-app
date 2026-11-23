@@ -11,9 +11,20 @@ const Dashboard = lazy(() =>
   import("./pages/app/Dashboard").then((m) => ({ default: m.Dashboard })),
 );
 
+// Signup, sign-in and account pages carry the passkey code: loaded on demand too.
+const Signup = lazy(() => import("./pages/auth/Signup").then((m) => ({ default: m.Signup })));
+const Login = lazy(() => import("./pages/auth/Login").then((m) => ({ default: m.Login })));
+const Account = lazy(() => import("./pages/auth/Account").then((m) => ({ default: m.Account })));
+
 const ROUTES: Record<string, ComponentType> = {
   "/": Landing,
   "/demo": Demo,
+};
+
+const LAZY_ROUTES: Record<string, ComponentType> = {
+  "/signup": Signup,
+  "/login": Login,
+  "/account": Account,
 };
 
 export function App() {
@@ -25,6 +36,16 @@ export function App() {
       <Shell>
         <Suspense fallback={null}>
           <Dashboard key={app[1]} role={app[1]} />
+        </Suspense>
+      </Shell>
+    );
+  }
+  const LazyPage = LAZY_ROUTES[path];
+  if (LazyPage) {
+    return (
+      <Shell>
+        <Suspense fallback={null}>
+          <LazyPage />
         </Suspense>
       </Shell>
     );

@@ -11,7 +11,7 @@ import {
   type Role,
 } from "../api/session";
 import { LiveSection } from "../live/LiveSection";
-import { navigate, usePageTitle } from "../router";
+import { Link, navigate, usePageTitle } from "../router";
 import "./Demo.css";
 
 const ROLES: { role: Role; label: string; body: string }[] = [
@@ -109,12 +109,17 @@ export function Demo() {
           })}
         </ul>
 
+        <p className="demo__account">
+          Want your own account? <Link href="/signup">Create an account</Link> or{" "}
+          <Link href="/login">sign in</Link> with a passkey.
+        </p>
+
         <Card className="note" as="section" aria-labelledby="demo-note">
           <h3 id="demo-note">About the sandbox</h3>
           <p>
             Every visitor of a role shares the same demo account, so never type anything real. Data
             is simulated and reset on a schedule, sessions last 8 hours, and the admin account can
-            look but not change anything. Real accounts with passkeys come in a later milestone.
+            look but not change anything.
           </p>
         </Card>
       </section>
