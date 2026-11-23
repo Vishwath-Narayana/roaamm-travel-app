@@ -66,6 +66,25 @@ public final class TestAccounts {
         return new Account(id, r.getResponse().getCookie(SessionCookie.NAME));
     }
 
+    /** A real traveller with a (simulated) verified request, as if an admin had approved it. */
+    public Account verifiedTraveller(String name) throws Exception {
+        Account a = real(name, "traveller");
+        markVerified(a.userId(), false);
+        return a;
+    }
+
+    public void markVerified(UUID userId, boolean isDemo) {
+        String ref = "SAMPLE-T" + Integer.toString(ThreadLocalRandom.current().nextInt(36 * 36 * 36 * 36 * 36), 36)
+                .toUpperCase(java.util.Locale.ROOT);
+        ref = (ref + "0000000").substring(0, 15);
+        jdbc.sql("""
+                        INSERT INTO verification_requests (id, user_id, doc_type, sample_ref, status, created_at,
+                                                           decided_at, is_demo)
+                        VALUES (:id, :user, 'passport', :ref, 'verified', now(), now(), :demo)""")
+                .param("id", UUID.randomUUID()).param("user", userId).param("ref", ref).param("demo", isDemo)
+                .update();
+    }
+
     /** What docs/runbooks/first-admin.md does by hand in the Neon SQL editor. */
     public Account realAdmin(String name) throws Exception {
         Account a = real(name, "traveller");

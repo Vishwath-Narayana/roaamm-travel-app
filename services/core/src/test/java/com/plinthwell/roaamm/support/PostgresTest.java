@@ -12,7 +12,14 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * the whole test run (Spring caches contexts across classes). Needs no Neon
  * and no secret. Skipped only where Docker is missing; CI runners have it.
  */
-@SpringBootTest
+// The per-IP API limits are in memory and this context is shared by every
+// test class, so they are raised here; ApiRateLimitTest checks them with low values.
+@SpringBootTest(properties = {
+    "roaamm.api-rate-limit.read.max-per-window=100000",
+    "roaamm.api-rate-limit.trip-write.max-per-window=100000",
+    "roaamm.api-rate-limit.guide-apply.max-per-window=100000",
+    "roaamm.api-rate-limit.admin-write.max-per-window=100000",
+})
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
 public abstract class PostgresTest {
