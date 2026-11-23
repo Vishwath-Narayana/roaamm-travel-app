@@ -46,6 +46,8 @@ export type AuditEntry = {
   admin: string | null;
   action: string;
   targetId: string;
+  /** Display name of the person whose request it was; null once the request is deleted. */
+  target?: string | null;
   createdAt: string;
 };
 

@@ -33,15 +33,25 @@
       content="A hiker crossing a golden mountain meadow, with the ROAAMM wordmark and the words Travel solo. Never alone."
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <!-- First hero photo (the LCP image on the landing page). -->
-    <link
-      rel="preload"
-      as="image"
-      type="image/avif"
-      fetchpriority="high"
-      imagesrcset="/images/hero-1-640.avif 640w, /images/hero-1-960.avif 960w, /images/hero-1-1280.avif 1280w, /images/hero-1-2048.avif 2048w"
-      imagesizes="100vw"
-    />
+    <!--
+      First hero photo (the LCP image on the landing page), preloaded on "/" only.
+      Other routes never show it, and a static preload there makes Chrome warn
+      "preloaded but not used". This must stay the only inline script: its SHA-256
+      is pinned for the strict CSP (docs/adr/0007-landing-only-hero-preload.md) and
+      a test fails if the two drift. It sits above the stylesheet so it never waits on CSS.
+    -->
+    <script>
+      if (location.pathname === "/") {
+        const l = document.createElement("link");
+        l.rel = "preload";
+        l.setAttribute("as", "image");
+        l.setAttribute("type", "image/avif");
+        l.setAttribute("fetchpriority", "high");
+        l.setAttribute("imagesrcset", "/images/hero-1-640.avif 640w, /images/hero-1-960.avif 960w, /images/hero-1-1280.avif 1280w, /images/hero-1-2048.avif 2048w");
+        l.setAttribute("imagesizes", "100vw");
+        document.head.appendChild(l);
+      }
+    </script>
     <!-- Display font used by the hero headline (above the fold). -->
     <link
       rel="preload"

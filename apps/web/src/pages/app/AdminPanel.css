@@ -74,6 +74,11 @@
   color: var(--muted);
 }
 
+.admin__short-id {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 .admin__table tr[aria-selected="true"] {
   background: color-mix(in srgb, var(--ink) 6%, transparent);
 }

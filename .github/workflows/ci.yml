@@ -93,6 +93,11 @@ jobs:
         run: node scripts/check-bundle-size.mjs apps/web/dist --initial 110 --total 130
       - name: Lighthouse (performance >= 0.9, accessibility >= 0.95)
         run: pnpm dlx @lhci/cli@0.14 autorun --config=apps/web/lighthouserc.json
+      # Every route loads with no console warnings or errors (e.g. an unused preload).
+      - name: Console check
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/check-console.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: web-dist

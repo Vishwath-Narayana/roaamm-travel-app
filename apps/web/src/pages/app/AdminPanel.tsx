@@ -56,7 +56,7 @@ export function AdminPanel({ readOnly, onSignedOut }: Props) {
       {readOnly && (
         <p className="admin__readonly" role="note">
           <strong>Read-only demo.</strong> You can look at everything here, but approving and
-          rejecting are disabled. The queue shows simulated sample people only.
+          rejecting are disabled. The queue shows simulated people and demo visitors only.
         </p>
       )}
       <div role="tablist" aria-label="Admin sections" className="admin__tabs">
@@ -390,6 +390,11 @@ function Detail({
   );
 }
 
+/** Last 8 hex digits: the seeded ids all start with zeros, so the tail is what differs. */
+export function shortId(uuid: string): string {
+  return uuid.replace(/-/g, "").slice(-8);
+}
+
 function Audit({ onSignedOut }: { onSignedOut: () => void }) {
   const { page, data, error, fetchPage } = usePaged(auditLog, onSignedOut, []);
   return (
@@ -422,7 +427,10 @@ function Audit({ onSignedOut }: { onSignedOut: () => void }) {
                   <td>{when(a.createdAt)}</td>
                   <td>{a.admin ?? "Deleted account"}</td>
                   <td>{ACTION_LABEL[a.action] ?? a.action}</td>
-                  <td className="mono">{a.targetId.slice(0, 8)}</td>
+                  <td>
+                    {a.target ?? "Deleted request"}{" "}
+                    <span className="mono admin__short-id">{shortId(a.targetId)}</span>
+                  </td>
                 </tr>
               ))}
             </tbody>

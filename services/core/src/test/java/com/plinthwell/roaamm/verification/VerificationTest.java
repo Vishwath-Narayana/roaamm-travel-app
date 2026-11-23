@@ -145,6 +145,7 @@ class VerificationTest extends PostgresTest {
                 .filter(n -> n.get("targetId").asString().equals(req.toString())).findFirst().orElseThrow();
         assertThat(mine.get("action").asString()).isEqualTo("verification.approve");
         assertThat(mine.get("admin").asString()).isEqualTo("Owner two");
+        assertThat(mine.get("target").asString()).isEqualTo("Pia");
     }
 
     @Test
@@ -199,6 +200,9 @@ class VerificationTest extends PostgresTest {
             assertThat(jdbc.sql("SELECT is_demo FROM admin_audit_log WHERE id = :id")
                     .param("id", UUID.fromString(n.get("id").asString())).query(Boolean.class).single()).isTrue();
         }
+        // Seeded audit rows name the simulated person whose request was decided.
+        assertThat(audit.get("items").valueStream().map(n -> n.path("target").asString("")).toList())
+                .contains("Sample traveller Mei", "Sample guide Lucas");
     }
 
     @Test
@@ -271,9 +275,13 @@ class VerificationTest extends PostgresTest {
                 .param("u", DEMO_TRAVELLER).query(Integer.class).single()).isZero();
         assertThat(jdbc.sql("SELECT count(*) FROM verification_requests WHERE is_seed")
                 .query(Integer.class).single()).isEqualTo(4);
-        // The audit row of the deleted request stays.
+        // The audit row of the deleted request stays, without the person's name.
         assertThat(jdbc.sql("SELECT count(*) FROM admin_audit_log WHERE target_id = :t")
                 .param("t", req).query(Integer.class).single()).isOne();
+        JsonNode audit = body(mvc.perform(get("/v1/admin/audit").cookie(admin.cookie())).andExpect(status().isOk()));
+        JsonNode row = audit.get("items").valueStream()
+                .filter(n -> n.get("targetId").asString().equals(req.toString())).findFirst().orElseThrow();
+        assertThat(row.path("target").isMissingNode() || row.path("target").isNull()).isTrue();
     }
 
     @Test

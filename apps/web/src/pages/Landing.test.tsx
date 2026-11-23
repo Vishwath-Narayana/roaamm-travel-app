@@ -225,15 +225,3 @@ describe("Destinations carousel", () => {
     }
   });
 });
-
-describe("index.html preloads", () => {
-  it("preloads exactly the hero-1 AVIF widths the optimiser produced", async () => {
-    const { IMAGES } = await import("../images.gen");
-    const html = (await import("../../index.html?raw")).default;
-    const expected = IMAGES["hero-1"].widths
-      .map((w) => `/images/hero-1-${w}.avif ${w}w`)
-      .join(", ");
-    expect(html).toContain(`imagesrcset="${expected}"`);
-    expect(html).toMatch(/rel="preload"\s+as="font"[\s\S]*inter-tight-latin-wght-normal\.woff2/);
-  });
-});

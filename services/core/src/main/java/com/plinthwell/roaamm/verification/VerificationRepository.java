@@ -18,7 +18,9 @@ public class VerificationRepository {
             String sampleRef, String status, String reason, Instant createdAt, Instant decidedAt,
             String decidedByName, boolean isDemo) {}
 
-    public record AuditEntry(UUID id, String adminDisplayName, String action, UUID targetId, Instant createdAt) {}
+    /** targetDisplayName is the request owner's name, or null once the request (or its user) is deleted. */
+    public record AuditEntry(UUID id, String adminDisplayName, String action, UUID targetId,
+            String targetDisplayName, Instant createdAt) {}
 
     private static final String SELECT_REQUEST = """
             SELECT r.id, r.user_id, u.display_name, u.role::text AS user_role, r.doc_type::text AS doc_type,
@@ -95,13 +97,16 @@ public class VerificationRepository {
 
     public List<AuditEntry> auditPage(boolean isDemo, int limit, int offset) {
         return jdbc.sql("""
-                        SELECT a.id, u.display_name, a.action, a.target_id, a.created_at
-                        FROM admin_audit_log a LEFT JOIN users u ON u.id = a.admin_user_id
+                        SELECT a.id, u.display_name, a.action, a.target_id, t.display_name AS target_name, a.created_at
+                        FROM admin_audit_log a
+                        LEFT JOIN users u ON u.id = a.admin_user_id
+                        LEFT JOIN verification_requests r ON r.id = a.target_id AND r.is_demo = a.is_demo
+                        LEFT JOIN users t ON t.id = r.user_id
                         WHERE a.is_demo = :demo
                         ORDER BY a.created_at DESC, a.id LIMIT :limit OFFSET :offset""")
                 .param("demo", isDemo).param("limit", limit).param("offset", offset)
                 .query((rs, n) -> new AuditEntry(rs.getObject("id", UUID.class), rs.getString("display_name"),
-                        rs.getString("action"), rs.getObject("target_id", UUID.class),
+                        rs.getString("action"), rs.getObject("target_id", UUID.class), rs.getString("target_name"),
                         rs.getTimestamp("created_at").toInstant()))
                 .list();
     }
