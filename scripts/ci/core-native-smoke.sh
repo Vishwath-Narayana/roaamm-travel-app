@@ -66,3 +66,7 @@ code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9090/v1/me -H "Co
 test "$code" = 401
 
 echo "native smoke ok: /health, /ready, demo session, /v1/me, bad role, CSRF, logout"
+
+# Passkeys: full register + login + logout round trip with a software
+# authenticator, and an admin-role signup refusal (scripts/ci/passkey-smoke.mjs).
+node "$(dirname "$0")/passkey-smoke.mjs" http://localhost:9090

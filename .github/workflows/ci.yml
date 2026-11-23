@@ -46,6 +46,7 @@ jobs:
             core:
               - 'services/core/**'
               - 'scripts/ci/core-native-smoke.sh'
+              - 'scripts/ci/passkey-smoke.mjs'
             api-proxy:
               - 'edge-api-proxy/**'
               - 'pnpm-lock.yaml'
