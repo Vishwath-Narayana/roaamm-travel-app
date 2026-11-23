@@ -73,3 +73,15 @@ roaamm:
     max-real-accounts: 300
     # Real accounts with no sign-in for this long are deleted. Demo users never are.
     inactive-after: 90d
+  # Simulated ID verification (docs/adr/0006-simulated-verification.md).
+  verification:
+    # Submissions per client IP.
+    max-per-window: 10
+    window: 1h
+    # Shared demo users: newest visitor-made requests kept per demo user.
+    max-per-demo-user: 50
+    # Demo visitors' requests are deleted after this; the simulated seed rows stay.
+    demo-retention: 24h
+    # Rejected requests are deleted this long after the decision.
+    rejected-retention: 30d
+    page-size: 20

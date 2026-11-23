@@ -20,7 +20,7 @@ public class SessionRepository {
     public Optional<User> findDemoUser(Role role) {
         return jdbc.sql("""
                         SELECT id, role::text AS role, display_name, is_demo
-                        FROM users WHERE is_demo AND role = CAST(:role AS user_role)
+                        FROM users WHERE is_demo AND NOT is_sample AND role = CAST(:role AS user_role)
                         ORDER BY created_at LIMIT 1""")
                 .param("role", role.wire())
                 .query((rs, n) -> new User(

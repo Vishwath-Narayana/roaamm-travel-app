@@ -97,9 +97,13 @@ public class AccountRepository {
                 .param("now", Timestamp.from(now)).param("id", userId).update();
     }
 
-    /** Deletes real accounts idle since {@code cutoff}. Demo users are never touched. */
+    /**
+     * Deletes real accounts idle since {@code cutoff}, with their verification
+     * requests (cascade). Demo users are never touched, and neither are admins:
+     * the owner's admin account must not disappear while they are away.
+     */
     public int deleteInactiveRealUsers(Instant cutoff) {
-        return jdbc.sql("DELETE FROM users WHERE NOT is_demo AND last_active_at < :cutoff")
+        return jdbc.sql("DELETE FROM users WHERE NOT is_demo AND role <> 'admin' AND last_active_at < :cutoff")
                 .param("cutoff", Timestamp.from(cutoff)).update();
     }
 

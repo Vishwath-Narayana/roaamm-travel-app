@@ -36,7 +36,7 @@ public class AuthRateLimits {
     public static class RateLimitedException extends RuntimeException {
         private final long retryAfterSeconds;
 
-        RateLimitedException(long retryAfterSeconds) {
+        public RateLimitedException(long retryAfterSeconds) {
             super("rate_limited", null, false, false);
             this.retryAfterSeconds = retryAfterSeconds;
         }

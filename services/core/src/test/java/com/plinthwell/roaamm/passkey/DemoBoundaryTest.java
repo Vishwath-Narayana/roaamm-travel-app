@@ -204,7 +204,8 @@ class DemoBoundaryTest extends PostgresTest {
                 .query(Integer.class).single()).isZero();
         assertThat(jdbc.sql("SELECT count(*) FROM users WHERE id = :id").param("id", active)
                 .query(Integer.class).single()).isOne();
-        assertThat(jdbc.sql("SELECT count(*) FROM users WHERE is_demo").query(Integer.class).single()).isEqualTo(3);
+        assertThat(jdbc.sql("SELECT count(*) FROM users WHERE is_demo AND NOT is_sample").query(Integer.class).single())
+                .isEqualTo(3);
         mvc.perform(get("/v1/me").cookie(demoSession)).andExpect(status().isOk());
         jdbc.sql("UPDATE users SET last_active_at = now() WHERE is_demo").update();
         jdbc.sql("DELETE FROM users WHERE id = :id").param("id", active).update();
