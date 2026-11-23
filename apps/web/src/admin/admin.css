@@ -116,6 +116,36 @@
   text-underline-offset: var(--sp-1);
 }
 
+/* Two forms of one text: the long one from 768 px, the short one on phones
+   (where the long one stays for screen readers). */
+.adm-short {
+  display: none;
+}
+
+.adm-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* Verified: a 16 px check in the success colour. Not verified: a muted dash. */
+.adm-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--ui-success);
+  vertical-align: middle;
+}
+
+.adm-verified--no {
+  color: var(--ui-text-3);
+}
+
+.adm-verified > span {
+  color: var(--ui-text);
+}
+
 /* ---- avatars and the logo mark (always 1:1) */
 
 .adm-logo,
@@ -152,9 +182,10 @@
   line-height: var(--leading-body);
 }
 
+/* The top-bar avatar: the same 32 px as the top-bar icon buttons, at every width. */
 .adm-avatar--btn {
-  width: var(--ui-control-h);
-  height: var(--ui-control-h);
+  width: var(--ui-icon-btn);
+  height: var(--ui-icon-btn);
   padding: 0;
   border: var(--ui-border-w) solid var(--ui-border);
   cursor: pointer;
@@ -295,22 +326,10 @@ a.adm-nav__item:hover {
   color: var(--ui-text);
 }
 
+/* The highlighted background alone marks the active item (no notch). */
 .adm-nav__item[aria-current="page"] {
   background: var(--ui-selected);
   color: var(--ui-text);
-}
-
-/* The active notch sits inside the item, fully visible, never at the screen edge. */
-.adm-nav__item[aria-current="page"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: var(--ui-notch-w);
-  height: var(--ui-notch-h);
-  transform: translateY(-50%);
-  border-radius: var(--radius-full);
-  background: var(--ui-primary);
 }
 
 .adm-nav__item--soon {
@@ -516,6 +535,23 @@ a.adm-nav__item:hover {
   color: var(--ui-text);
 }
 
+/* The ⋯ row and card menu: a 32 px icon-only ghost button at every width
+   (its tap area grows to 44 px on phones). */
+.adm-more {
+  width: var(--ui-icon-btn);
+  height: var(--ui-icon-btn);
+}
+
+.adm-icon-btn[aria-disabled="true"] {
+  color: var(--ui-text-3);
+  cursor: not-allowed;
+}
+
+.adm-icon-btn[aria-disabled="true"]:hover {
+  background: transparent;
+  color: var(--ui-text-3);
+}
+
 /* ---- page */
 
 .adm-main {
@@ -546,8 +582,13 @@ a.adm-nav__item:hover {
   flex-wrap: wrap;
 }
 
+.adm-page__titles {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
 .adm-page__lead {
-  margin-top: var(--sp-1);
   color: var(--ui-text-2);
 }
 
@@ -763,18 +804,11 @@ a.adm-line:hover {
 }
 
 .adm-line__title {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
   min-width: 0;
-  font-weight: var(--weight-medium);
-}
-
-.adm-line__name,
-.adm-line__title:not(:has(.adm-line__name)) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: var(--weight-medium);
 }
 
 .adm-line__meta {
@@ -929,11 +963,6 @@ a.adm-line:hover .adm-line__chev {
   background: var(--ui-danger-dot);
 }
 
-.adm-chip--sample {
-  background: var(--ui-sample-tint);
-  color: var(--ui-sample);
-}
-
 .adm-chips,
 .adm-chips-row {
   display: flex;
@@ -1016,6 +1045,13 @@ a.adm-line:hover .adm-line__chev {
   min-width: 0;
 }
 
+.adm-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
 /* Tabs and segmented controls share one look: a track with a soft raised pill. */
 .adm-tabs,
 .adm-seg {
@@ -1063,11 +1099,8 @@ a.adm-line:hover .adm-line__chev {
   box-shadow: var(--ui-shadow-card);
 }
 
-.adm-tabs__tab[aria-selected="true"] .adm-count,
-.adm-seg__btn[aria-pressed="true"] .adm-count {
-  background: var(--ui-selected);
-  color: var(--ui-text);
-}
+/* The count badge looks the same on the selected option: the raised surface
+   alone marks the selection. */
 
 .adm-search {
   position: relative;
@@ -1178,14 +1211,33 @@ a.adm-line:hover .adm-line__chev {
   min-width: 0;
 }
 
+/* One fixed column template per screen: the <colgroup> widths (shares of the
+   table set by each screen, plus the fixed checkbox, action and chevron
+   columns) decide every column, never the data. So no header moves when a
+   tab, filter or page changes. */
 .adm-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   font-size: var(--text-dense);
   line-height: var(--leading-dense);
 }
 
+.adm-table__col-check {
+  width: calc(var(--ui-card-pad) + var(--ui-check) + var(--sp-3));
+}
+
+.adm-table__col-action {
+  width: calc(var(--ui-icon-btn) + 2 * var(--sp-3));
+}
+
+.adm-table__col-chev {
+  width: calc(var(--sp-3) + var(--ui-icon-sm) + var(--ui-card-pad));
+}
+
+/* Text that really does not fit its column ends in an ellipsis. The clip
+   leaves room for focus rings. */
 .adm-table th,
 .adm-table td {
   padding: 0 var(--sp-3);
@@ -1193,6 +1245,9 @@ a.adm-line:hover .adm-line__chev {
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;
+  overflow: clip;
+  overflow-clip-margin: var(--sp-1);
+  text-overflow: ellipsis;
 }
 
 /* The first cell of every row starts at the card padding, with or without a checkbox column. */
@@ -1237,16 +1292,7 @@ a.adm-line:hover .adm-line__chev {
   background: var(--ui-selected);
 }
 
-.adm-col--primary {
-  width: 100%;
-  max-width: 0;
-}
-
-.adm-col--end {
-  text-align: right;
-}
-
-.adm-table th.adm-col--end {
+.adm-table :is(th, td).adm-col--end {
   text-align: right;
 }
 
@@ -1264,19 +1310,12 @@ a.adm-line:hover .adm-line__chev {
   white-space: nowrap;
 }
 
-/* Fixed-width columns size their content, not their padding. */
-.adm-table__check,
 .adm-table__chev {
-  box-sizing: content-box;
-}
-
-.adm-table__check {
-  width: var(--ui-check);
-}
-
-.adm-table__chev {
-  width: var(--ui-icon-sm);
   color: var(--ui-text-3);
+}
+
+.adm-table .adm-col--action {
+  padding: 0 var(--sp-3);
 }
 
 .adm-table__chev svg {
@@ -1371,10 +1410,6 @@ a.adm-line:hover .adm-line__chev {
   max-width: 100%;
 }
 
-.adm-table .adm-subject {
-  max-width: var(--ui-cell-max);
-}
-
 .adm-subject__name {
   min-width: 0;
   overflow: hidden;
@@ -1382,33 +1417,6 @@ a.adm-line:hover .adm-line__chev {
   white-space: nowrap;
 }
 
-.adm-subject__id {
-  color: var(--ui-text-3);
-  font-size: var(--text-caption);
-  line-height: var(--leading-caption);
-}
-
-/* Only one column may flex: below 1280 px the low-priority ones step aside,
-   and row buttons keep their icon (the label stays for screen readers). */
-@media (max-width: 1279px) {
-  .adm-col--wide {
-    display: none;
-  }
-
-  .adm-table .adm-menu .adm-btn {
-    width: var(--ui-control-h);
-    padding: 0;
-  }
-
-  .adm-table .adm-btn__label {
-    position: absolute;
-    width: var(--ui-border-w);
-    height: var(--ui-border-w);
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-}
 
 /* ---- skeletons */
 
@@ -1527,7 +1535,12 @@ button.adm-row:active {
   text-overflow: ellipsis;
 }
 
-.adm-row__meta:first-child {
+.adm-row__line2 > :is(.adm-pill, .adm-chip) {
+  flex: none;
+  margin-right: var(--sp-1);
+}
+
+.adm-row__meta:not(:last-child) {
   flex: none;
   max-width: 50%;
 }
@@ -1815,6 +1828,88 @@ button.adm-row:active {
   justify-self: start;
 }
 
+/* The bar above a detail drawer names the kind of thing; the summary below names it. */
+.adm-sheet__label {
+  min-width: 0;
+  color: var(--ui-text-2);
+  font-size: var(--text-dense);
+  line-height: var(--leading-dense);
+  font-weight: var(--weight-medium);
+}
+
+/* Drawer summary: avatar or icon, name, status, then three key facts. */
+.adm-summary {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: var(--ui-border-w) solid var(--ui-border);
+  border-radius: var(--radius-lg);
+  background: var(--ui-card);
+}
+
+.adm-summary__top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.adm-summary__icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--sp-10);
+  height: var(--sp-10);
+  border-radius: 50%;
+  background: var(--ui-neutral-tint);
+  color: var(--ui-text-2);
+}
+
+.adm-summary__id {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.adm .adm-summary__name {
+  font-size: var(--text-title);
+  line-height: var(--leading-title);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.adm-summary__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+  padding-top: var(--sp-4);
+  border-top: var(--ui-border-w) solid var(--ui-border);
+}
+
+.adm-summary__fact {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.adm-summary__fact dt {
+  color: var(--ui-text-3);
+  font-size: var(--text-label);
+  line-height: var(--leading-label);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.adm-summary__fact dd {
+  font-size: var(--text-dense);
+  line-height: var(--leading-dense);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
 .adm-section {
   display: grid;
   gap: var(--sp-3);
@@ -1930,9 +2025,10 @@ button.adm-row:active {
   outline: none;
 }
 
+/* The field holds focus the whole time the palette is open: its divider
+   turns the focus colour instead of a square ring inside the rounded panel. */
 .adm-palette__field:focus-within {
-  outline: var(--ui-focus-w) solid var(--ui-focus);
-  outline-offset: calc(-1 * var(--ui-focus-w));
+  border-bottom-color: var(--ui-focus);
 }
 
 .adm-palette__input::placeholder {
@@ -2061,15 +2157,16 @@ button.adm-row:active {
   min-width: 0;
 }
 
-/* Column headers: a soft translucent tint, never an opaque block. */
+/* Column headers: a neutral surface, the status as a coloured dot, a count. */
 .adm-board__head {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
   height: var(--ui-row-head);
-  padding: 0 var(--sp-3);
+  padding: 0 var(--sp-4);
+  border: var(--ui-border-w) solid var(--ui-border);
   border-radius: var(--radius-md);
-  background: var(--ui-neutral-tint);
+  background: var(--ui-card);
 }
 
 .adm-board__head[data-hidden] {
@@ -2090,36 +2187,16 @@ button.adm-row:active {
   background: var(--ui-neutral-dot);
 }
 
-.adm-board__head .adm-count {
-  background: var(--ui-card);
-}
-
-.adm-board__head--submitted {
-  background: var(--ui-warning-tint);
-}
-
 .adm-board__head--submitted .adm-board__dot {
   background: var(--ui-warning-dot);
-}
-
-.adm-board__head--in_review {
-  background: var(--ui-review-tint);
 }
 
 .adm-board__head--in_review .adm-board__dot {
   background: var(--ui-review-dot);
 }
 
-.adm-board__head--approved {
-  background: var(--ui-success-tint);
-}
-
 .adm-board__head--approved .adm-board__dot {
   background: var(--ui-success-dot);
-}
-
-.adm-board__head--rejected {
-  background: var(--ui-danger-tint);
 }
 
 .adm-board__head--rejected .adm-board__dot {
@@ -2140,12 +2217,13 @@ button.adm-row:active {
   padding: var(--sp-6) var(--sp-4);
 }
 
+/* A board card: title and ⋯ menu, "applicant · date", city chips. About
+   112 px tall with a one-line title. */
 .adm-appcard {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  min-height: var(--ui-kanban-card-min);
   padding: var(--sp-4);
   border: var(--ui-border-w) solid var(--ui-border);
   border-radius: var(--radius-lg);
@@ -2157,22 +2235,20 @@ button.adm-row:active {
   border-color: var(--ui-border-control);
 }
 
-.adm-appcard__top {
+.adm-appcard__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--sp-2);
 }
 
-.adm-appcard__chev {
-  margin-left: auto;
-  color: var(--ui-text-3);
-}
-
-.adm-appcard:hover .adm-appcard__chev {
-  color: var(--ui-text);
+/* The 32 px menu button hangs into the padding, so the row stays one line tall. */
+.adm-appcard__head .adm-menu {
+  margin: calc(-1 * var(--sp-1)) calc(-1 * var(--sp-2)) calc(-1 * var(--sp-1)) auto;
 }
 
 .adm-appcard__title {
+  flex: 1;
+  min-width: 0;
   font-size: var(--text-body);
   line-height: var(--leading-body);
   font-weight: var(--weight-semibold);
@@ -2205,27 +2281,26 @@ button.adm-row:active {
   outline-offset: var(--ui-focus-offset);
 }
 
-.adm-appcard__who {
-  color: var(--ui-text-2);
-  font-size: var(--text-dense);
-  line-height: var(--leading-dense);
-}
-
-.adm-appcard__foot {
+.adm-appcard__meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-2);
-  margin-top: auto;
-  padding-top: var(--sp-3);
-  border-top: var(--ui-border-w) solid var(--ui-border);
+  gap: var(--sp-1);
+  min-width: 0;
+  color: var(--ui-text-2);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+}
+
+.adm-appcard__who {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .adm-appcard__date {
+  flex: none;
   color: var(--ui-text-3);
-  font-size: var(--text-caption);
-  line-height: var(--leading-caption);
-  font-variant-numeric: tabular-nums;
 }
 
 .adm-appcard .adm-menu {
@@ -2410,24 +2485,55 @@ button.adm-row:active {
     flex-wrap: nowrap;
   }
 
-  /* One scrollable line of filters with faded edges; it bleeds to the card edge. */
+  /* One full-width row of filters. It scrolls sideways only if it has to,
+     and then fades the edge that has more (data-fade, set by Scroller). */
   .adm-scroller {
-    margin: 0 calc(-1 * var(--ui-card-pad));
-    padding: 0 var(--ui-card-pad);
     overflow-x: auto;
     scrollbar-width: none;
-    mask-image: linear-gradient(to right, transparent, var(--ui-text) var(--ui-card-pad), var(--ui-text) calc(100% - var(--ui-card-pad)), transparent);
   }
 
   .adm-scroller::-webkit-scrollbar {
     display: none;
   }
 
-  /* Equal-width board tabs: the label over its count, never clipped. */
+  .adm-scroller[data-fade="start"] {
+    mask-image: linear-gradient(to right, transparent, var(--ui-text) var(--sp-8));
+  }
+
+  .adm-scroller[data-fade="end"] {
+    mask-image: linear-gradient(to left, transparent, var(--ui-text) var(--sp-8));
+  }
+
+  .adm-scroller[data-fade="both"] {
+    mask-image: linear-gradient(to right, transparent, var(--ui-text) var(--sp-8), var(--ui-text) calc(100% - var(--sp-8)), transparent);
+  }
+
+  .adm-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Tabs and segmented controls fill the row with equal segments, as wide as
+     the search field. If the widest label does not fit, every segment takes
+     its width and the row scrolls. */
+  .adm-scroller > :is(.adm-tabs, .adm-seg),
   .adm-seg--fill {
     display: grid;
     grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .adm-scroller > :is(.adm-tabs, .adm-seg) :is(.adm-tabs__tab, .adm-seg__btn) {
+    padding: 0 var(--sp-2);
+  }
+
+  /* The board's column tabs: the label over its count, the same type and
+     badge selected or not; the raised surface alone marks the selection. */
+  .adm-seg--fill {
     grid-auto-columns: minmax(0, 1fr);
+    width: 100%;
     height: auto;
   }
 
@@ -2436,6 +2542,7 @@ button.adm-row:active {
     gap: var(--sp-1);
     height: var(--ui-tap);
     padding: 0 var(--sp-1);
+    color: var(--ui-text);
     font-size: var(--text-caption);
     line-height: var(--leading-caption);
   }
@@ -2477,16 +2584,24 @@ button.adm-row:active {
     display: none;
   }
 
+  /* The top bar lines up with the content: 16 px at both ends, and every
+     control 32 px (44 px tap areas, 12 px apart so they never overlap). */
   .adm-topbar {
-    gap: var(--sp-1);
-    padding: 0 var(--sp-2);
+    gap: var(--sp-3);
+    padding: 0 var(--ui-page-pad);
   }
 
   .adm-topbar .adm-topbar__menu {
     display: inline-grid;
   }
 
-  .adm-topbar__title {
+  .adm-topbar :is(.adm-icon-btn, .icon-btn, .adm-cmdk) {
+    width: var(--ui-icon-btn);
+    height: var(--ui-icon-btn);
+  }
+
+  /* Below 768 px this is the page's h1. */
+  .adm .adm-topbar__title {
     display: block;
     flex: 1;
     min-width: 0;
@@ -2496,6 +2611,7 @@ button.adm-row:active {
     font-size: var(--text-title);
     line-height: var(--leading-title);
     font-weight: var(--weight-semibold);
+    letter-spacing: normal;
   }
 
   .adm-crumbs {
@@ -2503,7 +2619,33 @@ button.adm-row:active {
   }
 
   .adm-topbar__right {
-    gap: var(--sp-1);
+    gap: var(--sp-3);
+  }
+
+  .adm-short {
+    display: inline;
+  }
+
+  .adm-long {
+    position: absolute;
+    width: var(--ui-border-w);
+    height: var(--ui-border-w);
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* No h1 here below 768 px: the lead and actions are the head's only items. */
+  .adm-page__titles {
+    display: contents;
+  }
+
+  /* The Board / List toggle: a full-width row of equal segments. */
+  .adm-page__head > .adm-seg {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    flex: 1 1 100%;
   }
 
   .adm-main {
@@ -2542,6 +2684,29 @@ button.adm-row:active {
     gap: var(--sp-2);
   }
 
+  /* Half-width cards: the short label on one line (no icon), so every number
+     in a row sits on the same baseline. */
+  .adm-kpi__icon {
+    display: none;
+  }
+
+  .adm-kpi {
+    position: relative;
+  }
+
+  .adm-kpi__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The arrow moves to the footnote's line, so the label has the full width. */
+  .adm-kpi__link {
+    position: absolute;
+    right: var(--ui-card-pad);
+    bottom: var(--ui-card-pad);
+  }
+
   /* Number over its pill, and room for a two-line footnote, loaded or not. */
   .adm-kpi__value {
     flex-direction: column;
@@ -2552,15 +2717,17 @@ button.adm-row:active {
   }
 
   .adm-kpi__foot {
-    min-height: calc(2 * var(--leading-caption));
+    min-height: var(--leading-caption);
   }
 
+  /* The title gets the whole first line; the pill leads the second. */
   .adm-line {
-    grid-template-columns: minmax(0, 1fr) auto var(--ui-icon-sm);
+    grid-template-columns: auto minmax(0, 1fr) var(--ui-icon-sm);
     grid-template-areas:
-      "title pill chev"
-      "meta meta chev";
+      "title title chev"
+      "pill meta chev";
     row-gap: var(--sp-1);
+    column-gap: var(--sp-2);
     min-height: var(--ui-row-phone);
     padding: var(--sp-3) var(--sp-2);
   }
@@ -2575,6 +2742,7 @@ button.adm-row:active {
 
   .adm-line > .adm-pill {
     grid-area: pill;
+    justify-self: start;
   }
 
   .adm-line > .adm-line__chev {
@@ -2721,5 +2889,20 @@ button.adm-row:active {
 
   .adm-menu__item {
     min-height: var(--ui-tap);
+  }
+}
+
+/* ---- small phones (below 640 px): the page lead is for screen readers only,
+   so content starts right below the banner. */
+
+@media (max-width: 639px) {
+  .adm-page__head .adm-page__lead,
+  .adm-page__head[data-bare] {
+    position: absolute;
+    width: var(--ui-border-w);
+    height: var(--ui-border-w);
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }

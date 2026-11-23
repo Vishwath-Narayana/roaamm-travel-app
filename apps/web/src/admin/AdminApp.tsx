@@ -27,7 +27,7 @@ import { AdminContext, type AdminContextValue } from "./context";
 import { MarkIcon, MenuIcon, SearchIcon, SidebarIcon } from "./icons";
 import { BASE, PAGES, slugOf } from "./nav";
 import { NavGroups, ScopeChip } from "./Sidebar";
-import { DemoBanner, Drawer, ErrorState, useMedia } from "./ui";
+import { DemoBanner, Drawer, ErrorState, PageHead, useIsPhone, useMedia } from "./ui";
 import { Overview } from "./screens/Overview";
 import { Verification } from "./screens/Verification";
 import { Users } from "./screens/Users";
@@ -76,6 +76,7 @@ export function AdminApp({ path }: { path: string }) {
   const [signingOut, setSigningOut] = useState(false);
   const meRef = useRef<Me | null>(null);
   const tablet = useMedia(TABLET);
+  const isPhone = useIsPhone();
   const rail = collapsed || tablet;
 
   // A tap (or click) on an unavailable control shows its reason for a moment:
@@ -175,6 +176,7 @@ export function AdminApp({ path }: { path: string }) {
   const me = state.kind === "ready" ? state.me : null;
   const ctx: AdminContextValue | null = me ? { me, readOnly: me.isDemo, onSignedOut } : null;
   const Screen = slug === null ? null : SCREENS[slug];
+  const title = slug === null ? "Page not found" : (page?.label ?? "Admin");
 
   return (
     <AdminContext.Provider value={ctx}>
@@ -226,9 +228,14 @@ export function AdminApp({ path }: { path: string }) {
             >
               <MenuIcon size={20} />
             </button>
-            <p className="adm-topbar__title" aria-hidden="true">
-              {page?.label ?? "Admin"}
-            </p>
+            {/* Below 768 px this title is the page's one h1 (PageHead leaves it out). */}
+            {isPhone ? (
+              <h1 className="adm-topbar__title">{title}</h1>
+            ) : (
+              <p className="adm-topbar__title" aria-hidden="true">
+                {title}
+              </p>
+            )}
             <nav aria-label="Breadcrumb" className="adm-crumbs">
               <ol>
                 <li>
@@ -265,7 +272,7 @@ export function AdminApp({ path }: { path: string }) {
           <main id="main" tabIndex={-1} className="adm-main">
             {state.kind === "loading" && (
               <div className="adm-page" aria-busy="true">
-                <h1>{page?.label ?? "Admin"}</h1>
+                <PageHead title={title} />
                 <p role="status" className="adm-page__lead">
                   Checking your session…
                 </p>
@@ -273,7 +280,7 @@ export function AdminApp({ path }: { path: string }) {
             )}
             {state.kind === "error" && (
               <div className="adm-page">
-                <h1>{page?.label ?? "Admin"}</h1>
+                <PageHead title={title} />
                 <section className="adm-card">
                   <ErrorState message={errorMessage(state.error)} onRetry={load} />
                 </section>
@@ -293,7 +300,7 @@ export function AdminApp({ path }: { path: string }) {
                 </Suspense>
               ) : (
                 <div className="adm-page">
-                  <h1>Page not found</h1>
+                  <PageHead title="Page not found" />
                   <p>
                     <Link href={BASE} className="adm-link">
                       Back to the overview

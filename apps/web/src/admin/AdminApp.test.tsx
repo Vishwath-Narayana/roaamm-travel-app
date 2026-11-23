@@ -81,7 +81,7 @@ describe("AdminApp", () => {
     // The shell is there from the first frame; the scope chip appears once the session is known.
     expect(screen.getByRole("link", { name: "ROAAMM Admin, overview" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Checking your session…");
-    expect(await screen.findByText("Demo (simulated)")).toBeInTheDocument();
+    expect(await screen.findByText("Demo accounts")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^Overview$/ })).toHaveAttribute(
       "aria-current",
@@ -303,7 +303,8 @@ describe("AdminApp", () => {
   it("shows a not-found page inside the shell for an unknown section", async () => {
     mockApi({ "/v1/me": [[200, REAL_ME]] });
     at("/app/admin/payments");
-    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    await screen.findByRole("link", { name: "Back to the overview" });
+    expect(screen.getByRole("heading", { level: 1, name: "Page not found" })).toBeInTheDocument();
   });
 
   it("opens the command palette with Ctrl+K", async () => {

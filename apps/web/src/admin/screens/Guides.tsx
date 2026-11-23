@@ -17,9 +17,10 @@ import {
 import { navigate, useSearchParams } from "../../router";
 import { BulkBar, BulkResults } from "../BulkBar";
 import { FINAL_LABEL, READ_ONLY_LABEL, useAdmin } from "../context";
-import { ChevronIcon, KanbanIcon, ListIcon } from "../icons";
+import { CompassIcon, KanbanIcon, ListIcon } from "../icons";
 import { MoveMenu, type MoveTarget } from "../MoveMenu";
 import { openDetail, withParam } from "../params";
+import { shortId } from "./Audit";
 import {
   Chip,
   Count,
@@ -28,14 +29,16 @@ import {
   Empty,
   ErrorState,
   Loading,
+  PageHead,
   Pager,
   Pill,
-  SampleChip,
   Scroller,
   SectionLabel,
   Segmented,
   SkeletonBlock,
+  SummaryIcon,
   Timeline,
+  VerifiedMark,
   adminErrorMessage,
   cleanTitle,
   fmtDate,
@@ -89,21 +92,21 @@ export function Guides() {
 
   return (
     <div className="adm-page">
-      <header className="adm-page__head">
-        <div>
-          <h1>Guide applications</h1>
-          <p className="adm-page__lead">Verified travellers who want to guide. Approving a real application makes the person a guide.</p>
-        </div>
-        <Segmented<View>
-          label="View"
-          value={view}
-          onChange={(v) => navigate(withParam("view", v === "list" ? "list" : null), { replace: true })}
-          options={[
-            { value: "kanban", label: (<><KanbanIcon size={16} /> Board</>) },
-            { value: "list", label: (<><ListIcon size={16} /> List</>) },
-          ]}
-        />
-      </header>
+      <PageHead
+        title="Guide applications"
+        lead="Verified travellers who want to guide. Approving a real application makes the person a guide."
+        actions={
+          <Segmented<View>
+            label="View"
+            value={view}
+            onChange={(v) => navigate(withParam("view", v === "list" ? "list" : null), { replace: true })}
+            options={[
+              { value: "kanban", label: (<><KanbanIcon size={16} /> Board</>) },
+              { value: "list", label: (<><ListIcon size={16} /> List</>) },
+            ]}
+          />
+        }
+      />
       <div aria-live="polite" className="adm-live">
         {notice && <p className="adm-notice">{notice}</p>}
       </div>
@@ -206,22 +209,31 @@ function Board({ version, readOnly, onMove }: { version: number; readOnly: boole
   );
 }
 
-/** A kanban card. The whole card opens the drawer; the move menu sits above that. */
+/**
+ * A kanban card: title, applicant, date and cities. The column already says
+ * the status. The whole card opens the drawer; the ⋯ menu sits above that.
+ */
 export function AppCard({ app, readOnly, onMove }: { app: Application; readOnly: boolean; onMove: (a: Application, to: MoveTarget) => void }) {
   const title = cleanTitle(app.headline);
   return (
     <article className="adm-appcard" aria-labelledby={`app-${app.id}`}>
-      <div className="adm-appcard__top">
-        <Pill status={app.status} />
-        {app.sample && <SampleChip />}
-        <ChevronIcon size={16} className="adm-appcard__chev" />
+      <div className="adm-appcard__head">
+        <h3 id={`app-${app.id}`} className="adm-appcard__title">
+          <button type="button" className="adm-rowlink adm-stretch" onClick={() => openDetail(app.id)}>
+            {title}
+          </button>
+        </h3>
+        <MoveMenu status={app.status} label={title} readOnly={readOnly} onMove={(to) => onMove(app, to)} />
       </div>
-      <h3 id={`app-${app.id}`} className="adm-appcard__title">
-        <button type="button" className="adm-rowlink adm-stretch" onClick={() => openDetail(app.id)}>
-          {title}
-        </button>
-      </h3>
-      <p className="adm-appcard__who">{app.applicant}</p>
+      <p className="adm-appcard__meta">
+        <span className="adm-appcard__who">{app.applicant}</span>
+        <span className="adm-row__sep" aria-hidden="true">
+          ·
+        </span>
+        <time className="adm-appcard__date" dateTime={app.createdAt}>
+          {fmtDate(app.createdAt)}
+        </time>
+      </p>
       <ul className="adm-chips" aria-label="Cities">
         {app.cities.map((c) => (
           <li key={c}>
@@ -229,10 +241,6 @@ export function AppCard({ app, readOnly, onMove }: { app: Application; readOnly:
           </li>
         ))}
       </ul>
-      <div className="adm-appcard__foot">
-        <span className="adm-appcard__date">{fmtDate(app.createdAt)}</span>
-        <MoveMenu status={app.status} label={title} readOnly={readOnly} onMove={(to) => onMove(app, to)} />
-      </div>
     </article>
   );
 }
@@ -271,24 +279,15 @@ function ListView({ version, readOnly, onMove }: { version: number; readOnly: bo
 
   const counts = state.data?.counts;
   const columns: Column<Application>[] = [
-    {
-      key: "title",
-      header: "Application",
-      primary: true,
-      cell: (a) => (
-        <>
-          <span className="adm-cell__text">{cleanTitle(a.headline)}</span>
-          {a.sample && <SampleChip />}
-        </>
-      ),
-    },
-    { key: "applicant", header: "Applicant", wide: true, cell: (a) => a.applicant },
-    { key: "cities", header: "Cities", wide: true, cell: (a) => a.cities.join(", ") },
-    { key: "submitted", header: "Submitted", cell: (a) => <span className="adm-num">{fmtDate(a.createdAt)}</span> },
-    { key: "status", header: "Status", cell: (a) => <Pill status={a.status} /> },
+    { key: "title", header: "Application", primary: true, size: 32, cell: (a) => <span className="adm-cell__text">{cleanTitle(a.headline)}</span> },
+    { key: "applicant", header: "Applicant", size: 18, wide: true, cell: (a) => a.applicant },
+    { key: "cities", header: "Cities", size: 16, wide: true, cell: (a) => a.cities.join(", ") },
+    { key: "submitted", header: "Submitted", size: 14, cell: (a) => <span className="adm-num">{fmtDate(a.createdAt)}</span> },
+    { key: "status", header: "Status", size: 13, cell: (a) => <Pill status={a.status} /> },
     {
       key: "actions",
       header: <span className="visually-hidden">Actions</span>,
+      size: "action",
       cell: (a) => <MoveMenu status={a.status} label={cleanTitle(a.headline)} readOnly={readOnly} onMove={(to) => onMove(a, to)} />,
     },
   ];
@@ -334,7 +333,6 @@ function ListView({ version, readOnly, onMove }: { version: number; readOnly: bo
             }}
             phone={(a) => ({
               title: cleanTitle(a.headline),
-              extra: a.sample ? <SampleChip /> : undefined,
               pill: <Pill status={a.status} />,
               meta: [a.applicant, <span className="adm-num" key="d">{fmtDate(a.createdAt)}</span>],
             })}
@@ -493,28 +491,51 @@ function ApplicationDrawer({
   ) : undefined;
 
   return (
-    <Drawer title={a ? cleanTitle(a.headline) : "Guide application"} onClose={onClose} footer={footer}>
+    <Drawer
+      title={a ? cleanTitle(a.headline) : "Guide application"}
+      label="Guide application"
+      summary={
+        a && {
+          lead: (
+            <SummaryIcon>
+              <CompassIcon size={20} />
+            </SummaryIcon>
+          ),
+          pill: <Pill status={a.status} />,
+          facts: [
+            ["Applicant", a.applicant],
+            ["Submitted", <span className="adm-num">{fmtDate(a.createdAt)}</span>],
+            ["Decided", <span className="adm-num">{a.decidedAt ? fmtDate(a.decidedAt) : "—"}</span>],
+          ],
+        }
+      }
+      onClose={onClose}
+      footer={footer}
+    >
       {state.kind === "error" && !a && <ErrorState message={state.message} onRetry={reload} />}
       {!a && state.kind === "loading" && <SkeletonBlock lines={8} />}
       {a && (
         <>
-          <div className="adm-chips-row">
-            <Pill status={a.status} />
-            {a.sample && <SampleChip />}
-            <Chip tone={a.applicantVerified ? "good" : "warn"}>{a.applicantVerified ? "Verified" : "Not verified"}</Chip>
-          </div>
-          <dl className="adm-facts">
-            <dt>Applicant</dt>
-            <dd>
-              {a.applicant} <span className="adm-muted">({a.applicantRole})</span>
-            </dd>
-            <dt>Languages</dt>
-            <dd>{a.languages.map((l) => LANGUAGE_NAME[l] ?? l).join(", ")}</dd>
-            <dt>Cities</dt>
-            <dd>{a.cities.join(", ")}</dd>
-            <dt>Bio</dt>
-            <dd className="adm-pre">{a.bio}</dd>
-          </dl>
+          <section className="adm-section">
+            <SectionLabel>Details</SectionLabel>
+            <dl className="adm-facts">
+              <dt>Applicant</dt>
+              <dd className="adm-inline">
+                <span>
+                  {a.applicant} <span className="adm-muted">({a.applicantRole})</span>
+                </span>
+                <VerifiedMark verified={a.applicantVerified} text />
+              </dd>
+              <dt>Languages</dt>
+              <dd>{a.languages.map((l) => LANGUAGE_NAME[l] ?? l).join(", ")}</dd>
+              <dt>Cities</dt>
+              <dd>{a.cities.join(", ")}</dd>
+              <dt>Bio</dt>
+              <dd className="adm-pre">{a.bio}</dd>
+              <dt>Application id</dt>
+              <dd className="mono adm-ref">{shortId(a.id)}</dd>
+            </dl>
+          </section>
           <section className="adm-section">
             <SectionLabel>Timeline</SectionLabel>
             <Timeline label="Application timeline" steps={applicationSteps(a)} />

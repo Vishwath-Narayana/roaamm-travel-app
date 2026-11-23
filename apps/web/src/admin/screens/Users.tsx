@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { users, type AdminUser, type UserSort } from "../../api/admin";
 import { useSearchParams } from "../../router";
+import { useAdmin } from "../context";
 import { openDetail } from "../params";
 import {
   Chip,
@@ -9,11 +10,13 @@ import {
   Empty,
   ErrorState,
   Loading,
+  PageHead,
   Pager,
-  SampleChip,
   Scroller,
   SearchBox,
+  SectionLabel,
   Segmented,
+  VerifiedMark,
   fmtDate,
   initials,
   useAdminData,
@@ -29,11 +32,11 @@ const ROLE_LABEL = { traveller: "Traveller", guide: "Guide", admin: "Admin" } as
 const ROLE_TONE: Record<AdminUser["role"], ChipTone> = { traveller: "neutral", guide: "info", admin: "warn" };
 
 const RoleChip = ({ u }: { u: AdminUser }) => <Chip tone={ROLE_TONE[u.role]}>{ROLE_LABEL[u.role]}</Chip>;
-const VerifiedChip = ({ u }: { u: AdminUser }) => <Chip tone={u.verified ? "good" : "neutral"}>{u.verified ? "Verified" : "Not verified"}</Chip>;
-const AccountChip = ({ u }: { u: AdminUser }) =>
-  u.sample ? <SampleChip /> : <Chip tone={u.demo ? "sample" : "neutral"}>{u.demo ? "Demo" : "Real"}</Chip>;
+/** Real admin only: the demo console never labels rows (the banner says everything is simulated). */
+const accountText = (u: AdminUser) => (u.demo ? "Demo" : "Real");
 
 export function Users() {
+  const { readOnly } = useAdmin();
   // The command palette and the audit log open this screen with ?q=<name>.
   const params = useSearchParams();
   const openId = params.get("id");
@@ -61,6 +64,7 @@ export function Users() {
       key: "name",
       header: "Name",
       primary: true,
+      size: 32,
       sort: { active: sortCol === "name", dir: sortDir, onSort: () => sortBy("name") },
       cell: (u) => (
         <>
@@ -71,13 +75,14 @@ export function Users() {
         </>
       ),
     },
-    { key: "id", header: "Short id", wide: true, cell: (u) => <span className="mono adm-ref">{u.shortId}</span> },
-    { key: "role", header: "Role", cell: (u) => <RoleChip u={u} /> },
-    { key: "verified", header: "Verified", cell: (u) => <VerifiedChip u={u} /> },
-    { key: "account", header: "Account", wide: true, cell: (u) => <AccountChip u={u} /> },
+    { key: "id", header: "Short id", size: 16, wide: true, cell: (u) => <span className="mono adm-ref">{u.shortId}</span> },
+    { key: "role", header: "Role", size: 16, cell: (u) => <RoleChip u={u} /> },
+    { key: "verified", header: "Verified", size: 12, cell: (u) => <VerifiedMark verified={u.verified} /> },
+    ...(readOnly ? [] : [{ key: "account", header: "Account", size: 12, wide: true, cell: accountText } satisfies Column<AdminUser>]),
     {
       key: "joined",
       header: "Joined",
+      size: 16,
       sort: { active: sortCol === "created", dir: sortDir, onSort: () => sortBy("created") },
       cell: (u) => <span className="adm-num">{fmtDate(u.createdAt)}</span>,
     },
@@ -85,38 +90,38 @@ export function Users() {
 
   return (
     <div className="adm-page">
-      <header className="adm-page__head">
-        <div>
-          <h1>Users</h1>
-          <p className="adm-page__lead">Display name, role and verification only. No email or contact detail exists.</p>
-        </div>
-      </header>
+      <PageHead title="Users" lead="Display name, role and verification only. No email or contact detail exists." />
       <div className="adm-card adm-card--flush">
         <div className="adm-toolbar">
+          {/* One filter group per row on phones: role, then verification. */}
+          <div className="adm-filters">
+            <Scroller>
+              <Segmented<RoleFilter>
+                label="Role"
+                value={role}
+                onChange={setRole}
+                options={[
+                  { value: "", label: "All roles" },
+                  { value: "traveller", label: "Travellers" },
+                  { value: "guide", label: "Guides" },
+                  { value: "admin", label: "Admins" },
+                ]}
+              />
+            </Scroller>
+            <Scroller>
+              <Segmented<VerifiedFilter>
+                label="Verification"
+                value={verified}
+                onChange={setVerified}
+                options={[
+                  { value: "", label: "Any" },
+                  { value: "true", label: "Verified" },
+                  { value: "false", label: "Not verified" },
+                ]}
+              />
+            </Scroller>
+          </div>
           <SearchBox value={search} onChange={setSearch} label="Search users by name" placeholder="Search by name" />
-          <Scroller>
-            <Segmented<RoleFilter>
-              label="Role"
-              value={role}
-              onChange={setRole}
-              options={[
-                { value: "", label: "All roles" },
-                { value: "traveller", label: "Travellers" },
-                { value: "guide", label: "Guides" },
-                { value: "admin", label: "Admins" },
-              ]}
-            />
-            <Segmented<VerifiedFilter>
-              label="Verification"
-              value={verified}
-              onChange={setVerified}
-              options={[
-                { value: "", label: "Any" },
-                { value: "true", label: "Verified" },
-                { value: "false", label: "Not verified" },
-              ]}
-            />
-          </Scroller>
         </div>
         {state.kind === "error" && !state.data ? (
           <ErrorState message={state.message} onRetry={reload} />
@@ -132,7 +137,7 @@ export function Users() {
               phone={(u) => ({
                 title: u.displayName,
                 pill: <RoleChip u={u} />,
-                meta: [u.verified ? "Verified" : "Not verified", <span className="adm-num" key="j">Joined {fmtDate(u.createdAt)}</span>],
+                meta: [<VerifiedMark verified={u.verified} key="v" />, <span className="adm-num" key="j">Joined {fmtDate(u.createdAt)}</span>],
               })}
               empty={q ? `No users match “${q}”.` : "No users with these filters."}
             />
@@ -142,37 +147,49 @@ export function Users() {
           <Pager page={page} hasMore={state.data.hasMore} size={SIZE} shown={state.data.items.length} total={state.data.total} noun={["user", "users"]} onPage={setPage} />
         )}
       </div>
-      {openId && <UserDrawer user={rows?.find((u) => u.id === openId)} loading={!rows} onClose={() => openDetail(null)} />}
+      {openId && <UserDrawer user={rows?.find((u) => u.id === openId)} loading={!rows} showAccount={!readOnly} onClose={() => openDetail(null)} />}
     </div>
   );
 }
 
 /** Built from the row already loaded: the API has no per-user read, and needs none. */
-function UserDrawer({ user: u, loading, onClose }: { user?: AdminUser; loading: boolean; onClose: () => void }) {
+function UserDrawer({ user: u, loading, showAccount, onClose }: { user?: AdminUser; loading: boolean; showAccount: boolean; onClose: () => void }) {
   return (
-    <Drawer title={u ? u.displayName : "User"} onClose={onClose}>
-      {!u && !loading && <Empty>This user is not in the current list. Search by name to find them.</Empty>}
-      {u && (
-        <>
-          <div className="adm-person">
+    <Drawer
+      title={u ? u.displayName : "User"}
+      label="User"
+      summary={
+        u && {
+          lead: (
             <span className="adm-avatar adm-avatar--lg" aria-hidden="true">
               {initials(u.displayName)}
             </span>
-            <div className="adm-chips-row">
-              <RoleChip u={u} />
-              <VerifiedChip u={u} />
-              <AccountChip u={u} />
-            </div>
-          </div>
+          ),
+          pill: <RoleChip u={u} />,
+          facts: [
+            ["Verified", <VerifiedMark verified={u.verified} text />],
+            ["Joined", <span className="adm-num">{fmtDate(u.createdAt)}</span>],
+            ["Short id", <span className="mono adm-ref">{u.shortId}</span>],
+          ],
+        }
+      }
+      onClose={onClose}
+    >
+      {!u && !loading && <Empty>This user is not in the current list. Search by name to find them.</Empty>}
+      {u && (
+        <section className="adm-section">
+          <SectionLabel>Details</SectionLabel>
           <dl className="adm-facts">
-            <dt>Short id</dt>
-            <dd className="mono adm-ref">{u.shortId}</dd>
-            <dt>Joined</dt>
-            <dd className="adm-num">{fmtDate(u.createdAt)}</dd>
+            {showAccount && (
+              <>
+                <dt>Account</dt>
+                <dd>{accountText(u)}</dd>
+              </>
+            )}
             <dt>Contact</dt>
             <dd className="adm-muted">None stored. ROAAMM keeps no email or phone number.</dd>
           </dl>
-        </>
+        </section>
       )}
     </Drawer>
   );

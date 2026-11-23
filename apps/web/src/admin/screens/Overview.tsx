@@ -22,8 +22,8 @@ import {
 import {
   Empty,
   ErrorState,
+  PageHead,
   Pill,
-  SampleChip,
   SkeletonBlock,
   fmtDate,
   initials,
@@ -35,13 +35,18 @@ import { SubjectChip, subjectHref } from "./Audit";
 
 type KpiKey = "users" | "pendingVerifications" | "pendingGuideApplications" | "trips";
 
-/** `queue`: a count of work waiting. New items there are not good news, so its pill stays neutral. */
-const KPIS: { key: KpiKey; label: string; icon: typeof UsersIcon; href: string; queue: boolean }[] =
+/**
+ * `queue`: a count of work waiting. New items there are not good news, so its
+ * pill stays neutral. `short`: the phone label, one line in a half-width card,
+ * so every number in a row sits on the same baseline.
+ */
+const KPIS: { key: KpiKey; label: string; short: string; icon: typeof UsersIcon; href: string; queue: boolean }[] =
   [
-    { key: "users", label: "Users", icon: UsersIcon, href: "/app/admin/users", queue: false },
+    { key: "users", label: "Users", short: "Users", icon: UsersIcon, href: "/app/admin/users", queue: false },
     {
       key: "pendingVerifications",
       label: "Pending verifications",
+      short: "Pending",
       icon: BadgeCheckIcon,
       href: "/app/admin/verification",
       queue: true,
@@ -49,11 +54,12 @@ const KPIS: { key: KpiKey; label: string; icon: typeof UsersIcon; href: string; 
     {
       key: "pendingGuideApplications",
       label: "Open guide applications",
+      short: "Open applications",
       icon: CompassIcon,
       href: "/app/admin/guide-applications",
       queue: true,
     },
-    { key: "trips", label: "Trips", icon: MapIcon, href: "/app/admin/trips", queue: false },
+    { key: "trips", label: "Trips", short: "Trips", icon: MapIcon, href: "/app/admin/trips", queue: false },
   ];
 
 const RECENT = 8;
@@ -66,12 +72,15 @@ const number = new Intl.NumberFormat();
  */
 export function KpiCard({
   label,
+  short,
   kpi,
   icon: Icon,
   href,
   queue,
 }: {
   label: string;
+  /** Shown below 768 px (the full label stays for screen readers). */
+  short?: string;
   kpi?: Kpi;
   icon: typeof UsersIcon;
   href: string;
@@ -85,7 +94,14 @@ export function KpiCard({
         <span className="adm-kpi__icon" aria-hidden="true">
           <Icon size={16} />
         </span>
-        <span className="adm-kpi__label">{label}</span>
+        <span className="adm-kpi__label">
+          <span className={short && short !== label ? "adm-long" : undefined}>{label}</span>
+          {short && short !== label && (
+            <span className="adm-short" aria-hidden="true">
+              {short}
+            </span>
+          )}
+        </span>
         <Link className="adm-kpi__link" href={href} aria-label={`Open ${label.toLowerCase()}`}>
           <ArrowUpRightIcon size={16} />
         </Link>
@@ -105,7 +121,12 @@ export function KpiCard({
       </p>
       <p className="adm-kpi__foot">
         {kpi ? (
-          `vs ${number.format(kpi.prev30)} in the previous 30 days`
+          <>
+            <span className="adm-long">vs {number.format(kpi.prev30)} in the previous 30 days</span>
+            <span className="adm-short" aria-hidden="true">
+              vs {number.format(kpi.prev30)} before
+            </span>
+          </>
         ) : (
           <span className="adm-skeleton" aria-hidden="true" />
         )}
@@ -137,14 +158,7 @@ export function Overview() {
 
   return (
     <div className="adm-page">
-      <header className="adm-page__head">
-        <div>
-          <h1>Overview</h1>
-          <p className="adm-page__lead">
-            Counts for your scope, compared with the previous 30 days.
-          </p>
-        </div>
-      </header>
+      <PageHead title="Overview" lead="Counts for your scope, compared with the previous 30 days." />
       {state.kind === "error" && !data ? (
         <section className="adm-card">
           <ErrorState message={state.message} onRetry={reload} />
@@ -155,6 +169,7 @@ export function Overview() {
             <KpiCard
               key={k.key}
               label={k.label}
+              short={k.short}
               kpi={data?.[k.key]}
               icon={k.icon}
               href={k.href}
@@ -201,10 +216,7 @@ export function Overview() {
                 empty="No open applications."
                 render={(a: Application) => (
                   <Link className="adm-line" href={`/app/admin/guide-applications?id=${a.id}`}>
-                    <span className="adm-line__title">
-                      <span className="adm-line__name">{a.applicant}</span>
-                      {a.sample && <SampleChip />}
-                    </span>
+                    <span className="adm-line__title">{a.applicant}</span>
                     <span className="adm-line__meta">{fmtDate(a.createdAt)}</span>
                     <Pill status={a.status} />
                     <ChevronIcon size={16} className="adm-line__chev" />

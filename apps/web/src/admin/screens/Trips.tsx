@@ -2,18 +2,21 @@ import { useEffect, useState } from "react";
 import { STATUS_TEXT, TRIP_STATUSES, trips, type AdminTrip, type TripSort, type TripStatus } from "../../api/admin";
 import { useSearchParams } from "../../router";
 import { openDetail } from "../params";
+import { MapIcon } from "../icons";
 import {
   DataTable,
   Drawer,
   Empty,
   ErrorState,
   Loading,
+  PageHead,
   Pager,
   Pill,
-  SampleChip,
   Scroller,
   SearchBox,
+  SectionLabel,
   Segmented,
+  SummaryIcon,
   fmtDay,
   useAdminData,
   useDebounced,
@@ -39,39 +42,24 @@ export function Trips() {
   const rows = state.data?.items;
 
   const columns: Column<AdminTrip>[] = [
-    {
-      key: "trip",
-      header: "Trip",
-      primary: true,
-      cell: (t) => (
-        <>
-          <span className="adm-cell__text">{t.title}</span>
-          {t.sample && <SampleChip />}
-        </>
-      ),
-    },
-    { key: "destination", header: "Destination", cell: (t) => t.destination },
+    { key: "trip", header: "Trip", primary: true, size: 30, cell: (t) => <span className="adm-cell__text">{t.title}</span> },
+    { key: "destination", header: "Destination", size: 20, cell: (t) => t.destination },
     {
       key: "dates",
       header: "Dates",
+      size: 22,
       sort: { active: sort !== "created_desc", dir: sort === "start_asc" ? "asc" : "desc", onSort: () => setSort(sort === "start_desc" ? "start_asc" : "start_desc") },
       cell: (t) => <span className="adm-num">{dates(t)}</span>,
     },
-    { key: "status", header: "Status", cell: (t) => <Pill status={t.status} /> },
-    { key: "owner", header: "Owner", wide: true, cell: (t) => t.owner },
+    { key: "status", header: "Status", size: 13, cell: (t) => <Pill status={t.status} /> },
+    { key: "owner", header: "Owner", size: 15, wide: true, cell: (t) => t.owner },
   ];
 
   return (
     <div className="adm-page">
-      <header className="adm-page__head">
-        <div>
-          <h1>Trips</h1>
-          <p className="adm-page__lead">Read-only. Trip notes are private to the traveller and never shown here.</p>
-        </div>
-      </header>
+      <PageHead title="Trips" lead="Read-only. Trip notes are private to the traveller and never shown here." />
       <div className="adm-card adm-card--flush">
         <div className="adm-toolbar">
-          <SearchBox value={search} onChange={setSearch} label="Search trips by title, place or owner" placeholder="Search title, place or owner" />
           <Scroller>
             <Segmented<TripStatus | "">
               label="Status"
@@ -80,6 +68,7 @@ export function Trips() {
               options={[{ value: "", label: "All" }, ...TRIP_STATUSES.map((s) => ({ value: s, label: STATUS_TEXT[s] }))]}
             />
           </Scroller>
+          <SearchBox value={search} onChange={setSearch} label="Search trips by title, place or owner" placeholder="Search title, place or owner" />
         </div>
         {state.kind === "error" && !state.data ? (
           <ErrorState message={state.message} onRetry={reload} />
@@ -94,7 +83,6 @@ export function Trips() {
               onOpen={(t) => openDetail(t.id)}
               phone={(t) => ({
                 title: t.title,
-                extra: t.sample ? <SampleChip /> : undefined,
                 pill: <Pill status={t.status} />,
                 meta: [t.destination, <span className="adm-num" key="d">{fmtDay(t.startDate)}</span>],
               })}
@@ -114,25 +102,35 @@ export function Trips() {
 /** Built from the row already loaded. Notes are private and never fetched. */
 function TripDrawer({ trip: t, loading, onClose }: { trip?: AdminTrip; loading: boolean; onClose: () => void }) {
   return (
-    <Drawer title={t ? t.title : "Trip"} onClose={onClose}>
+    <Drawer
+      title={t ? t.title : "Trip"}
+      label="Trip"
+      summary={
+        t && {
+          lead: (
+            <SummaryIcon>
+              <MapIcon size={20} />
+            </SummaryIcon>
+          ),
+          pill: <Pill status={t.status} />,
+          facts: [
+            ["Dates", <span className="adm-num">{dates(t)}</span>],
+            ["Destination", t.destination],
+            ["Owner", t.owner],
+          ],
+        }
+      }
+      onClose={onClose}
+    >
       {!t && !loading && <Empty>This trip is not in the current list.</Empty>}
       {t && (
-        <>
-          <div className="adm-chips-row">
-            <Pill status={t.status} />
-            {t.sample && <SampleChip />}
-          </div>
+        <section className="adm-section">
+          <SectionLabel>Details</SectionLabel>
           <dl className="adm-facts">
-            <dt>Destination</dt>
-            <dd>{t.destination}</dd>
-            <dt>Dates</dt>
-            <dd className="adm-num">{dates(t)}</dd>
-            <dt>Owner</dt>
-            <dd>{t.owner}</dd>
             <dt>Notes</dt>
             <dd className="adm-muted">Private to the traveller. Admins never see them.</dd>
           </dl>
-        </>
+        </section>
       )}
     </Drawer>
   );

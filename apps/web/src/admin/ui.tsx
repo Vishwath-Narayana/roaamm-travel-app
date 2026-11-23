@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -116,6 +117,8 @@ export function useMedia(query: string): boolean {
 /** Phones (below 768 px) get list rows and bottom sheets instead of tables and drawers. */
 export const PHONE_QUERY = "(max-width: 767px)";
 export const useIsPhone = () => useMedia(PHONE_QUERY);
+/** Low-priority table columns (`wide`) exist from 1280 px up. */
+export const WIDE_QUERY = "(min-width: 1280px)";
 
 // ---- labels
 
@@ -141,7 +144,7 @@ export function relTime(iso: string, now = Date.now()): string {
 
 /**
  * Display only: sample rows carry a "Sample:" prefix in the database, and the
- * Sample chip already says so. The stored text is never changed.
+ * demo banner already says every row is simulated. The stored text is never changed.
  */
 export function cleanTitle(title: string): string {
   const t = title.replace(/^Sample:\s*/i, "");
@@ -185,14 +188,25 @@ export function Pill({ status }: { status: string }) {
   );
 }
 
-export type ChipTone = "neutral" | "info" | "good" | "warn" | "bad" | "sample" | "review";
+export type ChipTone = "neutral" | "info" | "good" | "warn" | "bad" | "review";
 
 export function Chip({ tone = "neutral", children }: { tone?: ChipTone; children: ReactNode }) {
   return <span className={`adm-chip adm-chip--${tone}`}>{children}</span>;
 }
 
-export function SampleChip() {
-  return <Chip tone="sample">Sample</Chip>;
+/**
+ * Verified or not, without a chip: a 16 px check in the success colour, or a
+ * muted dash. Both carry their meaning as an accessible name; `text` also
+ * shows it (drawer facts).
+ */
+export function VerifiedMark({ verified, text }: { verified: boolean; text?: boolean }) {
+  const label = verified ? "Verified" : "Not verified";
+  return (
+    <span className={`adm-verified${verified ? "" : " adm-verified--no"}`} role="img" aria-label={label}>
+      {verified ? <CheckIcon size={16} aria-hidden="true" /> : <span aria-hidden="true">—</span>}
+      {text && <span aria-hidden="true">{label}</span>}
+    </span>
+  );
 }
 
 export function Count({ n }: { n: number | null | undefined }) {
@@ -306,10 +320,51 @@ export function SearchBox({
   );
 }
 
-/** One line of filters that scrolls sideways on narrow screens, with faded edges. */
+/**
+ * One row of filters. On narrow screens it scrolls sideways, fades an edge
+ * only while there is more to see on that side, and keeps the selected option
+ * in view (on first render and whenever the selection changes).
+ */
 export function Scroller({ children, label }: { children: ReactNode; label?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const shown = useRef<Element | null>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const start = el.scrollLeft > 1;
+      const end = max - el.scrollLeft > 1;
+      el.dataset.fade = start && end ? "both" : start ? "start" : end ? "end" : "none";
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(update) : null;
+    ro?.observe(el);
+    if (el.firstElementChild) ro?.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro?.disconnect();
+    };
+  }, []);
+
+  // Bring the selected option into view without scrolling the page.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const sel = el?.querySelector('[aria-pressed="true"], [aria-selected="true"]');
+    if (!el || !sel || sel === shown.current) return;
+    shown.current = sel;
+    if (el.scrollWidth <= el.clientWidth) return;
+    const box = el.getBoundingClientRect();
+    const r = sel.getBoundingClientRect();
+    const pad = r.width / 2;
+    if (r.left < box.left) el.scrollLeft += r.left - box.left - pad;
+    else if (r.right > box.right) el.scrollLeft += r.right - box.right + pad;
+  });
+
   return (
-    <div className="adm-scroller" data-scroll="x" aria-label={label} role={label ? "group" : undefined}>
+    <div ref={ref} className="adm-scroller" data-scroll="x" aria-label={label} role={label ? "group" : undefined}>
       {children}
     </div>
   );
@@ -370,7 +425,7 @@ export function Segmented<T extends string>({
   value: T;
   options: { value: T; label: ReactNode }[];
   onChange: (v: T) => void;
-  /** Equal-width segments that fill the row (the phone board tabs). */
+  /** The board's column tabs on small screens: the label over its count. */
   fill?: boolean;
 }) {
   return (
@@ -396,17 +451,26 @@ export type Column<T> = {
   key: string;
   header: ReactNode;
   cell: (row: T) => ReactNode;
-  /** The row header: absorbs the spare width, truncates, and holds the open button. */
+  /**
+   * The column's share of the table width (the screen's column template).
+   * Shares are relative: the visible columns split the width left after the
+   * fixed checkbox, action and chevron columns. "action" is one icon button.
+   */
+  size: number | "action";
+  /** The row header: holds the open button; long text ends in an ellipsis. */
   primary?: boolean;
-  /** Low priority: hidden below 1280 px so the table never scrolls sideways. */
+  /** Low priority: rendered only from 1280 px, so the table never scrolls sideways. */
   wide?: boolean;
   /** Right-aligned (numbers, dates at the end). */
   end?: boolean;
   sort?: { active: boolean; dir: "asc" | "desc"; onSort: () => void };
 };
 
-/** A phone list row: title and pill on line 1, at most two meta items on line 2. */
-export type PhoneRow = { title: ReactNode; extra?: ReactNode; pill?: ReactNode; meta: ReactNode[] };
+/**
+ * A phone list row. Line 1: the title, which gets the whole line (and an
+ * optional `aside`, such as a time). Line 2: the pill, then at most two meta items.
+ */
+export type PhoneRow = { title: ReactNode; aside?: ReactNode; pill?: ReactNode; meta: ReactNode[] };
 
 export type Selection<T> = {
   selected: Set<string>;
@@ -429,19 +493,26 @@ function SortButton({ label, sort }: { label: ReactNode; sort: NonNullable<Colum
 
 const IGNORE_ROW_CLICK = 'input, a, .adm-check, .adm-menu, [role="menu"], button:not(.adm-rowlink)';
 
+const colClass = <T,>(c: Column<T>) =>
+  [c.primary && "adm-col--primary", c.end && "adm-col--end", c.size === "action" && "adm-col--action"].filter(Boolean).join(" ") || undefined;
+
 /**
- * Every admin list. Desktop and tablet: a table (header 40 px, rows 48 px, the
- * first column starts at the card padding). Phone: two-line list rows. Rows
- * that open something get a hover fill, a pointer cursor and a chevron.
+ * Every admin list. Desktop and tablet: a table with one fixed column
+ * template per screen (table-layout: fixed and a <colgroup>), so no header
+ * moves when a tab, filter, page or the data changes. Header 40 px, rows
+ * 48 px, the first column starts at the card padding. Phone: two-line list
+ * rows. Rows that open something get a hover fill, a pointer cursor and a
+ * chevron.
  */
 export function DataTable<T extends { id: string }>({
   caption,
-  columns,
+  columns: allColumns,
   rows,
   busy,
   onOpen,
   phone,
   selection,
+  checkColumn = false,
   empty,
   skeleton = 6,
 }: {
@@ -453,10 +524,16 @@ export function DataTable<T extends { id: string }>({
   onOpen?: (row: T) => void;
   phone: (row: T) => PhoneRow;
   selection?: Selection<T>;
+  /**
+   * Reserve the checkbox column even while `selection` is off (a tab without
+   * bulk actions on a screen that has them), so the columns never move.
+   */
+  checkColumn?: boolean;
   empty: ReactNode;
   skeleton?: number;
 }) {
   const isPhone = useIsPhone();
+  const wide = useMedia(WIDE_QUERY);
   const loaded = rows !== undefined;
   const list = rows ?? [];
 
@@ -478,10 +555,10 @@ export function DataTable<T extends { id: string }>({
                 <span className="adm-row__main">
                   <span className="adm-row__line1">
                     <span className="adm-row__title">{p.title}</span>
-                    {p.extra}
-                    {p.pill}
+                    {p.aside}
                   </span>
                   <span className="adm-row__line2">
+                    {p.pill}
                     {p.meta.slice(0, 2).map((m, i) => (
                       <Fragment key={i}>
                         {i > 0 && (
@@ -515,6 +592,9 @@ export function DataTable<T extends { id: string }>({
     );
   }
 
+  const columns = allColumns.filter((c) => wide || !c.wide);
+  const shares = columns.reduce((n, c) => n + (c.size === "action" ? 0 : c.size), 0);
+  const hasCheck = Boolean(selection) || checkColumn;
   const selectable = selection ? list.filter((r) => !selection.blocked(r)) : [];
   const allSelected = selectable.length > 0 && selectable.every((r) => selection!.selected.has(r.id));
   const headReason = selection && selectable.length === 0 ? (list[0] ? selection.blocked(list[0]) : "Nothing to select") : null;
@@ -525,32 +605,46 @@ export function DataTable<T extends { id: string }>({
     else next.add(id);
     selection.onChange(next);
   };
-  const cols = columns.length + (selection ? 1 : 0) + (onOpen ? 1 : 0);
+  const cols = columns.length + (hasCheck ? 1 : 0) + (onOpen ? 1 : 0);
 
   return (
     <div className="adm-table-wrap">
       <table className="adm-table" aria-busy={busy} data-openable={onOpen ? "true" : undefined}>
         <caption className="visually-hidden">{caption}</caption>
+        <colgroup>
+          {hasCheck && <col className="adm-table__col-check" />}
+          {columns.map((c) =>
+            c.size === "action" ? (
+              <col key={c.key} className="adm-table__col-action" />
+            ) : (
+              <col key={c.key} style={{ width: `${((c.size / shares) * 100).toFixed(3)}%` }} />
+            ),
+          )}
+          {onOpen && <col className="adm-table__col-chev" />}
+        </colgroup>
         <thead>
           <tr>
-            {selection && (
-              <th scope="col" className="adm-table__check">
-                <span className="adm-check" data-tip={headReason ?? undefined}>
-                  <input
-                    type="checkbox"
-                    aria-label={selection.allLabel}
-                    checked={allSelected}
-                    onChange={() => selection.onChange(allSelected ? new Set() : new Set(selectable.map((r) => r.id)))}
-                    {...unavailable(headReason)}
-                  />
-                </span>
-              </th>
-            )}
+            {hasCheck &&
+              (selection ? (
+                <th scope="col" className="adm-table__check">
+                  <span className="adm-check" data-tip={headReason ?? undefined}>
+                    <input
+                      type="checkbox"
+                      aria-label={selection.allLabel}
+                      checked={allSelected}
+                      onChange={() => selection.onChange(allSelected ? new Set() : new Set(selectable.map((r) => r.id)))}
+                      {...unavailable(headReason)}
+                    />
+                  </span>
+                </th>
+              ) : (
+                <td className="adm-table__check" />
+              ))}
             {columns.map((c) => (
               <th
                 key={c.key}
                 scope="col"
-                className={[c.primary && "adm-col--primary", c.wide && "adm-col--wide", c.end && "adm-col--end"].filter(Boolean).join(" ") || undefined}
+                className={colClass(c)}
                 aria-sort={c.sort ? (c.sort.active ? (c.sort.dir === "asc" ? "ascending" : "descending") : "none") : undefined}
               >
                 {c.sort ? <SortButton label={c.header} sort={c.sort} /> : c.header}
@@ -582,21 +676,24 @@ export function DataTable<T extends { id: string }>({
                     : undefined
                 }
               >
-                {selection && (
-                  <td className="adm-table__check">
-                    <span className="adm-check" data-tip={reason ?? undefined}>
-                      <input
-                        type="checkbox"
-                        aria-label={selection.rowLabel(r)}
-                        checked={isSelected}
-                        onChange={() => toggle(r.id)}
-                        {...unavailable(reason)}
-                      />
-                    </span>
-                  </td>
-                )}
+                {hasCheck &&
+                  (selection ? (
+                    <td className="adm-table__check">
+                      <span className="adm-check" data-tip={reason ?? undefined}>
+                        <input
+                          type="checkbox"
+                          aria-label={selection.rowLabel(r)}
+                          checked={isSelected}
+                          onChange={() => toggle(r.id)}
+                          {...unavailable(reason)}
+                        />
+                      </span>
+                    </td>
+                  ) : (
+                    <td className="adm-table__check" />
+                  ))}
                 {columns.map((c) => {
-                  const cls = [c.primary && "adm-col--primary", c.wide && "adm-col--wide", c.end && "adm-col--end"].filter(Boolean).join(" ") || undefined;
+                  const cls = colClass(c);
                   if (c.primary) {
                     return (
                       <th key={c.key} scope="row" className={cls}>
@@ -707,14 +804,35 @@ function useDragToClose(panel: RefObject<HTMLElement | null>, onClose: () => voi
   return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp };
 }
 
+/** The summary at the top of a detail drawer: who or what, its status, three key facts. */
+export type Summary = {
+  /** An avatar or an icon, 40 px. */
+  lead: ReactNode;
+  pill?: ReactNode;
+  facts: [label: string, value: ReactNode][];
+};
+
+/** A 40 px round icon for a drawer summary (things without a person: trips, applications). */
+export function SummaryIcon({ children }: { children: ReactNode }) {
+  return (
+    <span className="adm-summary__icon" aria-hidden="true">
+      {children}
+    </span>
+  );
+}
+
 /**
  * The detail drawer (desktop and tablet: a 480 px panel on the right) that is
  * a full-height bottom sheet on phones, with a drag handle and a sticky action
  * bar. `kind="menu"` is the phone navigation sheet: content height only.
+ * With a `summary`, the bar shows `label` (what kind of thing this is) and the
+ * body opens with the summary, whose heading (`title`) names the dialog.
  * Linkable: callers open it from a ?id= query parameter.
  */
 export function Drawer({
   title,
+  label,
+  summary,
   onClose,
   children,
   footer,
@@ -722,6 +840,8 @@ export function Drawer({
   closeLabel = "Close details",
 }: {
   title: ReactNode;
+  label?: ReactNode;
+  summary?: Summary;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
@@ -730,6 +850,7 @@ export function Drawer({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const isPhone = useIsPhone();
   useDialogFocus(ref, true, onClose);
   const drag = useDragToClose(ref, onClose);
   return (
@@ -737,20 +858,67 @@ export function Drawer({
       <div className="adm-backdrop" onClick={onClose} aria-hidden="true" />
       <div ref={ref} className={`adm-sheet adm-sheet--${kind}`} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <div className="adm-sheet__top" {...drag}>
-          <span className="adm-sheet__handle" aria-hidden="true" />
+          {/* The handle exists only on phones, where the sheet can be dragged down. */}
+          {isPhone && <span className="adm-sheet__handle" aria-hidden="true" />}
           <header className="adm-sheet__head">
-            <h2 id={titleId} className="adm-sheet__title">
-              {title}
-            </h2>
+            {summary ? (
+              <p className="adm-sheet__label">{label ?? title}</p>
+            ) : (
+              <h2 id={titleId} className="adm-sheet__title">
+                {label ?? title}
+              </h2>
+            )}
             <button type="button" className="adm-icon-btn" onClick={onClose} aria-label={closeLabel}>
               <CloseIcon size={16} />
             </button>
           </header>
         </div>
-        <div className="adm-sheet__body">{children}</div>
+        <div className="adm-sheet__body">
+          {summary && (
+            <section className="adm-summary" aria-labelledby={titleId}>
+              <div className="adm-summary__top">
+                {summary.lead}
+                <div className="adm-summary__id">
+                  <h2 id={titleId} className="adm-summary__name">
+                    {title}
+                  </h2>
+                  {summary.pill}
+                </div>
+              </div>
+              <dl className="adm-summary__facts">
+                {summary.facts.map(([k, v]) => (
+                  <div key={k} className="adm-summary__fact">
+                    <dt>{k}</dt>
+                    <dd>{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+          {children}
+        </div>
         {footer && <div className="adm-sheet__foot">{footer}</div>}
       </div>
     </div>
+  );
+}
+
+/**
+ * A page's title, lead and actions. Exactly one h1 per page at every width:
+ * from 768 px it is here; below 768 px the top bar's title is the h1 and this
+ * header keeps only the lead (for screen readers below 640 px) and actions.
+ */
+export function PageHead({ title, lead, actions }: { title: ReactNode; lead?: ReactNode; actions?: ReactNode }) {
+  const isPhone = useIsPhone();
+  if (isPhone && !lead && !actions) return null;
+  return (
+    <header className="adm-page__head" data-bare={!actions || undefined}>
+      <div className="adm-page__titles">
+        {!isPhone && <h1>{title}</h1>}
+        {lead && <p className="adm-page__lead">{lead}</p>}
+      </div>
+      {actions}
+    </header>
   );
 }
 
