@@ -30,7 +30,9 @@ passkeys (ADR 0005).
   `is_seed` for the fixed demo rows.
 - A member's status comes from their **latest** request: `none`, `pending`,
   `verified` or `rejected`. After a rejection they may submit again.
-  `verified` is final.
+  `verified` is final. *Update (M4a, [ADR 0008](0008-guide-applications.md)):*
+  verified is final for the shared demo users too, and the demo traveller is
+  seeded as a simulated verified traveller.
 - **Real users: at most one pending request** (unique index). Shared demo
   users cannot be held to that, because many visitors use them, so their
   visitor-made requests are capped at **50 per demo user** (oldest dropped).
