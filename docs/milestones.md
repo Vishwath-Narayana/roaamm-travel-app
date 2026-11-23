@@ -2,6 +2,8 @@
 
 > Doc 7 of 8. Each milestone ends with: a merged pull request (`ci-ok` green), a deploy to production, the docs updated, and a short demo note. Build in order. Durations are rough estimates for one developer working with Claude.
 
+**Definition of done (every milestone):** the milestone PR adds or updates its study note in [docs/learn/](learn/README.md), with every section the folder README lists, and adds any new ADR to [docs/learn/decisions-in-plain-words.md](learn/decisions-in-plain-words.md). A milestone PR without its note is not done.
+
 | # | Milestone | Delivers | Done when |
 |---|---|---|---|
 | **M0** | Foundation | Public repo, monorepo skeleton (web, edge, crates, core, packages), CI with `ci-ok`, Cloudflare/Google Cloud/Neon accounts, a "hello" app deployed on **all 4 subdomains**, core on Cloud Run behind the `roaamm-api` Worker proxy, Sentry | `roaamm.`, `roaamm-rt.`, `roaamm-api.` and `roaamm-status.plinthwell.com` all return 200 over TLS from CI deploys |
