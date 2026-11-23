@@ -1,6 +1,14 @@
 // The admin console (M4b): its own app shell (sidebar + top bar) instead of
 // the marketing header and footer. Loaded only by admins, on /app/admin/*.
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ComponentType } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+} from "react";
 import {
   ApiFailure,
   dashboardPath,
@@ -12,15 +20,14 @@ import {
   type Me,
 } from "../api/session";
 import { clearAdminCache } from "../api/admin";
-import { CloseIcon, MenuIcon, SearchIcon } from "../components/icons";
 import { ThemeToggle } from "../components/TopNav";
 import { Link, navigate, usePageTitle } from "../router";
 import { AccountMenu } from "./AccountMenu";
 import { AdminContext, type AdminContextValue } from "./context";
-import { SidebarIcon } from "./icons";
+import { MarkIcon, MenuIcon, SearchIcon, SidebarIcon } from "./icons";
 import { BASE, PAGES, slugOf } from "./nav";
 import { NavGroups, ScopeChip } from "./Sidebar";
-import { ReadOnlyBanner, useDialogFocus } from "./ui";
+import { DemoBanner, Drawer, ErrorState, useMedia } from "./ui";
 import { Overview } from "./screens/Overview";
 import { Verification } from "./screens/Verification";
 import { Users } from "./screens/Users";
@@ -42,6 +49,10 @@ const SCREENS: Record<string, ComponentType> = {
 };
 
 const COLLAPSE_KEY = "roaamm:admin-sidebar";
+/** Tablets get the icon rail whatever the saved choice is. */
+const TABLET = "(min-width: 768px) and (max-width: 1023px)";
+/** How long a tapped unavailable control shows its reason. */
+const TIP_MS = 2400;
 const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
 
 function readCollapsed(): boolean {
@@ -64,6 +75,33 @@ export function AdminApp({ path }: { path: string }) {
   const [palette, setPalette] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const meRef = useRef<Me | null>(null);
+  const tablet = useMedia(TABLET);
+  const rail = collapsed || tablet;
+
+  // A tap (or click) on an unavailable control shows its reason for a moment:
+  // touch screens have no hover, so the title tooltip alone is not enough.
+  useEffect(() => {
+    let timer = 0;
+    let shown: Element | null = null;
+    function onClick(e: MouseEvent) {
+      const target = e.target as Element | null;
+      const tip = target?.closest?.("[data-tip]");
+      if (!tip) return;
+      const off =
+        tip.getAttribute("aria-disabled") === "true" || tip.querySelector('[aria-disabled="true"]');
+      if (!off) return;
+      shown?.removeAttribute("data-tip-open");
+      tip.setAttribute("data-tip-open", "");
+      shown = tip;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => tip.removeAttribute("data-tip-open"), TIP_MS);
+    }
+    document.addEventListener("click", onClick, true);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   /** 401: real admins go to the sign-in page; a demo session goes back to the demo page. */
   const onSignedOut = useCallback(() => {
@@ -140,40 +178,57 @@ export function AdminApp({ path }: { path: string }) {
 
   return (
     <AdminContext.Provider value={ctx}>
-      <div className="adm" data-collapsed={collapsed}>
+      <div className="adm" data-collapsed={rail}>
         <a className="skip-link" href="#main">
           Skip to content
         </a>
         <aside className="adm-sidebar" aria-label="Admin">
-          <div className="adm-sidebar__head">
-            <Link href={BASE} className="adm-brand">
-              <span className="adm-brand__mark" aria-hidden="true">
-                R
-              </span>
-              <span className="adm-brand__name">ROAAMM Admin</span>
-            </Link>
-            <button
-              type="button"
-              className="adm-icon-btn adm-sidebar__collapse"
-              onClick={toggleCollapsed}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              aria-pressed={collapsed}
-            >
-              <SidebarIcon size={18} />
-            </button>
+          <div className="adm-sidebar__inner">
+            <div className="adm-sidebar__head">
+              <Link href={BASE} className="adm-brand" aria-label="ROAAMM Admin, overview">
+                <span className="adm-logo" aria-hidden="true">
+                  <MarkIcon size={20} />
+                </span>
+                <span className="adm-brand__name" aria-hidden="true">
+                  ROAAMM <span className="adm-brand__sub">Admin</span>
+                </span>
+              </Link>
+              <button
+                type="button"
+                className="adm-icon-btn adm-sidebar__collapse"
+                onClick={toggleCollapsed}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-pressed={collapsed}
+              >
+                <SidebarIcon size={16} />
+              </button>
+            </div>
+            <div className="adm-sidebar__scope">
+              {me ? (
+                <ScopeChip isDemo={me.isDemo} />
+              ) : (
+                <span className="adm-scope adm-scope--pending" aria-hidden="true" />
+              )}
+            </div>
+            <nav className="adm-nav" aria-label="Admin sections">
+              <NavGroups slug={slug ?? ""} collapsed={rail} />
+            </nav>
           </div>
-          <div className="adm-sidebar__scope">
-            {me ? <ScopeChip isDemo={me.isDemo} /> : <span className="adm-scope adm-scope--pending" aria-hidden="true" />}
-          </div>
-          <nav className="adm-nav" aria-label="Admin sections">
-            <NavGroups slug={slug ?? ""} collapsed={collapsed} />
-          </nav>
         </aside>
         <div className="adm-body">
           <header className="adm-topbar">
-            <button type="button" className="adm-icon-btn adm-topbar__menu" aria-label="Open menu" aria-expanded={sheet} onClick={() => setSheet(true)}>
+            <button
+              type="button"
+              className="adm-icon-btn adm-topbar__menu"
+              aria-label="Open menu"
+              aria-expanded={sheet}
+              onClick={() => setSheet(true)}
+            >
               <MenuIcon size={20} />
             </button>
+            <p className="adm-topbar__title" aria-hidden="true">
+              {page?.label ?? "Admin"}
+            </p>
             <nav aria-label="Breadcrumb" className="adm-crumbs">
               <ol>
                 <li>
@@ -183,16 +238,27 @@ export function AdminApp({ path }: { path: string }) {
               </ol>
             </nav>
             <div className="adm-topbar__right">
-              <button type="button" className="adm-cmdk" onClick={() => setPalette(true)} aria-keyshortcuts="Control+K Meta+K">
-                <SearchIcon size={14} />
-                <span className="adm-cmdk__text">Search or jump to…</span>
-                <kbd>{IS_MAC ? "⌘K" : "Ctrl K"}</kbd>
+              <button
+                type="button"
+                className="adm-cmdk"
+                onClick={() => setPalette(true)}
+                aria-keyshortcuts="Control+K Meta+K"
+                aria-label="Search or jump to a page"
+              >
+                <SearchIcon size={16} />
+                <span className="adm-cmdk__text" aria-hidden="true">
+                  Search or jump to…
+                </span>
+                <kbd aria-hidden="true">{IS_MAC ? "⌘K" : "Ctrl K"}</kbd>
               </button>
               <ThemeToggle />
               {me ? (
                 <AccountMenu me={me} onSignOut={onSignOut} signingOut={signingOut} />
               ) : (
-                <span className="adm-avatar adm-avatar--btn adm-avatar--pending" aria-hidden="true" />
+                <span
+                  className="adm-avatar adm-avatar--btn adm-avatar--pending"
+                  aria-hidden="true"
+                />
               )}
             </div>
           </header>
@@ -208,20 +274,21 @@ export function AdminApp({ path }: { path: string }) {
             {state.kind === "error" && (
               <div className="adm-page">
                 <h1>{page?.label ?? "Admin"}</h1>
-                <p role="alert" className="adm-inline-error adm-inline-error--flush">
-                  {errorMessage(state.error)}
-                </p>
-                <p>
-                  <button type="button" className="adm-btn adm-btn--primary" onClick={load}>
-                    Try again
-                  </button>
-                </p>
+                <section className="adm-card">
+                  <ErrorState message={errorMessage(state.error)} onRetry={load} />
+                </section>
               </div>
             )}
-            {me && me.isDemo && <ReadOnlyBanner />}
+            {me && me.isDemo && <DemoBanner />}
             {me &&
               (Screen ? (
-                <Suspense fallback={<p role="status" className="adm-muted">Loading…</p>}>
+                <Suspense
+                  fallback={
+                    <p role="status" className="adm-page__lead">
+                      Loading…
+                    </p>
+                  }
+                >
                   <Screen />
                 </Suspense>
               ) : (
@@ -236,7 +303,13 @@ export function AdminApp({ path }: { path: string }) {
               ))}
           </main>
         </div>
-        {sheet && <MenuSheet slug={slug ?? ""} isDemo={me?.isDemo ?? null} onClose={() => setSheet(false)} />}
+        {sheet && (
+          <MenuSheet
+            slug={slug ?? ""}
+            isDemo={me?.isDemo ?? null}
+            onClose={() => setSheet(false)}
+          />
+        )}
         {palette && (
           <Suspense fallback={null}>
             <Palette onClose={() => setPalette(false)} />
@@ -247,25 +320,22 @@ export function AdminApp({ path }: { path: string }) {
   );
 }
 
-/** Below 768 px the sidebar becomes this sheet. */
-function MenuSheet({ slug, isDemo, onClose }: { slug: string; isDemo: boolean | null; onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useDialogFocus(ref, true, onClose);
+/** Below 768 px the sidebar becomes this bottom sheet (the drawer's sheet, 44 px rows). */
+function MenuSheet({
+  slug,
+  isDemo,
+  onClose,
+}: {
+  slug: string;
+  isDemo: boolean | null;
+  onClose: () => void;
+}) {
   return (
-    <div className="adm-sheet-layer">
-      <div className="adm-drawer-backdrop" onClick={onClose} aria-hidden="true" />
-      <div ref={ref} className="adm-sheet" role="dialog" aria-modal="true" aria-label="Admin menu">
-        <div className="adm-sheet__head">
-          <span className="adm-brand__name">ROAAMM Admin</span>
-          <button type="button" className="adm-icon-btn" onClick={onClose} aria-label="Close menu">
-            <CloseIcon size={18} />
-          </button>
-        </div>
-        {isDemo !== null && <ScopeChip isDemo={isDemo} />}
-        <nav className="adm-nav" aria-label="Admin sections">
-          <NavGroups slug={slug} collapsed={false} onNavigate={onClose} />
-        </nav>
-      </div>
-    </div>
+    <Drawer kind="menu" title="ROAAMM Admin" onClose={onClose} closeLabel="Close menu">
+      {isDemo !== null && <ScopeChip isDemo={isDemo} />}
+      <nav className="adm-nav" aria-label="Admin sections">
+        <NavGroups slug={slug} collapsed={false} onNavigate={onClose} />
+      </nav>
+    </Drawer>
   );
 }

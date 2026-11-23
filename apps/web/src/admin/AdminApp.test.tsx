@@ -7,7 +7,12 @@ import { AdminApp } from "./AdminApp";
 const DEMO_ME = { role: "admin", displayName: "Demo admin", isDemo: true };
 const REAL_ME = { role: "admin", displayName: "Sample owner Ada", isDemo: false };
 
-const kpi = (value: number, change: number | null) => ({ value, last30: 2, prev30: change === null ? 0 : 1, change });
+const kpi = (value: number, change: number | null) => ({
+  value,
+  last30: 2,
+  prev30: change === null ? 0 : 1,
+  change,
+});
 const OVERVIEW = {
   scope: "demo",
   users: kpi(12, 50),
@@ -33,7 +38,25 @@ const QUEUE = {
   hasMore: false,
   counts: { pending: 2, verified: 5, rejected: 1 },
 };
-const EMPTY_APPS = { items: [], page: 0, size: 5, hasMore: false, total: 0, counts: { submitted: 0, in_review: 0, approved: 0, rejected: 0, total: 0 } };
+const AUDIT = [
+  {
+    id: "e1",
+    admin: "Demo admin",
+    action: "verification.approve",
+    targetType: "verification",
+    targetId: "a9",
+    target: "Sample traveller Mei",
+    createdAt: "2026-11-21T08:00:00Z",
+  },
+];
+const EMPTY_APPS = {
+  items: [],
+  page: 0,
+  size: 5,
+  hasMore: false,
+  total: 0,
+  counts: { submitted: 0, in_review: 0, approved: 0, rejected: 0, total: 0 },
+};
 
 function at(path: string) {
   window.history.replaceState(null, "", path);
@@ -44,20 +67,26 @@ describe("AdminApp", () => {
   beforeEach(() => clearAdminCache());
   afterEach(() => vi.restoreAllMocks());
 
-  it("shows the shell, the scope chip and KPI deltas only where the API gives one", async () => {
+  it("shows the shell, the scope chip, absolute KPI changes and recent activity", async () => {
     mockApi({
       "/v1/me": [[200, DEMO_ME]],
-      "/v1/admin/overview": [[200, OVERVIEW]],
+      "/v1/admin/overview": [
+        [200, { ...OVERVIEW, trips: { value: 3, last30: 0, prev30: 1, change: -100 } }],
+      ],
       "/v1/admin/verification": [[200, QUEUE]],
       "/v1/admin/guide-applications": [[200, EMPTY_APPS]],
+      "/v1/admin/audit": [[200, { items: AUDIT, page: 0, hasMore: false }]],
     });
     at("/app/admin");
     // The shell is there from the first frame; the scope chip appears once the session is known.
-    expect(screen.getByText("ROAAMM Admin")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ROAAMM Admin, overview" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Checking your session…");
     expect(await screen.findByText("Demo (simulated)")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Overview/ })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: /^Overview$/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     // Coming soon items are labelled and are not links.
     expect(screen.getByText("M8")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Safety/ })).toBeNull();
@@ -65,35 +94,59 @@ describe("AdminApp", () => {
     const kpis = await screen.findByRole("list", { name: "Key numbers" });
     await waitFor(() => expect(within(kpis).getByText("12")).toBeInTheDocument());
     const cards = within(kpis).getAllByRole("listitem");
-    expect(cards[0]!.querySelector(".adm-delta")).toHaveTextContent("up +50%");
-    // change: null -> no pill at all.
-    expect(cards[1]!.querySelector(".adm-delta")).toBeNull();
-    expect(cards[2]!.querySelector(".adm-delta")).toHaveTextContent("down -25%");
-    expect(cards[3]!.querySelector(".adm-delta")).toHaveTextContent("no change 0%");
+    // Absolute counts, never percentages; growth is green, queues stay neutral.
+    expect(cards[0]!.querySelector(".adm-delta")).toHaveTextContent("+2 in 30 days");
+    expect(cards[0]!.querySelector(".adm-delta")).toHaveClass("adm-delta--good");
+    expect(cards[1]!.querySelector(".adm-delta")).toHaveTextContent("+2 in 30 days");
+    expect(cards[1]!.querySelector(".adm-delta")).toHaveClass("adm-delta--neutral");
+    expect(cards[3]!.querySelector(".adm-delta")).toHaveTextContent("None new in 30 days");
+    expect(kpis).not.toHaveTextContent("%");
     expect(cards[1]).toHaveTextContent("vs 0 in the previous 30 days");
     expect(await screen.findByText("No open applications.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Sample traveller Ana/ })).toHaveAttribute(
       "href",
       "/app/admin/verification?id=a1",
     );
+    // Recent activity: the latest audit entries, each opening its subject's drawer.
+    const recent = screen.getByRole("region", { name: "Recent activity" });
+    const entry = await within(recent).findByRole("link", { name: /Approved verification/ });
+    expect(entry).toHaveAttribute("href", "/app/admin/verification?id=a9");
+    expect(entry).toHaveTextContent("Sample traveller Mei");
   });
 
-  it("the demo admin can read everything but every action is disabled", async () => {
-    mockApi({
+  it("the demo admin can read everything; actions stay visible but unavailable, with one page-level note", async () => {
+    const user = userEvent.setup();
+    const { calls } = mockApi({
       "/v1/me": [[200, DEMO_ME]],
       "/v1/admin/verification": [[200, QUEUE]],
       "/v1/admin/verification/a1": [[200, { ...req("a1", "Sample traveller Ana"), history: [] }]],
     });
     at("/app/admin/verification?id=a1");
-    expect(await screen.findByRole("note")).toHaveTextContent("Demo is read-only.");
+    expect(await screen.findByRole("note")).toHaveTextContent("Demo, read-only.");
     await screen.findByText("Sample guide Kofi");
-    // No selection checkboxes, so no bulk actions.
-    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+    // One indicator for the page, not one per row.
+    expect(screen.queryAllByText("Demo is read-only")).toHaveLength(0);
+    // The selection column is there (same alignment as a real admin's), but disabled.
+    const boxes = screen.getAllByRole("checkbox");
+    expect(boxes.length).toBe(3);
+    for (const b of boxes) {
+      expect(b).toHaveAttribute("aria-disabled", "true");
+      expect(b).toHaveAccessibleDescription("Demo is read-only");
+    }
+    await user.click(boxes[1]!);
+    expect(boxes[1]).not.toBeChecked();
+    expect(screen.queryByRole("region", { name: "Bulk actions" })).toBeNull();
+
     const dialog = await screen.findByRole("dialog", { name: "Sample traveller Ana" });
     const approve = await within(dialog).findByRole("button", { name: "Approve" });
-    expect(approve).toBeDisabled();
+    expect(approve).toHaveAttribute("aria-disabled", "true");
     expect(approve).toHaveAccessibleDescription("Demo is read-only");
-    expect(within(dialog).getByRole("button", { name: "Reject…" })).toBeDisabled();
+    await user.click(approve);
+    expect(calls.some((c) => c.init?.method === "POST")).toBe(false);
+    expect(within(dialog).getByRole("button", { name: "Reject…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("a real admin bulk-approves selected rows and sees every row's result", async () => {
@@ -118,7 +171,9 @@ describe("AdminApp", () => {
     });
     at("/app/admin/verification");
     expect(await screen.findByText("Real accounts")).toBeInTheDocument();
-    await user.click(await screen.findByRole("checkbox", { name: "Select every row on this page" }));
+    await user.click(
+      await screen.findByRole("checkbox", { name: "Select every row on this page" }),
+    );
     const bar = screen.getByRole("region", { name: "Bulk actions" });
     expect(bar).toHaveTextContent("2 selected");
     await user.click(within(bar).getByRole("button", { name: "Approve 2" }));
@@ -129,7 +184,9 @@ describe("AdminApp", () => {
     const bulk = calls.find((c) => c.path.endsWith("/bulk-decision"))!;
     expect(JSON.parse(String(bulk.init?.body))).toEqual({ ids: ["a1", "a2"], decision: "approve" });
     // The list is refetched after the change (the cache was cleared).
-    expect(calls.filter((c) => c.path === "/v1/admin/verification").length).toBeGreaterThanOrEqual(2);
+    expect(calls.filter((c) => c.path === "/v1/admin/verification").length).toBeGreaterThanOrEqual(
+      2,
+    );
   });
 
   it("shows the board with four labelled columns and moves a card from the keyboard", async () => {
@@ -149,7 +206,14 @@ describe("AdminApp", () => {
       sample: false,
     };
     const counts = { submitted: 1, in_review: 0, approved: 0, rejected: 0, total: 1 };
-    const list = (items: unknown[]) => ({ items, page: 0, size: 50, hasMore: false, total: items.length, counts });
+    const list = (items: unknown[]) => ({
+      items,
+      page: 0,
+      size: 50,
+      hasMore: false,
+      total: items.length,
+      counts,
+    });
     const { calls } = mockApi({
       "/v1/me": [[200, REAL_ME]],
       "/v1/admin/guide-applications": [
@@ -167,10 +231,16 @@ describe("AdminApp", () => {
     }
     const card = await screen.findByRole("article", { name: "Night food walks" });
     expect(within(card).getByText("Lisbon")).toBeInTheDocument();
-    within(card).getByRole("button", { name: /Move to…/ }).focus();
+    within(card)
+      .getByRole("button", { name: /Move to…/ })
+      .focus();
     await user.keyboard("{ArrowDown}{Enter}");
     expect(await screen.findByText("Real applicant Bo: moved to In review.")).toBeInTheDocument();
-    expect(calls.some((c) => c.path === "/v1/admin/guide-applications/g1/review" && c.init?.method === "POST")).toBe(true);
+    expect(
+      calls.some(
+        (c) => c.path === "/v1/admin/guide-applications/g1/review" && c.init?.method === "POST",
+      ),
+    ).toBe(true);
   });
 
   it("caches each list for 30 seconds across screens", async () => {
@@ -207,7 +277,8 @@ describe("AdminApp", () => {
   it("renders skeleton rows while a table loads", async () => {
     mockApi({ "/v1/me": [[200, REAL_ME]] });
     vi.mocked(globalThis.fetch).mockImplementation(async (input) => {
-      if (String(input).endsWith("/v1/me")) return new Response(JSON.stringify(REAL_ME), { status: 200 });
+      if (String(input).endsWith("/v1/me"))
+        return new Response(JSON.stringify(REAL_ME), { status: 200 });
       return new Promise<Response>(() => {});
     });
     const { container } = at("/app/admin/trips");
@@ -222,7 +293,9 @@ describe("AdminApp", () => {
     await waitFor(() => expect(window.location.pathname).toBe("/login"));
     vi.restoreAllMocks();
 
-    mockApi({ "/v1/me": [[200, { role: "traveller", displayName: "Demo traveller", isDemo: true }]] });
+    mockApi({
+      "/v1/me": [[200, { role: "traveller", displayName: "Demo traveller", isDemo: true }]],
+    });
     at("/app/admin/users");
     await waitFor(() => expect(window.location.pathname).toBe("/app/traveller"));
   });
@@ -242,7 +315,9 @@ describe("AdminApp", () => {
     at("/app/admin/audit");
     await screen.findByText("No admin actions yet.");
     await user.keyboard("{Control>}k{/Control}");
-    expect(await screen.findByRole("dialog", { name: "Go to a page or find a user" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("dialog", { name: "Go to a page or find a user" }),
+    ).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });

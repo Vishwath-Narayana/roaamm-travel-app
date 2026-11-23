@@ -92,9 +92,13 @@ jobs:
       # First visit to the landing page <= 100 kB gzipped (hard); every chunk together <= 150 kB.
       - name: Bundle size budget
         run: node scripts/check-bundle-size.mjs apps/web/dist --initial 100 --total 150
-      # Admin status pills and chips: >= 4.5:1 contrast in light and dark.
-      - name: Admin pill contrast
-        run: node scripts/check-admin-contrast.mjs
+      # Design tokens (docs/design-system.md): every token pair meets its
+      # contrast minimum in light and dark, and admin CSS has no raw colours
+      # or off-scale values (site CSS may not add any).
+      - name: Token contrast
+        run: node scripts/check-contrast.mjs
+      - name: Token lint
+        run: node scripts/check-tokens.mjs
       - name: Lighthouse (performance >= 0.9, accessibility >= 0.95)
         run: pnpm dlx @lhci/cli@0.14 autorun --config=apps/web/lighthouserc.json
       # Every route loads with no console warnings or errors (e.g. an unused preload).
@@ -102,6 +106,13 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: node scripts/check-console.mjs
+      # Every admin screen and state at 390/768/1440 px, light and dark: no
+      # overflow, clipped text or layout shift, tap targets >= 44 px on phone,
+      # and every computed size on the token scale (docs/design-system.md).
+      - name: UI token check
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/check-ui-tokens.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: web-dist

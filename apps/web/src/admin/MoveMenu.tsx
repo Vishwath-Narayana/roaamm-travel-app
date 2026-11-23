@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { STATUS_TEXT, type AppStatus } from "../api/admin";
-import { READ_ONLY_LABEL } from "./context";
+import { FINAL_LABEL, READ_ONLY_LABEL } from "./context";
 import { MoreIcon } from "./icons";
+import { unavailable } from "./ui";
 
 export type MoveTarget = "in_review" | "approved" | "rejected";
 
@@ -78,26 +79,25 @@ export function MoveMenu({
     }
   }
 
-  const disabled = readOnly || final;
+  const reason = final ? FINAL_LABEL : readOnly ? READ_ONLY_LABEL : null;
   return (
     <div className="adm-menu">
       <button
         ref={buttonRef}
         type="button"
-        className="adm-btn adm-btn--secondary adm-btn--sm"
+        className="adm-btn adm-btn--secondary"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        disabled={disabled}
-        title={readOnly ? READ_ONLY_LABEL : undefined}
         onClick={() => {
           setActive(0);
           setOpen((o) => !o);
         }}
-        onKeyDown={onButtonKey}
+        onKeyDown={reason ? undefined : onButtonKey}
+        {...unavailable(reason)}
       >
-        <MoreIcon size={14} />
-        {readOnly ? READ_ONLY_LABEL : final ? "Decided" : "Move to…"}
+        <MoreIcon size={16} />
+        <span className="adm-btn__label">{final ? "Decided" : "Move to…"}</span>
         <span className="visually-hidden">: {label}</span>
       </button>
       {open && (

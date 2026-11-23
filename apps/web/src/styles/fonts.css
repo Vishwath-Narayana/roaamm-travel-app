@@ -38,3 +38,32 @@
   src: url("@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2")
     format("woff2-variations");
 }
+
+/*
+ * "Inter Fallback": Arial (or Liberation Sans, its metric twin on Linux)
+ * scaled to Inter's widths, so the first paint, before Inter arrives, lays
+ * text out almost exactly as Inter will, and the swap does not move anything
+ * (layout shift). size-adjust is Inter's width / Arial's width on the admin
+ * console's own text, measured in Chrome per weight: 400 -> 1.0618,
+ * 500 -> 1.0718 (Arial has no 500), 600 and up -> 1.0117 against Arial Bold.
+ */
+@font-face {
+  font-family: "Inter Fallback";
+  font-weight: 100 450;
+  src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans");
+  size-adjust: 106.18%;
+}
+
+@font-face {
+  font-family: "Inter Fallback";
+  font-weight: 451 550;
+  src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans");
+  size-adjust: 107.18%;
+}
+
+@font-face {
+  font-family: "Inter Fallback";
+  font-weight: 551 900;
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold");
+  size-adjust: 101.17%;
+}

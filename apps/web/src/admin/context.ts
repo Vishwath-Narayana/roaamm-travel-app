@@ -17,4 +17,6 @@ export function useAdmin(): AdminContextValue {
   return v;
 }
 
+/** Why an action control is unavailable (tooltip and accessible description). */
 export const READ_ONLY_LABEL = "Demo is read-only";
+export const FINAL_LABEL = "Decided: decisions are final";

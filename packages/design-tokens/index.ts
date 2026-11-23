@@ -1,34 +1,36 @@
-// ROAAMM design tokens: the single source of truth.
-// apps/web/src/styles/tokens.css mirrors these values as CSS variables, and a
-// test in apps/web keeps the two in sync.
+// ROAAMM design tokens for TypeScript. apps/web/src/styles/tokens.css is the
+// single file every stylesheet reads (docs/design-system.md); the values here
+// mirror its site palette and scales, and a test in apps/web keeps the two in
+// sync.
 // Monochrome: black ink is the accent. SOS is the only red and is always solid.
 
 export const color = {
   light: {
-    bg: "#FAFAFA",
-    surface: "#F1F1F2",
-    ink: "#0B0B0F",
-    muted: "#5F5F66",
-    border: "#EAEAEB",
-    "verified-bg": "#E7F6EE",
-    "verified-fg": "#0B7A43",
-    sos: "#D92D20",
+    bg: "#fafafa",
+    surface: "#f0f0f0",
+    ink: "#0a0a0a",
+    muted: "#5c5c5c",
+    border: "#e5e5e5",
+    "verified-bg": "#e7f6ee",
+    "verified-fg": "#0b7a43",
+    sos: "#d92d20",
   },
+  // Pure black and neutral greys only (R = G = B): docs/design-system.md.
   dark: {
-    bg: "#0B0B0F",
-    surface: "#17171B",
-    ink: "#F4F4F5",
-    muted: "#A1A1A6",
-    border: "#2A2A2E",
-    "verified-bg": "#0F2A1C",
-    "verified-fg": "#4ADE80",
-    sos: "#F97066",
+    bg: "#000000",
+    surface: "#141414",
+    ink: "#fafafa",
+    muted: "#b3b3b3",
+    border: "#262626",
+    "verified-bg": "#0a1f12",
+    "verified-fg": "#4ade80",
+    sos: "#f97066",
   },
 } as const;
 
 export const font = {
   display: '"Inter Tight Variable", "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif',
-  sans: '"Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif',
+  sans: '"Inter Variable", "Inter Fallback", system-ui, -apple-system, "Segoe UI", sans-serif',
   serif: '"Instrument Serif", "Iowan Old Style", Georgia, serif',
   mono: '"JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace',
   weight: { regular: 400, medium: 500, semibold: 600, bold: 700, extrabold: 800 },

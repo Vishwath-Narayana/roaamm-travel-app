@@ -29,15 +29,30 @@ export function currentTheme(): Theme {
   return isTheme(set) ? set : systemTheme();
 }
 
+/**
+ * Points every <meta name="theme-color"> at the page colour actually shown
+ * (--bg from tokens.css), so an explicit choice wins over the OS preference
+ * that the static tags in index.html follow.
+ */
+function syncThemeColor(): void {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  if (!bg) return;
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = bg;
+}
+
 /** Run once before the first render so a saved choice applies immediately. */
 export function initTheme(): void {
   const saved = readStoredTheme();
-  if (saved) document.documentElement.dataset.theme = saved;
+  if (saved) {
+    document.documentElement.dataset.theme = saved;
+    syncThemeColor();
+  }
 }
 
 /** Apply a theme and try to remember it. The page still switches if storage fails. */
 export function setTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
+  syncThemeColor();
   try {
     window.localStorage.setItem(STORAGE_KEY, theme);
   } catch {

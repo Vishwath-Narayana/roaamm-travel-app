@@ -88,3 +88,17 @@ are in [docs/adr/](../adr). Here is each one in a few plain lines.
   twice), and preloading from the app bundle (too late to help).
 - **Why:** every other route was logging "preloaded but not used". The fix
   kept Lighthouse at 91 and LCP unchanged.
+
+## [ADR 0009: One CSS tokens file, enforced by checks](../adr/0009-one-tokens-file.md)
+
+- **Chose:** `apps/web/src/styles/tokens.css` is the only place raw colours
+  and sizes live. Three CI checks enforce it: a static lint of the admin CSS,
+  a contrast check of every token pair in both themes, and a rendered check of
+  every admin screen at three widths.
+- **Rejected:** generating the CSS from the TypeScript tokens at build time,
+  and adopting a CSS framework.
+- **Why:** the console's spacing and colours had drifted value by value; a
+  check that names the file and line stops that, without a new dependency or
+  build step.
+- **Also:** the marketing pages are ratcheted: their raw values can only go
+  down.
