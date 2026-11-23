@@ -27,7 +27,7 @@
 | Stateful parts | **Durable Objects**, SQLite-backed: `SessionDO` (per user), `RoomDO` (per conversation), `KeyPackageDO` (per user) | Strict ordering per room, durable storage, global placement |
 | WebSockets | **Hibernation API** (`accept_web_socket`) | Idle connections cost nothing |
 | Rate limiting | Workers Rate Limiting binding | |
-| Token check | Ed25519 JWT checked with the core's public key (JWKS cached) | No call to the core on the fast path |
+| Session check | Decided in M5. Sessions are opaque cookies in Postgres (ADR 0004); there are no JWTs | |
 | Metrics | Workers Analytics Engine | Feeds the System page |
 | Serialization | `serde` + JSON (CBOR later) | |
 | Testing | `cargo test`, Miniflare / `wrangler dev` integration tests | |
@@ -49,8 +49,7 @@
 |---|---|---|
 | Language | **Java 25 (LTS)** | |
 | Framework | **Spring Boot 4**, Spring MVC on **virtual threads** | Simple blocking-style code that still handles many requests at once |
-| Security | Spring Security, WebAuthn (passkeys) via a maintained library such as `webauthn4j`, email one-time codes | |
-| Tokens | Ed25519 JWT signing (Nimbus JOSE + JWT), JWKS endpoint | |
+| Security | Passkeys with `webauthn4j-core` (ADR 0005), recovery codes, opaque cookie sessions (ADR 0004). No Spring Security, no email codes | Fewest dependencies; works in the native image |
 | Data | Postgres (**Neon**), **Spring Data JDBC or jOOQ**, **Flyway** migrations, HikariCP | Explicit SQL, no ORM surprises |
 | API contract | OpenAPI 3 (springdoc) → `packages/api-client` generated with `openapi-typescript` + `openapi-fetch` | The frontend can't drift from the backend |
 | Payments | Razorpay **test mode** SDK + webhook signature check | |

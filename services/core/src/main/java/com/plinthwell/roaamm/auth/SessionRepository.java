@@ -32,15 +32,56 @@ public class SessionRepository {
     }
 
     public void insert(UUID id, UUID userId, byte[] tokenHash, Instant now, Instant expiresAt) {
+        insert(id, userId, tokenHash, now, expiresAt, false, null);
+    }
+
+    public void insert(UUID id, UUID userId, byte[] tokenHash, Instant now, Instant expiresAt, boolean viaRecovery,
+            Instant freshAuthAt) {
         jdbc.sql("""
-                        INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at, last_seen_at)
-                        VALUES (:id, :user, :hash, :now, :exp, :now)""")
+                        INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at, last_seen_at,
+                                              via_recovery, fresh_auth_at)
+                        VALUES (:id, :user, :hash, :now, :exp, :now, :recovery, :fresh)""")
                 .param("id", id)
                 .param("user", userId)
                 .param("hash", tokenHash)
                 .param("now", Timestamp.from(now))
                 .param("exp", Timestamp.from(expiresAt))
+                .param("recovery", viaRecovery)
+                .param("fresh", freshAuthAt == null ? null : Timestamp.from(freshAuthAt))
                 .update();
+    }
+
+    /** The live session and its user, touching last_seen_at; empty when unknown or expired. */
+    public Optional<SessionService.Current> findSessionByTokenHash(byte[] tokenHash, Instant now) {
+        return jdbc.sql("""
+                        UPDATE sessions s SET last_seen_at = :now
+                        FROM users u
+                        WHERE s.token_hash = :hash AND s.expires_at > :now AND u.id = s.user_id
+                        RETURNING s.id AS session_id, s.via_recovery, s.fresh_auth_at,
+                                  u.id, u.role::text AS role, u.display_name, u.is_demo""")
+                .param("hash", tokenHash)
+                .param("now", Timestamp.from(now))
+                .query((rs, n) -> {
+                    Timestamp fresh = rs.getTimestamp("fresh_auth_at");
+                    return new SessionService.Current(
+                            rs.getObject("session_id", UUID.class),
+                            new User(rs.getObject("id", UUID.class),
+                                    Role.fromWire(rs.getString("role")).orElseThrow(),
+                                    rs.getString("display_name"),
+                                    rs.getBoolean("is_demo")),
+                            rs.getBoolean("via_recovery"),
+                            fresh == null ? null : fresh.toInstant());
+                })
+                .optional();
+    }
+
+    public void markFresh(UUID sessionId, Instant now) {
+        jdbc.sql("UPDATE sessions SET fresh_auth_at = :now WHERE id = :id")
+                .param("now", Timestamp.from(now)).param("id", sessionId).update();
+    }
+
+    public void clearRecoveryFlag(UUID sessionId) {
+        jdbc.sql("UPDATE sessions SET via_recovery = false WHERE id = :id").param("id", sessionId).update();
     }
 
     /** The live session's user, touching last_seen_at; empty when unknown or expired. */

@@ -55,19 +55,22 @@ Not goals: anonymity (the server knows who talks to whom), hiding traffic patter
 - **Check-in timer:** if a check-in is missed, the core escalates in steps: in-app reminder, then a notice to the contacts room, then the SOS email.
 
 ## 5. Accounts and sessions
-- **Passkeys (WebAuthn)** are the main login. **Email one-time code** (6 digits, 10-minute lifetime, 5 attempts, rate-limited) as fallback and for recovery.
-- **Access token:** a JWT signed with **Ed25519 (EdDSA)**, valid 15 minutes, containing `sub`, `dev`, `scope` and `ver`. Published at `/.well-known/jwks.json`; the edge caches it.
-- **Refresh token:** opaque, rotating, stored as a hash, sent as an `httpOnly; Secure; SameSite=Strict` cookie scoped to `roaamm-api`. If an old refresh token is reused, the whole token family is revoked.
-- **Demo login** ("Try demo"): creates a short-lived session for a shared demo user with `scope=demo`. It can't change its email or passkeys, can't send SOS emails, and its data resets nightly.
-- **Admin:** separate role, passkey only, every action written to `audit_log`.
+Details and reasons: [ADR 0004](adr/0004-auth-sessions-m2a.md) (sessions, demo login) and [ADR 0005](adr/0005-passkeys.md) (passkeys).
+- **Passkeys (WebAuthn)** are the only login for real accounts: discoverable credentials, user verification required, attestation `none`, rpId `roaamm.plinthwell.com`, origin checked against `https://roaamm.plinthwell.com` only. Challenges are single use and expire after 5 minutes.
+- **Recovery codes** instead of email: 8 codes at signup, shown once, stored only as SHA-256 hashes, single use, strictly rate-limited. A recovery sign-in makes the user add a new passkey.
+- **No email, phone number or IP address is stored.** Real accounts idle for 90 days are deleted.
+- **Sessions:** opaque 32-byte random tokens, stored only as SHA-256 hashes in Postgres, 8 hours, in a `__Host-roaamm_session` cookie (`HttpOnly; Secure; SameSite=Lax`, host-only on `roaamm-api`). **No JWTs.** How the edge checks sessions is decided in M5.
+- **Fresh check:** deleting a passkey or regenerating recovery codes needs a passkey check within the last 5 minutes. The last passkey can't be deleted without unused recovery codes.
+- **Demo login** ("Try demo"): one click, a shared sandbox user per role, simulated data only. The demo admin is read-only.
+- **Admin:** signup can never create an admin (refused by the API and by a database constraint). Real admin accounts arrive with the admin features; every admin action will be written to `audit_log`.
 
 ## 6. Web and API hardening (target: OWASP ASVS level 2)
 - **TLS 1.3** only, HSTS with preload, all subdomains on Cloudflare.
 - **CSP (strict):** `default-src 'self'`; scripts from self only, using `'wasm-unsafe-eval'` for WebAssembly; no inline scripts; `connect-src` limited to `roaamm-api`, `roaamm-rt` (wss), R2 and TURN; `frame-ancestors 'none'`; `require-trusted-types-for 'script'`.
 - **Subresource Integrity** on all built assets. Plus `X-Content-Type-Options`, `Referrer-Policy: no-referrer`, a `Permissions-Policy` that allows only camera, mic and geolocation on the app origin, `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`.
-- **CSRF:** the cookie is SameSite=Strict, and changing requests need the Bearer access token too.
+- **CSRF:** the session cookie is SameSite=Lax, and every state-changing API request needs an exact `Origin: https://roaamm.plinthwell.com` plus the `X-Roaamm-Csrf: 1` header (ADR 0004).
 - **Input:** schema validation on both sides (Zod in the browser, Bean Validation in Java). Size limits everywhere. SQL only through parameterised queries.
-- **Rate limits:** Worker Rate Limiting binding (per IP and per user) on login, OTP, sign-up, sending messages and creating rooms. Plus Cloudflare Turnstile on sign-up and OTP.
+- **Rate limits:** per IP in the core today (demo login, passkey endpoints, a strict one for recovery codes; in memory, see ADR 0005) and a global cap on real accounts. Later: the Worker Rate Limiting binding on sending messages and creating rooms, and Cloudflare Turnstile on sign-up.
 - **Secrets:** Wrangler secrets, GitHub Actions encrypted secrets, server environment from a root-only file. Nothing in the repo (gitleaks in CI).
 - **Supply chain:** pinned dependencies, Dependabot, CodeQL, cargo-deny, OWASP Dependency-Check, actions pinned to commit SHAs.
 - **Server:** the core runs on Google Cloud Run, so there is no VM, OS or SSH of ours to patch or expose. Public traffic arrives through the `roaamm-api` Cloudflare Worker, which allows CORS only from the web origin. Deploys use keyless Workload Identity Federation. Runs as a non-root user in a distroless image.

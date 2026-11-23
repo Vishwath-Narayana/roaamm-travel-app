@@ -1,5 +1,7 @@
 package com.plinthwell.roaamm.common;
 
+import com.plinthwell.roaamm.passkey.AuthRateLimits;
+import com.plinthwell.roaamm.passkey.PasskeyException;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,19 @@ public class ApiExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<Map<String, String>> method(Exception e) {
         return body(HttpStatus.METHOD_NOT_ALLOWED, "method_not_allowed");
+    }
+
+    @ExceptionHandler(PasskeyException.class)
+    public ResponseEntity<Map<String, String>> passkey(PasskeyException e) {
+        return body(HttpStatus.valueOf(e.status()), e.code());
+    }
+
+    @ExceptionHandler(AuthRateLimits.RateLimitedException.class)
+    public ResponseEntity<Map<String, String>> rateLimited(AuthRateLimits.RateLimitedException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Cache-Control", "no-store")
+                .header("Retry-After", Long.toString(e.retryAfterSeconds()))
+                .body(Map.of("error", "rate_limited"));
     }
 
     @ExceptionHandler(DataAccessException.class)

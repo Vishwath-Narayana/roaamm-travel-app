@@ -1,5 +1,6 @@
 package com.plinthwell.roaamm.auth;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Optional;
@@ -22,9 +23,19 @@ public class AuthController {
 
     public record DemoSessionRequest(String role) {}
 
-    public record Me(String role, String displayName, boolean isDemo) {
+    /**
+     * The signed-in user. {@code needsNewPasskey} is only sent for real users
+     * (true after a recovery-code sign-in), so demo responses are unchanged.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Me(String role, String displayName, boolean isDemo, Boolean needsNewPasskey) {
         static Me of(User u) {
-            return new Me(u.role().wire(), u.displayName(), u.isDemo());
+            return new Me(u.role().wire(), u.displayName(), u.isDemo(), null);
+        }
+
+        static Me of(SessionService.Current s) {
+            User u = s.user();
+            return new Me(u.role().wire(), u.displayName(), u.isDemo(), u.isDemo() ? null : s.viaRecovery());
         }
     }
 
@@ -61,8 +72,8 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<?> me(HttpServletRequest request) {
-        return sessions.currentUser(SessionCookie.read(request))
-                .<ResponseEntity<?>>map(u -> ResponseEntity.ok(Me.of(u)))
+        return sessions.currentSession(SessionCookie.read(request))
+                .<ResponseEntity<?>>map(s -> ResponseEntity.ok(Me.of(s)))
                 .orElseGet(() -> error(HttpStatus.UNAUTHORIZED, "unauthenticated"));
     }
 
