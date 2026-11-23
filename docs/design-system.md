@@ -286,7 +286,9 @@ right. Phone: a full-height bottom sheet with 16 px top corners, a drag handle
 insets. The phone menu is the same sheet, with 44 px rows.
 
 **Demo banner**: the one page-level read-only indicator. Desktop: a calm
-bordered strip. Phone: one line, at most 40 px. Disabled actions keep their
+bordered strip. Below 1024 px: the short form on one line that never wraps (a
+wrap that depends on which font has loaded would shift the page); on phone at
+most 40 px high. Disabled actions keep their
 normal label and explain themselves in a tooltip on hover, focus and tap
 (`aria-disabled` plus `data-tip`, described for screen readers too).
 

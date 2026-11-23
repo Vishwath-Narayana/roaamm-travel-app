@@ -12,13 +12,18 @@
 //   - a tap target smaller than 44 x 44 px on phone (390), counting the
 //     transparent ::before / ::after hit area
 //   - an icon that renders at 0 px
-//   - cumulative layout shift above 0.01 while the screen loads
+//   - cumulative layout shift above 0.01 while the screen loads, with web
+//     fonts answered 500 ms late (UI_FONT_DELAY_MS)
 //   - any computed font size, line height (checked as a size/line-height
 //     pair), font weight, padding, gap, border width or corner radius that is
 //     not on the token scale
 // UI_CHECK_INJECT_CSS="<css>" adds a stylesheet to every page first: a way to
 // prove the check catches a regression (it must then fail).
 import { DIST, SCREENS, launch, open, serve } from "./ui-harness.mjs";
+
+// Fonts arrive 500 ms late by default (the worst case on a slow CI runner):
+// a layout that only holds once the web font has loaded fails here, every time.
+process.env.UI_FONT_DELAY_MS ??= "500";
 import { existsSync } from "node:fs";
 
 const args = process.argv.slice(2);

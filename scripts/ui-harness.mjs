@@ -44,8 +44,15 @@ export function serve() {
     if (!file.startsWith(DIST) || !existsSync(file) || statSync(file).isDirectory()) {
       file = join(DIST, "index.html");
     }
-    res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });
-    res.end(readFileSync(file));
+    const send = () => {
+      res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });
+      res.end(readFileSync(file));
+    };
+    // UI_FONT_DELAY_MS: answer web fonts late, so the first paint uses the
+    // fallback font and any layout that depends on the font shows up as shift.
+    const delay = Number(process.env.UI_FONT_DELAY_MS ?? 0);
+    if (delay > 0 && file.endsWith(".woff2")) setTimeout(send, delay);
+    else send();
   });
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
 }
@@ -105,7 +112,7 @@ export async function open(browser, origin, route, { width = 1440, theme = "ligh
         if (e.hadRecentInput) continue;
         window.__cls += e.value;
         window.__clsSources = (window.__clsSources ?? []).concat(
-          e.sources.map((x) => `${x.node?.className || x.node?.nodeName || "?"} y${Math.round(x.previousRect.y)}->${Math.round(x.currentRect.y)} h${Math.round(x.previousRect.height)}->${Math.round(x.currentRect.height)} @${Math.round(e.startTime)}ms`),
+          e.sources.map((x) => `${x.node?.getAttribute?.("class") || x.node?.nodeName || "?"} y${Math.round(x.previousRect.y)}->${Math.round(x.currentRect.y)} h${Math.round(x.previousRect.height)}->${Math.round(x.currentRect.height)} @${Math.round(e.startTime)}ms`),
         );
       }
     }).observe({ type: "layout-shift", buffered: true });

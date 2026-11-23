@@ -2445,6 +2445,26 @@ button.adm-row:active {
   }
 }
 
+/* Below 1024 px the banner is the short one-line form: the long sentence sits
+   near its wrap point there, and a wrap that depends on which font has
+   loaded would move the page (layout shift). */
+@media (max-width: 1023px) {
+  .adm-banner {
+    white-space: nowrap;
+  }
+
+  .adm-banner__long {
+    display: none;
+  }
+
+  .adm-banner__short {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 /* ---- phone (below 768 px): a redesign, not a squeeze */
 
 @media (max-width: 767px) {
@@ -2512,18 +2532,6 @@ button.adm-row:active {
   /* The slim one-line banner. */
   .adm-banner {
     max-height: var(--ui-banner-phone);
-    white-space: nowrap;
-  }
-
-  .adm-banner__long {
-    display: none;
-  }
-
-  .adm-banner__short {
-    display: block;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .adm-kpis {
