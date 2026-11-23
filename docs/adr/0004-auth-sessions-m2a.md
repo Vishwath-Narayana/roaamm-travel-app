@@ -114,11 +114,25 @@ returns `{"status":"ok"}` or `503`.
   without a round trip to the core. That is a later decision with its own ADR.
 - Passkeys, real accounts, and the JWT/refresh-token design: M2b.
 
-## Not measured yet
-- **Neon wake-up time** after its idle suspend: **UNMEASURED.**
-- **Time to first byte on a cold Cloud Run start with the database**
-  (instance start + Flyway + Neon wake, through the proxy): **UNMEASURED.**
+## First measurement (cold start and Neon wake-up)
+Replaces the earlier UNMEASURED entries for Neon wake-up and time to first
+byte on a cold start with the database.
 
-Neither can be measured from CI without the Neon secret, which CI must not
-have. Measure both from a workstation after deploy (first request after at
-least 10 minutes idle, at least 20 samples, p50 and p95) and record them here.
+Taken 2026-11-23 13:46 IST with `curl` from a home connection in India,
+after the service had been idle for about 12 hours:
+
+| Request | Status | Total time |
+|---|---|---|
+| Cold `GET /ready` | 200 | 0.84 s |
+| Warm `GET /ready` | 200 | 0.67 s |
+| Warm `POST /v1/demo/session` | 200 | 0.75 s |
+
+Caveats:
+- **Single sample.**
+- It was **not verified from Cloud Run logs** that both Cloud Run and Neon
+  were actually asleep before the cold request.
+- Most of the warm time is network distance: India → Cloudflare →
+  us-central1 (Cloud Run) → us-east-2 (Neon). The cold penalty seen here is
+  about 0.17 s over warm.
+
+**Repeat on another idle day with 3 samples before quoting these publicly.**
