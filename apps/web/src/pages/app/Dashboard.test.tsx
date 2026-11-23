@@ -40,6 +40,25 @@ describe("Dashboard", () => {
     );
   });
 
+  it("names a real user without saying demo, and links to the account page", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      json({ role: "traveller", displayName: "Asha Rao", isDemo: false, needsNewPasskey: false }),
+    );
+    render(<Dashboard role="traveller" />);
+    expect(await screen.findByText("Signed in as Asha Rao")).toBeInTheDocument();
+    expect(screen.queryByText(/demo/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Simulated data")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Account" })).toHaveAttribute("href", "/account");
+  });
+
+  it("sends a recovery-code sign-in to add a passkey first", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      json({ role: "guide", displayName: "Asha", isDemo: false, needsNewPasskey: true }),
+    );
+    render(<Dashboard role="guide" />);
+    await waitFor(() => expect(window.location.pathname).toBe("/account"));
+  });
+
   it("marks the admin demo as read-only", async () => {
     window.history.replaceState(null, "", "/app/admin");
     vi.spyOn(globalThis, "fetch").mockResolvedValue(

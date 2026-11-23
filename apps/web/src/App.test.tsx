@@ -92,6 +92,28 @@ describe("App routing", () => {
     vi.restoreAllMocks();
   });
 
+  it("loads the signup, sign-in and account pages on demand", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>(() => {}));
+    const { unmount } = renderAt("/signup");
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Create an account" }),
+    ).toBeInTheDocument();
+    unmount();
+    renderAt("/login");
+    expect(await screen.findByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+    vi.restoreAllMocks();
+  });
+
+  it("keeps the demo as the main action and adds account links on the landing page", () => {
+    renderAt("/");
+    expect(screen.getAllByRole("link", { name: /Try demo/ })[0]).toHaveAttribute("href", "/demo");
+    expect(screen.getAllByRole("link", { name: /create an account/i })[0]).toHaveAttribute(
+      "href",
+      "/signup",
+    );
+    expect(screen.getAllByRole("link", { name: "Sign in" })[0]).toHaveAttribute("href", "/login");
+  });
+
   it("shows a 404 for an unknown dashboard role", () => {
     renderAt("/app/root");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Page not found");
