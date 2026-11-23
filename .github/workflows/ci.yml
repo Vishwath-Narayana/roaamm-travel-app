@@ -87,8 +87,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      # First visit to the landing page <= 110 kB gzipped; every chunk together <= 130 kB.
       - name: Bundle size budget
-        run: node scripts/check-bundle-size.mjs apps/web/dist 250
+        run: node scripts/check-bundle-size.mjs apps/web/dist --initial 110 --total 130
       - name: Lighthouse (performance >= 0.9, accessibility >= 0.95)
         run: pnpm dlx @lhci/cli@0.14 autorun --config=apps/web/lighthouserc.json
       - uses: actions/upload-artifact@v7
