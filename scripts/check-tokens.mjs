@@ -36,10 +36,10 @@ const defined = new Set([...tokenCss.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1
 
 const SPACING = /^--(sp-\d+|ui-(page-pad|card-pad|card-gap|section-gap))$/;
 const FAMILY = {
-  "font-size": /^--text-/,
+  "font-size": /^--text-(label|caption|dense|body|title|page|kpi)$/,
   "line-height": /^--leading-/,
   "font-weight": /^--weight-/,
-  "border-radius": /^--radius-/,
+  "border-radius": /^--radius-(sm|md|lg|xl|full)$/,
   "letter-spacing": /^--tracking-/,
 };
 const SPACING_PROPS = /^(padding|margin|gap|row-gap|column-gap|inset|scroll-padding|scroll-margin)(-|$)/;
