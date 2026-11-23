@@ -70,3 +70,6 @@ echo "native smoke ok: /health, /ready, demo session, /v1/me, bad role, CSRF, lo
 # Passkeys: full register + login + logout round trip with a software
 # authenticator, and an admin-role signup refusal (scripts/ci/passkey-smoke.mjs).
 node "$(dirname "$0")/passkey-smoke.mjs" http://localhost:9090
+
+# Simulated ID verification and the scoped, read-only demo admin queue.
+node "$(dirname "$0")/verification-smoke.mjs" http://localhost:9090
