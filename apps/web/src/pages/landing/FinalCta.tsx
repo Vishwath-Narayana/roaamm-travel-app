@@ -1,6 +1,7 @@
 import { Button } from "../../components/Button";
 import { Photo } from "../../components/Photo";
 import { Reveal } from "../../motion";
+import { Link } from "../../router";
 import "./FinalCta.css";
 
 export function FinalCta() {
@@ -15,12 +16,14 @@ export function FinalCta() {
             See it for <span className="serif">yourself</span>
           </h2>
           <p className="lead">
-            Watch the live preview of chat, the AI assistant and safety tools now. Sandbox accounts
-            for travellers, guides and admins open in M2.
+            Open a sandbox account as a traveller, guide or admin in one click. No sign-up needed.
           </p>
           <Button href="/demo" size="lg" arrow>
             Open the demo
           </Button>
+          <p className="final-cta__account">
+            Or <Link href="/signup">create an account</Link> with a passkey.
+          </p>
         </Reveal>
       </div>
     </section>

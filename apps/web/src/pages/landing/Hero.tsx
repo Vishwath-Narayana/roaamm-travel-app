@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FocusEvent } from "react";
 import { Button } from "../../components/Button";
 import { ArrowLeftIcon, ArrowRightIcon, PauseIcon, PlayIcon } from "../../components/icons";
 import { Photo } from "../../components/Photo";
+import { Link } from "../../router";
 import {
   prefersReducedMotion as reducedMotionNow,
   useInView,
@@ -136,6 +137,11 @@ export function Hero() {
               How it works
             </Button>
           </div>
+          <p className="hero__account">
+            <Link href="/signup">Create an account</Link>
+            <span aria-hidden="true"> · </span>
+            <Link href="/login">Sign in</Link>
+          </p>
         </div>
 
         <div className="hero__bottom">

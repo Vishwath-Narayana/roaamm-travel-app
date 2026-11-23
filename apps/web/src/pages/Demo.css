@@ -85,3 +85,14 @@
 .demo__error {
   border-color: var(--sos);
 }
+
+.demo__account {
+  margin-top: var(--space-5);
+  color: var(--muted);
+}
+
+.demo__account a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

@@ -48,3 +48,14 @@
 .final-cta__card .lead {
   margin-bottom: 12px;
 }
+
+.final-cta__account {
+  margin-top: var(--space-3);
+  color: var(--muted);
+}
+
+.final-cta__account a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

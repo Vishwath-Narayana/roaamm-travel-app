@@ -1,0 +1,97 @@
+.auth {
+  max-width: 640px;
+}
+
+.auth__card {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.auth__h2 {
+  font-size: 1.5rem;
+}
+
+.auth__muted {
+  color: var(--muted);
+}
+
+.auth__form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.auth__roles {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.auth__roles legend {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.auth__choice,
+.auth__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.auth__choice input,
+.auth__check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ink);
+}
+
+.auth__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.auth__codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-2) var(--space-5);
+  padding-left: 1.5em;
+  font-size: 1.0625rem;
+  user-select: all;
+}
+
+.auth__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.auth__links a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth__passkeys {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.auth__passkey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.auth__notice {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+}
