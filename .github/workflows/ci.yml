@@ -106,6 +106,13 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: node scripts/check-console.mjs
+      # Every admin screen and state at 390/768/1440 px, light and dark: no
+      # overflow, clipped text or layout shift, tap targets >= 44 px on phone,
+      # and every computed size on the token scale (docs/design-system.md).
+      - name: UI token check
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/check-ui-tokens.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: web-dist

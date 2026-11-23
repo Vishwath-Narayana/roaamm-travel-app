@@ -135,8 +135,53 @@ function paged(items, params, extra = {}) {
 
 const match = (q, ...fields) => !q || fields.some((f) => f.toLowerCase().includes(q.toLowerCase()));
 
-/** The JSON the core would answer the demo admin, or null for an unknown path. */
-export function adminStub(path, params) {
+/**
+ * A real (non-demo) admin's view: the same shapes with fictional names, no
+ * sample flags and no "Sample" prefixes. Only used for screenshots.
+ */
+function asReal(value) {
+  if (Array.isArray(value)) return value.map(asReal);
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (k === "sample" || k === "demo") out[k] = false;
+      else if (k === "scope") out[k] = "real";
+      else out[k] = asReal(v);
+    }
+    return out;
+  }
+  if (typeof value === "string")
+    return value
+      .replace(/^Sample: /, "")
+      .replace(/ \(simulated\)/, "")
+      .replace(/^Sample (traveller|guide|applicant) /, "")
+      .replace(/^Demo (traveller|guide|admin)$/, (_, r) => ({ traveller: "Noor Haddad", guide: "Tomas Lind", admin: "Avery Admin" })[r]);
+  return value;
+}
+
+/** Every list empty and every count zero (the empty-state screenshots). */
+function asEmpty(path, body) {
+  if (!body || typeof body !== "object") return body;
+  if (path === "/v1/admin/overview") {
+    const zero = { value: 0, last30: 0, prev30: 0, change: null };
+    return { ...body, users: zero, pendingVerifications: zero, pendingGuideApplications: zero, trips: zero };
+  }
+  if (!Array.isArray(body.items)) return body;
+  const counts = body.counts && Object.fromEntries(Object.keys(body.counts).map((k) => [k, 0]));
+  return { ...body, items: [], hasMore: false, ...(body.total != null && { total: 0 }), ...(counts && { counts }) };
+}
+
+/**
+ * The JSON the core would answer an admin, or null for an unknown path.
+ * opts.scope "demo" (default) or "real"; opts.empty answers every list empty.
+ */
+export function adminStub(path, params, opts = {}) {
+  const body = demoStub(path, params);
+  const scoped = opts.scope === "real" ? asReal(body) : body;
+  return opts.empty ? asEmpty(path, scoped) : scoped;
+}
+
+function demoStub(path, params) {
   if (path === "/v1/admin/overview") {
     return {
       scope: "demo",
