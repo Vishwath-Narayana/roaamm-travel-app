@@ -100,7 +100,9 @@ only while unused recovery codes exist.
 Real users can write. The demo admin stays read-only. `/v1/auth/*` is open to
 a demo session (it creates or signs into a different account and replaces
 the demo session); `/v1/me/credentials` and the other account endpoints
-refuse demo users.
+refuse demo users with 403. As a second line of defence, migration V4 adds
+database triggers that refuse any passkey or recovery code whose owner is a
+demo user, so the shared demo accounts can never hold one.
 
 ### Cleanup
 Real accounts with no sign-in for **90 days** are deleted, with their
