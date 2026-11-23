@@ -25,7 +25,7 @@ import tools.jackson.databind.ObjectMapper;
 
 class VerificationTest extends PostgresTest {
 
-    static final UUID DEMO_TRAVELLER = UUID.fromString("00000000-0000-4000-8000-000000000001");
+    static final UUID DEMO_GUIDE = UUID.fromString("00000000-0000-4000-8000-000000000002");
     static final UUID SEED_PENDING = UUID.fromString("00000000-0000-4000-8000-000000000201");
 
     @Autowired
@@ -159,17 +159,26 @@ class VerificationTest extends PostgresTest {
     }
 
     @Test
+    void theDemoTravellerIsASimulatedVerifiedTravellerAndVerifiedIsFinal() throws Exception {
+        Cookie demoTraveller = accounts.demo("traveller");
+        mvc.perform(get("/v1/verification/me").cookie(demoTraveller))
+                .andExpect(content().json("{\"status\":\"verified\",\"simulated\":true}", JsonCompareMode.LENIENT));
+        submit(demoTraveller, "passport").andExpect(status().isConflict())
+                .andExpect(content().json("{\"error\":\"already_verified\"}", JsonCompareMode.STRICT));
+    }
+
+    @Test
     void demoAdminSeesOnlyDemoRowsAndCannotWrite() throws Exception {
         var realUser = accounts.real("Real person", "traveller");
         submit(realUser.cookie(), "passport").andExpect(status().isOk());
         UUID realReq = jdbc.sql("SELECT id FROM verification_requests WHERE user_id = :u")
                 .param("u", realUser.userId()).query(UUID.class).single();
 
-        Cookie demoTraveller = accounts.demo("traveller");
-        submit(demoTraveller, "driving_licence").andExpect(status().isOk());
+        Cookie demoGuide = accounts.demo("guide");
+        submit(demoGuide, "driving_licence").andExpect(status().isOk());
         UUID demoReq = jdbc.sql("""
                         SELECT id FROM verification_requests WHERE user_id = :u ORDER BY created_at DESC LIMIT 1""")
-                .param("u", DEMO_TRAVELLER).query(UUID.class).single();
+                .param("u", DEMO_GUIDE).query(UUID.class).single();
 
         Cookie demoAdmin = accounts.demo("admin");
         List<String> pending = queueIds(demoAdmin, "pending");
@@ -208,8 +217,7 @@ class VerificationTest extends PostgresTest {
     @Test
     void realAdminSeesOnlyRealRows() throws Exception {
         var admin = accounts.realAdmin("Owner three");
-        Cookie demoTraveller = accounts.demo("traveller");
-        submit(demoTraveller, "passport").andExpect(status().isOk());
+        submit(accounts.demo("guide"), "passport").andExpect(status().isOk());
         var realUser = accounts.real("Real two", "guide");
         submit(realUser.cookie(), "national_id").andExpect(status().isOk());
 
@@ -261,20 +269,20 @@ class VerificationTest extends PostgresTest {
         jdbc.sql("UPDATE verification_requests SET decided_at = now() - interval '31 days' WHERE id = :id")
                 .param("id", req).update();
 
-        Cookie demoTraveller = accounts.demo("traveller");
-        submit(demoTraveller, "passport").andExpect(status().isOk());
+        submit(accounts.demo("guide"), "passport").andExpect(status().isOk());
         jdbc.sql("""
                 UPDATE verification_requests SET created_at = now() - interval '25 hours'
-                WHERE user_id = :u AND NOT is_seed""").param("u", DEMO_TRAVELLER).update();
+                WHERE user_id = :u AND NOT is_seed""").param("u", DEMO_GUIDE).update();
         jdbc.sql("UPDATE verification_requests SET created_at = now() - interval '400 days' WHERE is_seed").update();
 
         service.purge();
         assertThat(jdbc.sql("SELECT count(*) FROM verification_requests WHERE id = :id")
                 .param("id", req).query(Integer.class).single()).isZero();
         assertThat(jdbc.sql("SELECT count(*) FROM verification_requests WHERE user_id = :u AND NOT is_seed")
-                .param("u", DEMO_TRAVELLER).query(Integer.class).single()).isZero();
+                .param("u", DEMO_GUIDE).query(Integer.class).single()).isZero();
+        // Four M3 sample people, the demo traveller and five M4 sample applicants.
         assertThat(jdbc.sql("SELECT count(*) FROM verification_requests WHERE is_seed")
-                .query(Integer.class).single()).isEqualTo(4);
+                .query(Integer.class).single()).isEqualTo(10);
         // The audit row of the deleted request stays, without the person's name.
         assertThat(jdbc.sql("SELECT count(*) FROM admin_audit_log WHERE target_id = :t")
                 .param("t", req).query(Integer.class).single()).isOne();

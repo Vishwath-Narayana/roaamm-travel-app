@@ -73,3 +73,6 @@ node "$(dirname "$0")/passkey-smoke.mjs" http://localhost:9090
 
 # Simulated ID verification and the scoped, read-only demo admin queue.
 node "$(dirname "$0")/verification-smoke.mjs" http://localhost:9090
+
+# M4a: trips, guide applications and the admin console (docs/adr/0008).
+node "$(dirname "$0")/m4-smoke.mjs" http://localhost:9090

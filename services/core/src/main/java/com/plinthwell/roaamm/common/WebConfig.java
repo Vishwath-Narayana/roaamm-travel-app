@@ -12,17 +12,21 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration(proxyBeanMethods = false)
 @EnableScheduling
-@EnableConfigurationProperties(AuthProperties.class)
+@EnableConfigurationProperties({AuthProperties.class, ApiRateLimitProperties.class})
 public class WebConfig implements WebMvcConfigurer {
 
     private final ReadOnlyDemoInterceptor readOnlyDemo;
+    private final ApiRateLimitInterceptor apiRateLimit;
 
-    public WebConfig(ReadOnlyDemoInterceptor readOnlyDemo) {
+    public WebConfig(ReadOnlyDemoInterceptor readOnlyDemo, ApiRateLimitInterceptor apiRateLimit) {
         this.readOnlyDemo = readOnlyDemo;
+        this.apiRateLimit = apiRateLimit;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(apiRateLimit)
+                .addPathPatterns("/v1/trips", "/v1/trips/**", "/v1/guide/**", "/v1/admin/**");
         registry.addInterceptor(readOnlyDemo).addPathPatterns("/v1/**");
     }
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Simulated ID verification against a running core (docs/adr/0006).
 //   node scripts/ci/verification-smoke.mjs http://localhost:9090
-// Demo traveller submits; demo admin lists it but cannot decide; a traveller
+// Demo guide submits (the demo traveller is already a simulated verified
+// traveller); demo admin lists it but cannot decide; a member
 // on an admin endpoint is refused. Demo sessions only, no secrets.
 
 const BASE = process.argv[2] ?? "http://localhost:9090";
@@ -32,7 +33,8 @@ function expect(cond, what) {
   }
 }
 
-const traveller = (await call("POST", "/v1/demo/session", null, { role: "traveller" })).cookie;
+// The demo guide is the unverified demo member (M4a); the variable name is kept short.
+const traveller = (await call("POST", "/v1/demo/session", null, { role: "guide" })).cookie;
 const admin = (await call("POST", "/v1/demo/session", null, { role: "admin" })).cookie;
 expect(traveller && admin, "demo sessions");
 
@@ -48,7 +50,7 @@ expect(/^SAMPLE-[A-Z0-9]{8}$/.test(submitted.json.sampleRef), "server-made sampl
 expect(!JSON.stringify(submitted.json).includes("must-be-ignored"), "extra fields ignored");
 
 const me = await call("GET", "/v1/verification/me", traveller);
-expect(me.status === 200 && me.json.status === "pending", "status for the traveller");
+expect(me.status === 200 && me.json.status === "pending", "status for the demo guide");
 
 const queue = await call("GET", "/v1/admin/verification?status=pending", admin);
 expect(queue.status === 200, `demo admin queue ${queue.status}`);
@@ -77,8 +79,8 @@ for (const path of ["/v1/admin/verification?status=pending", "/v1/admin/audit"])
 const forged = await call("POST", `/v1/admin/verification/${mine.id}/decision`, traveller, {
   decision: "approve",
 });
-expect(forged.status === 403, "traveller cannot decide");
+expect(forged.status === 403, "member cannot decide");
 
 console.log(
-  "verification smoke ok: demo submit, demo admin list, demo admin read-only, traveller refused",
+  "verification smoke ok: demo submit, demo admin list, demo admin read-only, member refused",
 );

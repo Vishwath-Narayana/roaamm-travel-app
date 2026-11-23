@@ -168,6 +168,9 @@ class PasskeyFlowTest extends PostgresTest {
 
     @Test
     void signupRejectsAdminAndBadInput() throws Exception {
+        // Other test classes promote admins with the runbook UPDATE; signup must add none.
+        int admins = jdbc.sql("SELECT count(*) FROM users WHERE NOT is_demo AND role = 'admin'")
+                .query(Integer.class).single();
         for (String role : new String[] {"admin", "root", "Traveller", ""}) {
             registerOptions("Asha", role).andExpect(status().isBadRequest())
                     .andExpect(content().json("{\"error\":\"invalid_role\"}", JsonCompareMode.STRICT));
@@ -178,7 +181,7 @@ class PasskeyFlowTest extends PostgresTest {
         }
         registerOptions("x".repeat(40), "guide").andExpect(status().isOk());
         assertThat(jdbc.sql("SELECT count(*) FROM users WHERE NOT is_demo AND role = 'admin'")
-                .query(Integer.class).single()).isZero();
+                .query(Integer.class).single()).isEqualTo(admins);
     }
 
     @Test

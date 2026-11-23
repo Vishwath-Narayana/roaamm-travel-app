@@ -85,3 +85,27 @@ roaamm:
     # Rejected requests are deleted this long after the decision.
     rejected-retention: 30d
     page-size: 20
+  # Trips (M4a): per user. Shared demo users keep their newest rows instead of being blocked.
+  trips:
+    max-per-user: 20
+    demo-retention: 24h
+    page-size: 20
+  # Guide applications (docs/adr/0008-guide-applications.md).
+  guide:
+    max-per-demo-user: 20
+    demo-retention: 24h
+    page-size: 20
+  # Per client IP on /v1/trips, /v1/guide and /v1/admin. In memory: resets on restart.
+  api-rate-limit:
+    read:
+      max-per-window: 300
+      window: 10m
+    trip-write:
+      max-per-window: 30
+      window: 10m
+    guide-apply:
+      max-per-window: 5
+      window: 1h
+    admin-write:
+      max-per-window: 60
+      window: 10m

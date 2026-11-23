@@ -4,23 +4,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-/** Verification requests and the append-only admin audit log. Every admin query is scoped by is_demo. */
+/** Verification requests. Every admin query is scoped by is_demo; the audit log is in AuditLog. */
 @Repository
 public class VerificationRepository {
 
     public record Request(UUID id, UUID userId, String userDisplayName, String userRole, String docType,
             String sampleRef, String status, String reason, Instant createdAt, Instant decidedAt,
             String decidedByName, boolean isDemo) {}
-
-    /** targetDisplayName is the request owner's name, or null once the request (or its user) is deleted. */
-    public record AuditEntry(UUID id, String adminDisplayName, String action, UUID targetId,
-            String targetDisplayName, Instant createdAt) {}
 
     private static final String SELECT_REQUEST = """
             SELECT r.id, r.user_id, u.display_name, u.role::text AS user_role, r.doc_type::text AS doc_type,
@@ -61,12 +59,38 @@ public class VerificationRepository {
                 .param("user", userId).param("keep", keep).update();
     }
 
-    public List<Request> list(boolean isDemo, String status, int limit, int offset) {
-        return jdbc.sql(SELECT_REQUEST + """
-                         WHERE r.is_demo = :demo AND r.status = CAST(:status AS verification_status)
+    /** {@code namePattern} is an escaped ILIKE pattern, or null for no search. */
+    public List<Request> list(boolean isDemo, String status, String namePattern, int limit, int offset) {
+        String search = namePattern == null ? "" : " AND u.display_name ILIKE :q ESCAPE '\\'";
+        var spec = jdbc.sql(SELECT_REQUEST + """
+                         WHERE r.is_demo = :demo AND r.status = CAST(:status AS verification_status)""" + search + """
                          ORDER BY r.created_at DESC, r.id LIMIT :limit OFFSET :offset""")
-                .param("demo", isDemo).param("status", status).param("limit", limit).param("offset", offset)
-                .query(VerificationRepository::request).list();
+                .param("demo", isDemo).param("status", status).param("limit", limit).param("offset", offset);
+        if (namePattern != null) {
+            spec = spec.param("q", namePattern);
+        }
+        return spec.query(VerificationRepository::request).list();
+    }
+
+    /** Requests per status in one scope, for the admin tabs. */
+    public Map<String, Long> countsByStatus(boolean isDemo) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (String s : List.of("pending", "verified", "rejected")) {
+            counts.put(s, 0L);
+        }
+        jdbc.sql("""
+                        SELECT status::text AS status, count(*) AS n FROM verification_requests
+                        WHERE is_demo = :demo GROUP BY status""")
+                .param("demo", isDemo)
+                .query((rs, n) -> Map.entry(rs.getString("status"), rs.getLong("n")))
+                .list().forEach(e -> counts.put(e.getKey(), e.getValue()));
+        return counts;
+    }
+
+    /** True once any request of the user was approved. Verified is final. */
+    public boolean isVerified(UUID userId) {
+        return jdbc.sql("SELECT EXISTS (SELECT 1 FROM verification_requests WHERE user_id = :u AND status = 'verified')")
+                .param("u", userId).query(Boolean.class).single();
     }
 
     public Optional<Request> findInScope(UUID id, boolean isDemo) {
@@ -84,31 +108,6 @@ public class VerificationRepository {
                 .param("status", status).param("reason", reason).param("now", Timestamp.from(now))
                 .param("admin", adminId).param("id", id).param("demo", isDemo)
                 .update() == 1;
-    }
-
-    public void audit(UUID adminId, String action, UUID targetId, boolean isDemo, Instant now) {
-        jdbc.sql("""
-                        INSERT INTO admin_audit_log (id, admin_user_id, action, target_id, created_at, is_demo)
-                        VALUES (:id, :admin, :action, :target, :now, :demo)""")
-                .param("id", UUID.randomUUID()).param("admin", adminId).param("action", action)
-                .param("target", targetId).param("now", Timestamp.from(now)).param("demo", isDemo)
-                .update();
-    }
-
-    public List<AuditEntry> auditPage(boolean isDemo, int limit, int offset) {
-        return jdbc.sql("""
-                        SELECT a.id, u.display_name, a.action, a.target_id, t.display_name AS target_name, a.created_at
-                        FROM admin_audit_log a
-                        LEFT JOIN users u ON u.id = a.admin_user_id
-                        LEFT JOIN verification_requests r ON r.id = a.target_id AND r.is_demo = a.is_demo
-                        LEFT JOIN users t ON t.id = r.user_id
-                        WHERE a.is_demo = :demo
-                        ORDER BY a.created_at DESC, a.id LIMIT :limit OFFSET :offset""")
-                .param("demo", isDemo).param("limit", limit).param("offset", offset)
-                .query((rs, n) -> new AuditEntry(rs.getObject("id", UUID.class), rs.getString("display_name"),
-                        rs.getString("action"), rs.getObject("target_id", UUID.class), rs.getString("target_name"),
-                        rs.getTimestamp("created_at").toInstant()))
-                .list();
     }
 
     /** Rejected requests are kept for a while so the user can see why, then deleted. */
