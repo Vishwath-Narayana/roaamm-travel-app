@@ -51,10 +51,10 @@ export function uninstallWebAuthn() {
 
 /** fetch mock answering by path, in order for repeated paths. */
 export function mockApi(routes: Record<string, Array<[number, unknown, Record<string, string>?]>>) {
-  const calls: { path: string; init: RequestInit | undefined }[] = [];
+  const calls: { path: string; url: string; init: RequestInit | undefined }[] = [];
   const spy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
     const path = new URL(String(input)).pathname;
-    calls.push({ path, init });
+    calls.push({ path, url: String(input), init });
     const queue = routes[path];
     if (!queue || queue.length === 0) throw new TypeError(`unexpected fetch ${path}`);
     const [status, body, headers] = queue.length > 1 ? queue.shift()! : queue[0]!;

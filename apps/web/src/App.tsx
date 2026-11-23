@@ -1,7 +1,6 @@
 import { lazy, Suspense, type ComponentType } from "react";
 import { isRole } from "./api/session";
 import { Shell } from "./layouts/Shell";
-import { Demo } from "./pages/Demo";
 import { Landing } from "./pages/Landing";
 import { NotFound } from "./pages/NotFound";
 import { useRoute, useRouteFocus } from "./router";
@@ -16,12 +15,15 @@ const Signup = lazy(() => import("./pages/auth/Signup").then((m) => ({ default: 
 const Login = lazy(() => import("./pages/auth/Login").then((m) => ({ default: m.Login })));
 const Account = lazy(() => import("./pages/auth/Account").then((m) => ({ default: m.Account })));
 
+// The demo page carries the live preview; it loads on demand too.
+const Demo = lazy(() => import("./pages/Demo").then((m) => ({ default: m.Demo })));
+
 const ROUTES: Record<string, ComponentType> = {
   "/": Landing,
-  "/demo": Demo,
 };
 
 const LAZY_ROUTES: Record<string, ComponentType> = {
+  "/demo": Demo,
   "/signup": Signup,
   "/login": Login,
   "/account": Account,

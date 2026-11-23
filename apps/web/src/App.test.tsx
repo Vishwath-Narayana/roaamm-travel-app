@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "./App";
 import { navigate } from "./router";
@@ -36,8 +36,9 @@ describe("App routing", () => {
     await user.click(within(hero).getByRole("link", { name: "Try demo" }));
 
     expect(window.location.pathname).toBe("/demo");
-    const h1 = screen.getByRole("heading", { level: 1, name: "Try the demo" });
-    expect(h1).toHaveFocus();
+    // /demo is lazy: focus moves to its h1 once it has rendered.
+    const h1 = await screen.findByRole("heading", { level: 1, name: "Try the demo" });
+    await waitFor(() => expect(h1).toHaveFocus());
     expect(document.title).toBe("Try the demo · ROAAMM");
 
     await act(async () => {
@@ -48,10 +49,11 @@ describe("App routing", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Travel solo.");
   });
 
-  it("points the canonical link and og:url at the current page", () => {
+  it("points the canonical link and og:url at the current page", async () => {
     document.head.innerHTML =
       '<link rel="canonical" href="https://roaamm.plinthwell.com/"><meta property="og:url" content="https://roaamm.plinthwell.com/">';
     renderAt("/demo");
+    await screen.findByRole("heading", { level: 1, name: "Try the demo" });
     expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute(
       "href",
       "https://roaamm.plinthwell.com/demo",
@@ -62,10 +64,10 @@ describe("App routing", () => {
     );
   });
 
-  it("navigate() renders the matching page and ignores a trailing slash", () => {
+  it("navigate() renders the matching page and ignores a trailing slash", async () => {
     renderAt("/");
     act(() => navigate("/demo/"));
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Try the demo");
+    expect(await screen.findByRole("heading", { level: 1, name: "Try the demo" })).toBeInTheDocument();
   });
 
   it("shows a 404 with a link home for unknown paths", async () => {

@@ -1,7 +1,7 @@
 // Passkeys in the browser (docs/adr/0005-passkeys.md). Loaded only by the
 // signup, login and account pages, never by the landing page.
 
-import { call, lastRole, write, type Me, type Role } from "./session";
+import { call, markSignedIn, write, type Me, type Role } from "./session";
 
 // ---- base64url <-> ArrayBuffer
 
@@ -187,7 +187,7 @@ export async function signUp(displayName: string, role: RealRole): Promise<Signe
     credential,
   });
   const me = (await res.json()) as SignedIn;
-  lastRole.set(me.role);
+  markSignedIn(me);
   return me;
 }
 
@@ -198,13 +198,13 @@ export async function signIn(): Promise<SignedIn> {
   const credential = await getCredential(opts.publicKey);
   const res = await write("/v1/auth/login/verify", { challengeId: opts.challengeId, credential });
   const me = (await res.json()) as SignedIn;
-  lastRole.set(me.role);
+  markSignedIn(me);
   return me;
 }
 
 export async function signInWithRecoveryCode(code: string): Promise<SignedIn> {
   const me = (await (await write("/v1/auth/recovery", { code })).json()) as SignedIn;
-  lastRole.set(me.role);
+  markSignedIn(me);
   return me;
 }
 

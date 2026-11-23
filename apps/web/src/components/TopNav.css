@@ -331,3 +331,70 @@
     display: none !important;
   }
 }
+
+/* Signed in: name, dashboard, account and sign out replace "Try demo". */
+.topnav__who,
+.topnav__text-link {
+  display: none;
+}
+
+.topnav__text-link {
+  min-height: 44px;
+  align-items: center;
+  padding: 0 var(--space-2);
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.topnav__text-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.topnav__who {
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  opacity: 0.8;
+}
+
+.topnav__mobile-session {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.topnav__mobile-who {
+  color: var(--muted);
+}
+
+.topnav__mobile-session .topnav__signout {
+  width: 100%;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (min-width: 860px) {
+  .topnav__text-link {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 1100px) {
+  .topnav__who {
+    display: inline-block;
+  }
+}

@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { API_ORIGIN, lastRole } from "../../api/session";
+import { mockApi } from "../../test/webauthn";
 import { Dashboard } from "./Dashboard";
 
 function json(body: unknown, status = 200) {
@@ -24,16 +25,18 @@ describe("Dashboard", () => {
   });
 
   it("renders the shell for the signed-in role with a Simulated data label", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(json({ role: "traveller", displayName: "Demo traveller", isDemo: true }));
+    const { spy: fetchSpy } = mockApi({
+      "/v1/me": [[200, { role: "traveller", displayName: "Demo traveller", isDemo: true }]],
+      "/v1/verification/me": [[200, { status: "none", simulated: true }]],
+    });
     render(<Dashboard role="traveller" />);
     expect(await screen.findByText("Signed in as demo traveller")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { level: 1, name: "Traveller dashboard" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Simulated data")).toBeInTheDocument();
-    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
+    // The verification card plus three placeholder panels.
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(4);
     expect(fetchSpy).toHaveBeenCalledWith(
       `${API_ORIGIN}/v1/me`,
       expect.objectContaining({ credentials: "include" }),
@@ -93,33 +96,33 @@ describe("Dashboard", () => {
   });
 
   it("shows an honest error with a retry when the API is down", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(json({ error: "bad_gateway" }, 502))
-      .mockResolvedValueOnce(
-        json({ role: "traveller", displayName: "Demo traveller", isDemo: true }),
-      );
+    const { calls } = mockApi({
+      "/v1/me": [
+        [502, { error: "bad_gateway" }],
+        [200, { role: "traveller", displayName: "Demo traveller", isDemo: true }],
+      ],
+      "/v1/verification/me": [[200, { status: "none", simulated: true }]],
+    });
     render(<Dashboard role="traveller" />);
     expect(await screen.findByRole("alert")).toHaveTextContent(/API is not answering/);
     expect(window.location.pathname).toBe("/app/traveller");
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("Signed in as demo traveller")).toBeInTheDocument();
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(calls.filter((c) => c.path === "/v1/me")).toHaveLength(2);
   });
 
   it("signs out: deletes the session and returns to /demo", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(
-        json({ role: "traveller", displayName: "Demo traveller", isDemo: true }),
-      )
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const { calls } = mockApi({
+      "/v1/me": [[200, { role: "traveller", displayName: "Demo traveller", isDemo: true }]],
+      "/v1/verification/me": [[200, { status: "none", simulated: true }]],
+      "/v1/logout": [[204, null]],
+    });
     lastRole.set("traveller");
     render(<Dashboard role="traveller" />);
     await userEvent.click(await screen.findByRole("button", { name: "Sign out" }));
     await waitFor(() => expect(window.location.search).toBe("?session=signed-out"));
-    const [url, init] = fetchSpy.mock.calls[1]!;
-    expect(url).toBe(`${API_ORIGIN}/v1/logout`);
+    const logout = calls.find((c) => c.path === "/v1/logout")!;
+    const init = logout.init;
     expect(init).toMatchObject({ method: "POST", credentials: "include" });
     expect(new Headers(init!.headers).get("X-Roaamm-Csrf")).toBe("1");
     expect(lastRole.get()).toBeNull();

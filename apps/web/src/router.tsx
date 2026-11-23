@@ -106,7 +106,26 @@ export function useRouteFocus(path: string): void {
     // Instant: smooth scrolling is only for in-page anchor jumps.
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     const h1 = document.querySelector<HTMLElement>("main h1");
-    if (h1) focusWithoutScroll(h1);
+    if (h1) {
+      focusWithoutScroll(h1);
+      return;
+    }
+    // A lazy page renders its h1 a moment later: focus it when it appears.
+    const main = document.querySelector("main");
+    if (!main) return;
+    const observer = new MutationObserver(() => {
+      const late = main.querySelector<HTMLElement>("h1");
+      if (late) {
+        observer.disconnect();
+        focusWithoutScroll(late);
+      }
+    });
+    observer.observe(main, { childList: true, subtree: true });
+    const stop = window.setTimeout(() => observer.disconnect(), 5000);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(stop);
+    };
   }, [path]);
 }
 

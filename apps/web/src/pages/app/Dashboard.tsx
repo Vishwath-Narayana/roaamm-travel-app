@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
@@ -15,17 +15,21 @@ import {
 } from "../../api/session";
 import { navigate, usePageTitle } from "../../router";
 import "../Demo.css";
+import { VerificationCard } from "./VerificationCard";
 import "./Dashboard.css";
+
+// Only admins download the queue and audit log.
+const AdminPanel = lazy(() => import("./AdminPanel").then((m) => ({ default: m.AdminPanel })));
 
 const LABEL: Record<Role, string> = { traveller: "Traveller", guide: "Guide", admin: "Admin" };
 
 /** Placeholders only: the real dashboards land in later milestones. */
 const PANELS: Record<Role, { title: string; body: string }[]> = {
   traveller: [
-    { title: "Your trips", body: "Trips you plan, with dates and places. Arrives in M3." },
+    { title: "Your trips", body: "Trips you plan, with dates and places. Arrives in M4." },
     {
       title: "Travellers on your dates",
-      body: "People heading to the same place at the same time. Arrives in M3.",
+      body: "People heading to the same place at the same time. Arrives in M4.",
     },
     { title: "Chats", body: "End-to-end encrypted conversations. Arrive in M5 and M6." },
   ],
@@ -35,10 +39,6 @@ const PANELS: Record<Role, { title: string; body: string }[]> = {
     { title: "Bookings", body: "Incoming and upcoming bookings. Arrives in M4." },
   ],
   admin: [
-    {
-      title: "ID verification queue",
-      body: "Submitted IDs waiting for a decision. Arrives in M4.",
-    },
     { title: "Guide approvals", body: "New guides to approve or decline. Arrives in M4." },
     { title: "Reports", body: "Reported users and messages. Arrives in a later milestone." },
   ],
@@ -51,6 +51,13 @@ export function Dashboard({ role }: { role: Role }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+
+  /** No session (any more): back to the demo page, saying so if it expired. */
+  const signedOut = useCallback(() => {
+    const expired = lastRole.get() !== null;
+    lastRole.set(null);
+    navigate(expired ? "/demo?session=expired" : "/demo", { replace: true });
+  }, []);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -68,10 +75,7 @@ export function Dashboard({ role }: { role: Role }) {
         if (cancelled) return;
         const error: ApiError = e instanceof ApiFailure ? e.error : { kind: "unavailable" };
         if (error.kind === "unauthenticated") {
-          // Had a session on this browser before: it expired. Otherwise: never signed in.
-          const expired = lastRole.get() !== null;
-          lastRole.set(null);
-          navigate(expired ? "/demo?session=expired" : "/demo", { replace: true });
+          signedOut();
           return;
         }
         setState({ kind: "error", error });
@@ -80,7 +84,7 @@ export function Dashboard({ role }: { role: Role }) {
     return () => {
       cancelled = true;
     };
-  }, [role]);
+  }, [role, signedOut]);
 
   useEffect(() => load(), [load]);
 
@@ -167,9 +171,18 @@ export function Dashboard({ role }: { role: Role }) {
         </p>
       )}
       <p className="dash__note small">
-        This is a shared sandbox. Everything here is simulated; real dashboards arrive in later
-        milestones.
+        {state.me.isDemo ? "This is a shared sandbox. " : ""}Everything here is simulated; more of
+        the dashboard arrives in later milestones.
       </p>
+      {role === "admin" ? (
+        <Suspense fallback={<p role="status">Loading the admin tools…</p>}>
+          <AdminPanel readOnly={state.me.isDemo} onSignedOut={signedOut} />
+        </Suspense>
+      ) : (
+        <div className="dash__panels dash__panels--top">
+          <VerificationCard onSignedOut={signedOut} />
+        </div>
+      )}
       <ul className="dash__panels" aria-label={`${LABEL[role]} panels`}>
         {PANELS[role].map((p) => (
           <Card as="li" key={p.title} className="dash__panel">
