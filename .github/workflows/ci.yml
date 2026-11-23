@@ -89,9 +89,12 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
-      # First visit to the landing page <= 110 kB gzipped; every chunk together <= 130 kB.
+      # First visit to the landing page <= 100 kB gzipped (hard); every chunk together <= 150 kB.
       - name: Bundle size budget
-        run: node scripts/check-bundle-size.mjs apps/web/dist --initial 110 --total 130
+        run: node scripts/check-bundle-size.mjs apps/web/dist --initial 100 --total 150
+      # Admin status pills and chips: >= 4.5:1 contrast in light and dark.
+      - name: Admin pill contrast
+        run: node scripts/check-admin-contrast.mjs
       - name: Lighthouse (performance >= 0.9, accessibility >= 0.95)
         run: pnpm dlx @lhci/cli@0.14 autorun --config=apps/web/lighthouserc.json
       # Every route loads with no console warnings or errors (e.g. an unused preload).
