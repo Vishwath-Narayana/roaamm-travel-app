@@ -4,8 +4,9 @@ import { IMAGES } from "./images.gen";
 import html from "../index.html?raw";
 import adr from "../../../docs/adr/0007-landing-only-hero-preload.md?raw";
 
-const INLINE = /<script>([\s\S]*?)<\/script>/g;
-const scripts = [...html.matchAll(INLINE)].map((m) => m[1]!);
+// Parsed like a browser would, so the text is exactly what the CSP hash covers.
+const doc = new DOMParser().parseFromString(html, "text/html");
+const scripts = [...doc.querySelectorAll("script:not([src])")].map((s) => s.textContent ?? "");
 
 /** The CSP source for an inline script: base64 SHA-256 of its exact text. */
 async function cspHash(code: string): Promise<string> {
@@ -25,7 +26,7 @@ describe("index.html hero preload", () => {
 
   it("has exactly one inline script and no static image preload", () => {
     expect(scripts).toHaveLength(1);
-    expect(html).not.toMatch(/<link[^>]*rel="preload"[^>]*as="image"/);
+    expect(doc.querySelector('link[rel="preload"][as="image"]')).toBeNull();
   });
 
   it("pins the inline script's CSP hash in the ADR", async () => {
@@ -52,6 +53,7 @@ describe("index.html hero preload", () => {
   );
 
   it("still preloads the hero headline font", () => {
-    expect(html).toMatch(/rel="preload"\s+as="font"[\s\S]*inter-tight-latin-wght-normal\.woff2/);
+    const font = doc.querySelector('link[rel="preload"][as="font"]');
+    expect(font?.getAttribute("href")).toMatch(/inter-tight-latin-wght-normal\.woff2$/);
   });
 });
