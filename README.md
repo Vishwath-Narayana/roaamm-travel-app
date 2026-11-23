@@ -184,6 +184,7 @@ Details: [docs/milestones.md](docs/milestones.md) and [docs/addendum-v2.md](docs
 - [Free services and setup](docs/free-services.md)
 - [Repo, CI/CD and load-test plan](docs/repo-cicd-loadtest.md)
 - [Architecture decision records](docs/adr)
+- [Learn: study notes for every milestone](docs/learn/README.md)
 - [Security policy](SECURITY.md)
 
 ## Author
