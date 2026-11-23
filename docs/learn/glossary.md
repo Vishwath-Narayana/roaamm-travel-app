@@ -37,6 +37,9 @@ later but does not yet.
 - **CSRF (Cross-Site Request Forgery):** another site tricking your
   browser into sending a request with your cookies. ROAAMM blocks it with
   an exact `Origin` check plus a custom header.
+- **Column template (`table-layout: fixed`, `<colgroup>`):** a table whose
+  column widths come from a fixed list (one `<col>` per column), not from the
+  text in its cells. Changing the rows can then never move a column.
 - **Cookie:** a small value the browser stores and sends back to a host.
   - **HttpOnly:** page scripts cannot read it.
   - **Secure:** only sent over HTTPS.
@@ -47,6 +50,9 @@ later but does not yet.
   timings) that all components share, defined once.
 - **Discoverable credential:** a passkey that the device can find by
   itself, so sign-in needs no username.
+- **Edge fade (`mask-image`):** a gradient mask that fades the edge of a row
+  that scrolls sideways, as a hint that there is more. The admin shows it
+  only on the side that has more.
 - **ESLint:** a tool that checks JavaScript and TypeScript for mistakes and
   style problems.
 - **History API:** browser functions (`pushState`, `popstate`) that change
@@ -95,6 +101,9 @@ later but does not yet.
   a page.
 - **Vite:** the build tool and dev server for the web app.
 - **Vitest:** the test runner for the web app and the proxy.
+- **Visually hidden:** content kept for screen readers but not drawn
+  (a 1 px clipped box, not `display: none`, which would hide it from screen
+  readers too). The admin's page lead below 640 px is one.
 - **WAI-ARIA:** attributes like `role` and `aria-selected` that describe
   widgets to assistive technology.
 - **WebAuthn:** the browser and server standard behind passkeys.
