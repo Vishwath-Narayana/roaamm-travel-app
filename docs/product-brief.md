@@ -35,7 +35,7 @@ It also has to look like a real product, with polished, consistent UI (monochrom
 Never claim "0 latency" or "unhackable". Measured numbers and a stated threat model are more credible.
 
 ## Features (scope)
-1. **Accounts and verification.** Sign-up with passkeys (plus email one-time code as fallback). Mock ID verification: upload a sample ID, encrypted to the admins' key, which an admin approves. A "Verified" badge.
+1. **Accounts and verification.** Sign-up with passkeys, with single-use recovery codes instead of email (ADR 0005). Mock ID verification: upload a sample ID, encrypted to the admins' key, which an admin approves. A "Verified" badge.
 2. **Trips and discovery.** Create trips (city and dates), find verified travellers whose dates overlap, send connection requests.
 3. **End-to-end encrypted chat.** 1:1 and group (up to 256 members). Delivery and read receipts, typing indicators, online status, encrypted image attachments.
 4. **End-to-end encrypted calls.** 1:1 voice and video calls (WebRTC + SFrame). Group calls are a stretch goal.

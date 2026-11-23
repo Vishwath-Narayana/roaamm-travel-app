@@ -11,7 +11,7 @@ The design splits the system by what each part needs most:
 | **Fast path (real-time)** | Chat messages, receipts, typing indicators, online status, call setup, live location updates | Very low latency, global reach, many open connections | **Cloudflare Workers + Durable Objects, written in Rust (WebAssembly)** on hundreds of edge locations |
 | **Steady path (business)** | Accounts, passkeys, ID verification, trips, discovery, guides, bookings, payments, admin, reports | Correctness, transactions, relational data | **Java 25 / Spring Boot 4**, GraalVM native image, on **Google Cloud Run** (scales to zero, [ADR 0003](adr/0003-core-hosting-cloud-run.md)), reached through Cloudflare, with **Neon Postgres** |
 
-The fast path **never waits on the steady path**. The edge checks login tokens on its own (Ed25519 signature, public key cached at the edge), so chat keeps working even if the Java server is down.
+The fast path **never waits on the steady path**. How the edge checks a signed-in user without calling the core on every message is decided in M5. Sessions are opaque cookies in Postgres ([ADR 0004](adr/0004-auth-sessions-m2a.md)); there are no JWTs.
 
 ```mermaid
 flowchart LR
@@ -61,7 +61,7 @@ All of them are first-level subdomains, so Cloudflare's free Universal SSL certi
 ## 3. Real-time design (the fast path)
 
 ### 3.1 Connection model: one gateway per user
-- Each browser tab opens **one WebSocket** to `roaamm-rt`. The Worker verifies the access token (an Ed25519 JWT, valid for 15 minutes) and rate-limits, then forwards the connection to that user's **Session DO** (`idFromName(userId)`).
+- Each browser tab opens **one WebSocket** to `roaamm-rt`. The Worker checks the user's session (how is decided in M5, see ADR 0004) and rate-limits, then forwards the connection to that user's **Session DO** (`idFromName(userId)`).
 - The Session DO holds the open connections for all of that user's devices using the **Hibernation API**: an idle connection costs no compute, and the Durable Object wakes when a message arrives.
 - **Why one Session DO per user instead of one socket per chat room:** a single socket per tab no matter how many chats are open. Online status lives in one place. Delivery to offline devices is easy to track. Trade-off: one extra RPC hop (Session DO → Room DO), a few milliseconds when they're in the same region.
 
@@ -162,13 +162,13 @@ Full detail in doc 6.
 ## 5. Steady path (Java core)
 
 ### 5.1 Responsibilities
-- Accounts, passkeys (WebAuthn), email one-time codes.
-- Issuing access tokens (Ed25519, 15 minutes) and refresh tokens (rotating, httpOnly cookie).
+- Accounts with passkeys (WebAuthn) and recovery codes ([ADR 0005](adr/0005-passkeys.md)), and one-click demo accounts.
+- Opaque cookie sessions, stored as hashes in Postgres ([ADR 0004](adr/0004-auth-sessions-m2a.md)). No JWTs.
 - **MLS Authentication Service:** signs each device's credential (binds a device's public key to a verified user).
 - Profiles, mock ID verification workflow, trips, discovery, connection requests, guides, bookings, Razorpay **test** payments with webhook signature checks, reports and moderation, SOS and check-in records, emergency contacts, admin.
 
 ### 5.2 Data model (Postgres)
-`users`, `devices` (device credential public keys), `passkeys`, `email_otps`, `verifications` (status, encrypted R2 object key), `trips`, `trip_matches` (materialised overlap), `connections`, `rooms` (metadata only: id, type, members, created_at; never content), `guides`, `guide_slots`, `bookings`, `payments`, `reports`, `emergency_contacts`, `checkins`, `sos_events`, `audit_log`.
+`users`, `sessions`, `webauthn_credentials`, `webauthn_challenges`, `recovery_codes`, `devices` (device credential public keys), `verifications` (status, encrypted R2 object key), `trips`, `trip_matches` (materialised overlap), `connections`, `rooms` (metadata only: id, type, members, created_at; never content), `guides`, `guide_slots`, `bookings`, `payments`, `reports`, `emergency_contacts`, `checkins`, `sos_events`, `audit_log`.
 - Migrations with Flyway.
 - Every table has `created_at` and `updated_at`.
 - Soft delete where users can delete content.
@@ -177,7 +177,7 @@ Full detail in doc 6.
 - About 30 core requests per user per hour → about 420 requests/s on average, about 1,200 at peak.
 - **Ways to keep this load small:**
   - Read-heavy public data is cached at the edge: trip discovery by city and date (cached 30 s), guide listings, public profiles.
-  - Login tokens are checked at the edge, so there's no session lookup on the core.
+  - A session check on the core is one indexed lookup by token hash. Moving that check to the edge is an M5 decision.
   - Writes and uncached reads that reach the core: about 150–300 requests/s.
 - **Demo deployment:** Cloud Run, at most 2 instances, scaling to zero. We **measure its real limit** (and cold starts) with k6 and publish it.
 - **Scale-out plan, documented:**
@@ -195,7 +195,7 @@ Full detail in doc 6.
 | Failure | Effect | What we do |
 |---|---|---|
 | Durable Object restarts or moves | Sockets drop | Client reconnects with exponential backoff plus random jitter, then resumes from the last seen `seq`. Nothing is lost (messages were stored before the ack). |
-| Java core down | No logins, bookings or trip edits | Chat, calls and SOS on the edge keep working until tokens expire. UI shows a "some features unavailable" banner. Health check alert. |
+| Java core down | No logins, bookings or trip edits | Chat, calls and SOS on the edge are meant to keep working; how the edge checks sessions without the core is decided in M5. UI shows a "some features unavailable" banner. Health check alert. |
 | Core or Neon cold after idle | First request slower (Cloud Run cold start and Neon wake-up are both **unmeasured**, see ADR 0003) | Warm-up ping before demo hours. The UI shows loading skeletons. |
 | Free-tier daily limit reached | Further operations of that type fail until midnight UTC | Alert at 70% of quota, clear error banner in the UI, the demo is light on traffic by design, the load test runs only during the paid month. |
 | Everyone reconnecting at once after an outage | Spike of new connections | Random jitter on backoff, a connection rate limit in the Worker, Session DOs start cheaply. |

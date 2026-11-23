@@ -13,7 +13,9 @@ the API host is sent with credentialed `fetch` calls from the web app.
 `docs/system-design.md` §5 and `docs/security.md` describe the long-term plan
 (Ed25519 JWT access tokens checked at the edge, rotating refresh cookie with
 `SameSite=Strict`). **For M2a this ADR takes precedence**: there is no JWT yet.
-How the two plans join is decided with passkeys in M2b.
+
+**Update (M2b):** the JWT and refresh-token plan is dropped. Real accounts use
+the same opaque cookie sessions; see [ADR 0005](0005-passkeys.md).
 
 ## Decision
 
@@ -112,7 +114,8 @@ returns `{"status":"ok"}` or `503`.
 ## Later decisions (not made here)
 - **Moving sessions to the Rust edge (Session DO)** so the edge can check them
   without a round trip to the core. That is a later decision with its own ADR.
-- Passkeys, real accounts, and the JWT/refresh-token design: M2b.
+- Passkeys and real accounts: decided in [ADR 0005](0005-passkeys.md) (M2b).
+  No JWTs.
 
 ## Not measured yet
 - **Neon wake-up time** after its idle suspend: **UNMEASURED.**
