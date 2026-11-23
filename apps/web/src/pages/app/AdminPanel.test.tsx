@@ -127,7 +127,16 @@ describe("AdminPanel", () => {
               admin: "Demo admin",
               action: "verification.approve",
               targetId: ANA.id,
+              target: "Sample traveller Ana",
               createdAt: "2026-11-22T08:00:00Z",
+            },
+            {
+              id: "a2",
+              admin: "Demo admin",
+              action: "verification.reject",
+              targetId: "8f3a2c1e-0000-4000-8000-00000000beef",
+              target: null,
+              createdAt: "2026-11-21T08:00:00Z",
             },
           ]),
         ],
@@ -143,6 +152,19 @@ describe("AdminPanel", () => {
     expect(auditTab).toHaveAttribute("aria-selected", "true");
     const table = await screen.findByRole("table", { name: /Admin actions/ });
     expect(within(table).getByText("Approved verification")).toBeInTheDocument();
+    const [, first, second] = within(table).getAllByRole("row");
+    expect(first).toHaveTextContent("Sample traveller Ana 00000201");
+    expect(second).toHaveTextContent("Deleted request 0000beef");
+    expect(table).not.toHaveTextContent("00000000");
+  });
+
+  it("says the read-only queue holds simulated people and demo visitors", async () => {
+    mockApi({ "/v1/admin/verification": [[200, page([])]] });
+    render(<AdminPanel readOnly onSignedOut={() => {}} />);
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "The queue shows simulated people and demo visitors only.",
+    );
+    expect(await screen.findByText(/queue is empty/)).toBeInTheDocument();
   });
 
   it("shows honest errors: forbidden, API down, and an expired session", async () => {

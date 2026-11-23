@@ -66,7 +66,7 @@ Details and reasons: [ADR 0004](adr/0004-auth-sessions-m2a.md) (sessions, demo l
 
 ## 6. Web and API hardening (target: OWASP ASVS level 2)
 - **TLS 1.3** only, HSTS with preload, all subdomains on Cloudflare.
-- **CSP (strict):** `default-src 'self'`; scripts from self only, using `'wasm-unsafe-eval'` for WebAssembly; no inline scripts; `connect-src` limited to `roaamm-api`, `roaamm-rt` (wss), R2 and TURN; `frame-ancestors 'none'`; `require-trusted-types-for 'script'`.
+- **CSP (strict):** `default-src 'self'`; scripts from self only, using `'wasm-unsafe-eval'` for WebAssembly; no inline scripts except the one hash-pinned landing-page preload snippet ([ADR 0007](adr/0007-landing-only-hero-preload.md)); `connect-src` limited to `roaamm-api`, `roaamm-rt` (wss), R2 and TURN; `frame-ancestors 'none'`; `require-trusted-types-for 'script'`.
 - **Subresource Integrity** on all built assets. Plus `X-Content-Type-Options`, `Referrer-Policy: no-referrer`, a `Permissions-Policy` that allows only camera, mic and geolocation on the app origin, `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`.
 - **CSRF:** the session cookie is SameSite=Lax, and every state-changing API request needs an exact `Origin: https://roaamm.plinthwell.com` plus the `X-Roaamm-Csrf: 1` header (ADR 0004).
 - **Input:** schema validation on both sides (Zod in the browser, Bean Validation in Java). Size limits everywhere. SQL only through parameterised queries.

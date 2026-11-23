@@ -50,7 +50,7 @@ public class VerificationController {
         }
     }
 
-    public record AuditView(UUID id, String admin, String action, UUID targetId, Instant createdAt) {}
+    public record AuditView(UUID id, String admin, String action, UUID targetId, String target, Instant createdAt) {}
 
     private final VerificationService service;
     private final SessionService sessions;
@@ -94,7 +94,8 @@ public class VerificationController {
             HttpServletRequest request) {
         var p = service.audit(current(request), page);
         return new VerificationService.Page<>(p.items().stream()
-                .map(a -> new AuditView(a.id(), a.adminDisplayName(), a.action(), a.targetId(), a.createdAt()))
+                .map(a -> new AuditView(a.id(), a.adminDisplayName(), a.action(), a.targetId(), a.targetDisplayName(),
+                        a.createdAt()))
                 .toList(), p.page(), p.hasMore());
     }
 
