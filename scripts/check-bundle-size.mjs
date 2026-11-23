@@ -1,5 +1,5 @@
 // JavaScript size budgets for a Vite build, gzipped.
-//   node scripts/check-bundle-size.mjs apps/web/dist --initial 110 --total 130
+//   node scripts/check-bundle-size.mjs apps/web/dist --initial 100 --total 150
 //
 // --initial: what a first visit to the landing page downloads: the entry
 //            module in index.html plus every chunk it preloads.

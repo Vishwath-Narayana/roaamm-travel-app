@@ -143,29 +143,46 @@ public class TripRepository {
 
     // ---- admin (read-only, scoped)
 
-    /** {@code sort}: start_desc, start_asc or created_desc (already checked). */
-    public List<Trip> listInScope(boolean isDemo, String status, String sort, int limit, int offset) {
+    /**
+     * {@code sort}: start_desc, start_asc or created_desc (already checked).
+     * {@code pattern}: an escaped ILIKE pattern over title, destination and owner name, or null.
+     */
+    public List<Trip> listInScope(boolean isDemo, String status, String pattern, String sort, int limit,
+            int offset) {
         String order = switch (sort) {
             case "start_asc" -> " ORDER BY t.start_date, t.id";
             case "created_desc" -> " ORDER BY t.created_at DESC, t.id";
             default -> " ORDER BY t.start_date DESC, t.id";
         };
-        String filter = status == null ? "" : " AND t.status = CAST(:status AS trip_status)";
-        var spec = jdbc.sql(SELECT_TRIP + " WHERE t.is_demo = :demo" + filter + order + " LIMIT :limit OFFSET :offset")
+        var spec = jdbc.sql(SELECT_TRIP + " WHERE t.is_demo = :demo" + adminFilter(status, pattern) + order
+                        + " LIMIT :limit OFFSET :offset")
                 .param("demo", isDemo).param("limit", limit).param("offset", offset);
-        if (status != null) {
-            spec = spec.param("status", status);
-        }
-        return spec.query(TripRepository::trip).list();
+        return bindAdmin(spec, status, pattern).query(TripRepository::trip).list();
     }
 
-    public long countInScope(boolean isDemo, String status) {
-        String filter = status == null ? "" : " AND status = CAST(:status AS trip_status)";
-        var spec = jdbc.sql("SELECT count(*) FROM trips WHERE is_demo = :demo" + filter).param("demo", isDemo);
+    public long countInScope(boolean isDemo, String status, String pattern) {
+        var spec = jdbc.sql("SELECT count(*) FROM trips t JOIN users u ON u.id = t.user_id WHERE t.is_demo = :demo"
+                + adminFilter(status, pattern)).param("demo", isDemo);
+        return bindAdmin(spec, status, pattern).query(Long.class).single();
+    }
+
+    private static String adminFilter(String status, String pattern) {
+        String s = status == null ? "" : " AND t.status = CAST(:status AS trip_status)";
+        if (pattern != null) {
+            s += " AND (t.title ILIKE :q ESCAPE '\\' OR t.destination ILIKE :q ESCAPE '\\'"
+                    + " OR u.display_name ILIKE :q ESCAPE '\\')";
+        }
+        return s;
+    }
+
+    private static JdbcClient.StatementSpec bindAdmin(JdbcClient.StatementSpec spec, String status, String pattern) {
         if (status != null) {
             spec = spec.param("status", status);
         }
-        return spec.query(Long.class).single();
+        if (pattern != null) {
+            spec = spec.param("q", pattern);
+        }
+        return spec;
     }
 
     private static Trip trip(ResultSet rs, int n) throws SQLException {

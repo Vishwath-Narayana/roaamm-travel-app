@@ -16,6 +16,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import puppeteer from "puppeteer-core";
+import { adminStub } from "./admin-stub.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const DIST = join(ROOT, "apps/web/dist");
@@ -30,6 +31,15 @@ const ROUTES = [
   "/app/traveller",
   "/app/guide",
   "/app/admin",
+  // The admin console (M4b), signed in as the demo admin with simulated data.
+  "/app/admin/verification",
+  "/app/admin/verification?id=00000000-0000-4000-8000-000000000204",
+  "/app/admin/guide-applications",
+  "/app/admin/guide-applications?view=list",
+  "/app/admin/guide-applications?id=00000000-0000-4000-8000-000000000503",
+  "/app/admin/users",
+  "/app/admin/trips",
+  "/app/admin/audit",
 ];
 // Chrome reports an unused preload about 3 s after the load event.
 const SETTLE_MS = 4500;
@@ -74,16 +84,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const EMPTY_PAGE = { items: [], page: 0, hasMore: false };
 
 /** What the API answers a signed-in demo user of `role`; null means unknown endpoint. */
-function apiStub(path, role) {
+function apiStub(path, role, params) {
   if (path === "/v1/me")
     return { role, displayName: `Demo ${role}`, isDemo: true, needsNewPasskey: false };
   if (path === "/v1/verification/me") return { status: "none" };
-  if (path.startsWith("/v1/admin/")) return EMPTY_PAGE;
+  if (path.startsWith("/v1/admin/")) return adminStub(path, params) ?? EMPTY_PAGE;
   return null;
 }
 
 async function check(browser, origin, route) {
-  const role = /^\/app\/([a-z]+)$/.exec(route)?.[1] ?? "traveller";
+  const role = /^\/app\/([a-z]+)/.exec(route)?.[1] ?? "traveller";
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
   const problems = [];
@@ -93,7 +103,7 @@ async function check(browser, origin, route) {
     const url = new URL(req.url());
     if (url.origin === origin || url.protocol === "data:") return void req.continue();
     if (req.method() === "OPTIONS") return void req.respond({ status: 204, headers: cors(origin) });
-    const body = url.origin === API ? apiStub(url.pathname, role) : null;
+    const body = url.origin === API ? apiStub(url.pathname, role, url.searchParams) : null;
     if (body === null) {
       offsite.push(req.url());
       return void req.abort();

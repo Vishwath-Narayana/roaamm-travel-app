@@ -46,7 +46,8 @@ function useSignOut(after?: () => void) {
   };
 }
 
-function ThemeToggle() {
+/** The light/dark switch (also used by the admin console top bar). */
+export function ThemeToggle() {
   const [theme, setState] = useState<Theme>(currentTheme);
 
   // Keep the label right if the OS scheme changes and no explicit choice exists.

@@ -1,6 +1,7 @@
 import { withViewTransition } from "./viewTransition";
 import {
   useEffect,
+  useMemo,
   useRef,
   useSyncExternalStore,
   type AnchorHTMLAttributes,
@@ -26,6 +27,16 @@ function subscribe(onChange: () => void): () => void {
 
 function getPath(): string {
   return normalize(window.location.pathname);
+}
+
+function getSearch(): string {
+  return window.location.search;
+}
+
+/** Current query string parameters, re-rendered on every navigation. */
+export function useSearchParams(): URLSearchParams {
+  const search = useSyncExternalStore(subscribe, getSearch, () => "");
+  return useMemo(() => new URLSearchParams(search), [search]);
 }
 
 /** Current pathname (hash and query excluded), re-rendered on every navigation. */

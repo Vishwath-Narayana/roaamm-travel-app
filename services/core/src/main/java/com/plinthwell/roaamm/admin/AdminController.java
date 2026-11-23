@@ -124,7 +124,7 @@ public class AdminController {
 
     @GetMapping("/v1/admin/trips")
     public TripListView trips(@RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "start_desc") String sort, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String q, @RequestParam(defaultValue = "start_desc") String sort, @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) Integer size, HttpServletRequest request) {
         User a = admin(request);
         String st = blankToNull(status);
@@ -134,10 +134,11 @@ public class AdminController {
         if (!TRIP_SORTS.contains(sort)) {
             throw new PasskeyException(400, "invalid_sort");
         }
+        String pattern = PlainText.searchPattern(q);
         int p = Page.page(page);
         int s = Page.size(size, PAGE_SIZE);
-        var rows = trips.listInScope(a.isDemo(), st, sort, s + 1, p * s);
-        var pg = Page.of(rows, p, s, trips.countInScope(a.isDemo(), st));
+        var rows = trips.listInScope(a.isDemo(), st, pattern, sort, s + 1, p * s);
+        var pg = Page.of(rows, p, s, trips.countInScope(a.isDemo(), st, pattern));
         return new TripListView(pg.items().stream()
                 .map(t -> new TripView(t.id(), t.title(), t.destination(), t.startDate().toString(),
                         t.endDate().toString(), t.status(), t.ownerDisplayName(), t.isSample(), t.createdAt()))

@@ -60,9 +60,16 @@ export const lastRole = {
   },
 };
 
+/**
+ * A credentialed API call. `init.signal` (optional) lets the caller abort, for
+ * example when the user navigates away; the request also times out on its own.
+ */
 export async function call(path: string, init: RequestInit = {}): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const outer = init.signal;
+  if (outer?.aborted) controller.abort();
+  else outer?.addEventListener("abort", () => controller.abort(), { once: true });
   let res: Response;
   try {
     res = await fetch(API_ORIGIN + path, {
@@ -247,6 +254,11 @@ const REJECTED: Record<string, string> = {
   invalid_doc_type: "Choose a document type.",
   invalid_status: "That filter isn't available.",
   not_found: "That passkey no longer exists.",
+  note_required: "Add a note (up to 300 characters) when rejecting.",
+  invalid_note: "Use 1 to 300 characters, without < or >.",
+  invalid_ids: "Choose between 1 and 25 rows.",
+  invalid_decision: "Choose approve or reject.",
+  invalid_search: "Search with up to 40 characters, without < or >.",
 };
 
 /** Dashboard route for a role. */
