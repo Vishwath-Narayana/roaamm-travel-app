@@ -62,15 +62,6 @@ describe("Dashboard", () => {
     await waitFor(() => expect(window.location.pathname).toBe("/account"));
   });
 
-  it("marks the admin demo as read-only", async () => {
-    window.history.replaceState(null, "", "/app/admin");
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      json({ role: "admin", displayName: "Demo admin", isDemo: true }),
-    );
-    render(<Dashboard role="admin" />);
-    expect(await screen.findByText("Signed in as demo admin (read-only)")).toBeInTheDocument();
-  });
-
   it("redirects to /demo without a session", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(json({ error: "unauthenticated" }, 401));
     render(<Dashboard role="traveller" />);

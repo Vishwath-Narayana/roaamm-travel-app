@@ -15,6 +15,9 @@ const Signup = lazy(() => import("./pages/auth/Signup").then((m) => ({ default: 
 const Login = lazy(() => import("./pages/auth/Login").then((m) => ({ default: m.Login })));
 const Account = lazy(() => import("./pages/auth/Account").then((m) => ({ default: m.Account })));
 
+// The admin console has its own shell; only admins download it.
+const AdminApp = lazy(() => import("./admin/AdminApp").then((m) => ({ default: m.AdminApp })));
+
 // The demo page carries the live preview; it loads on demand too.
 const Demo = lazy(() => import("./pages/Demo").then((m) => ({ default: m.Demo })));
 
@@ -32,6 +35,13 @@ const LAZY_ROUTES: Record<string, ComponentType> = {
 export function App() {
   const path = useRoute();
   useRouteFocus(path);
+  if (path === "/app/admin" || path.startsWith("/app/admin/")) {
+    return (
+      <Suspense fallback={null}>
+        <AdminApp path={path} />
+      </Suspense>
+    );
+  }
   const app = /^\/app\/([a-z]+)$/.exec(path);
   if (app && isRole(app[1])) {
     return (
