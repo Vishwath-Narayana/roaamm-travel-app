@@ -36,6 +36,7 @@ repository, its pull requests or its CI runs. Treat it as unknown.
 | 12 | [31-m2a-database-demo-login.md](31-m2a-database-demo-login.md) | M2a: Postgres, Flyway, cookie sessions, one-click demo |
 | 13 | [32-m2b-passkeys.md](32-m2b-passkeys.md) | M2b: passkey accounts and recovery codes |
 | 14 | [40-m3-verification-admin.md](40-m3-verification-admin.md) | M3: simulated ID verification, admin queue, audit log |
+| 15 | [43-m4b-1-admin-polish.md](43-m4b-1-admin-polish.md) | M4b.1: the design system, the admin console rebuilt on it, and its checks |
 
 M1.9 was merged after M2-prep, because it needed the API proxy. It is still
 listed with the other M1 notes because it is a landing page change.

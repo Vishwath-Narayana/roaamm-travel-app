@@ -10,12 +10,19 @@ later but does not yet.
   people who use screen readers or only a keyboard.
 - **AA contrast:** the WCAG level for text contrast. Normal text needs a
   contrast ratio of at least 4.5 to 1 against its background.
+- **`aria-disabled`:** marks a control as unavailable but keeps it
+  focusable, so it can still explain itself in a tooltip. Plain `disabled`
+  takes it out of the keyboard order.
 - **AVIF / WebP:** modern image formats that are much smaller than JPEG at
   the same quality.
+- **Bottom sheet:** a panel that slides up from the bottom of a phone
+  screen, with a drag handle. The admin drawer becomes one below 768 px.
 - **Bundle / chunk:** the JavaScript files the build produces. A **lazy
   chunk** is downloaded only when a page needs it.
 - **CDP (Chrome DevTools Protocol):** the remote-control interface for
   Chrome. Puppeteer and Lighthouse use it.
+- **CLS (Cumulative Layout Shift):** a score for how much visible content
+  jumps while a page loads. ROAAMM keeps it at or below 0.01.
 - **Console warning / error:** a message the browser writes to the
   developer console. CI fails if any appear.
 - **CORS (Cross-Origin Resource Sharing):** browser rules for when a page
@@ -44,6 +51,8 @@ later but does not yet.
   style problems.
 - **History API:** browser functions (`pushState`, `popstate`) that change
   the URL without loading a new page.
+- **Ratchet (lint):** a check that tolerates existing problems but fails if
+  their count grows, so the number can only go down.
 - **SPA (single-page app):** one HTML page; JavaScript draws
   each "page" by reading the URL. ROAAMM is an SPA with no server rendering.
 - **LCP (Largest Contentful Paint):** the time until the biggest thing on
@@ -67,6 +76,15 @@ later but does not yet.
   made-up data, so no one mistakes it for real.
 - **Spring animation / `linear()`:** motion that eases like a physical
   spring. `linear()` is a CSS timing function that can draw that curve.
+- **Tabular numbers:** digits that all have the same width (`font-variant-
+  numeric: tabular-nums`), so numbers in a column line up.
+- **Tap target:** the area a finger can hit to use a control: at least 44 x
+  44 px on phones. A smaller icon gets an invisible larger hit area.
+- **Token scale:** the short list of allowed values for one kind of design
+  token, for example spacing 4, 8, 12, 16, 20, 24, 32, 40, 48 and 64 px.
+  Anything else fails CI.
+- **Translucent tint:** a colour at low opacity (14% here), so it takes on
+  the surface beneath it instead of covering it.
 - **Trusted Types:** a browser feature that blocks unsafe ways of turning
   strings into HTML or script. Planned with the strict CSP in M12.
 - **TypeScript:** JavaScript with types, checked before the code runs.
