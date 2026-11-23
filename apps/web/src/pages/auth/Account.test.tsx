@@ -43,6 +43,10 @@ describe("Account", () => {
     expect(within(list).getByText("Passkey 2")).toBeInTheDocument();
     expect(within(list).getByText("Synced")).toBeInTheDocument();
     expect(screen.getByText(/6 of 8 unused/)).toBeInTheDocument();
+    // The privacy note is on the account page too.
+    expect(screen.getByRole("region", { name: "Privacy" })).toHaveTextContent(
+      /No email, no phone number, no IP address.*no sign-in for 90 days are deleted/,
+    );
   });
 
   it("asks for a fresh passkey check before removing, then retries", async () => {
