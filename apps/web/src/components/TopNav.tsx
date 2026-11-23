@@ -1,10 +1,21 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Link, useRoute } from "../router";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
+import { dashboardPath, refreshSession, sessionStore, signOut, type Me } from "../api/session";
+import { Link, navigate, useRoute } from "../router";
 import { currentTheme, onSystemThemeChange, setTheme, type Theme } from "../theme";
 import { Button } from "./Button";
 import { CloseIcon, MarkIcon, MenuIcon, MoonIcon, SunIcon } from "./icons";
 import { prefersReducedMotion } from "../motion";
 import { themeTransition } from "../viewTransition";
+import { useOptionalToast } from "./Toast";
 import "./TopNav.css";
 
 export const NAV_LINKS = [
@@ -12,6 +23,28 @@ export const NAV_LINKS = [
   { href: "/#safety", label: "Safety" },
   { href: "/#guides", label: "Guides" },
 ] as const;
+
+/** Who is signed in, for the header. Asks the API only if this browser signed in before. */
+function useHeaderSession(): Me | null {
+  const session = useSyncExternalStore(sessionStore.subscribe, sessionStore.get, sessionStore.get);
+  useEffect(() => {
+    void refreshSession();
+  }, []);
+  return session.kind === "signed-in" ? session.me : null;
+}
+
+function useSignOut(after?: () => void) {
+  const toast = useOptionalToast();
+  return async () => {
+    after?.();
+    try {
+      await signOut();
+      navigate("/demo?session=signed-out");
+    } catch {
+      toast?.show("Couldn't reach the API to sign out. Try again in a moment.");
+    }
+  };
+}
 
 function ThemeToggle() {
   const [theme, setState] = useState<Theme>(currentTheme);
@@ -177,10 +210,20 @@ export function TopNav({ overlay = false }: TopNavProps) {
     ];
     const i = items.indexOf(document.activeElement as HTMLElement);
     if (i === -1) return;
-    const next = e.shiftKey ? (i === 0 ? items.length - 1 : i - 1) : i === items.length - 1 ? 0 : i + 1;
+    const next = e.shiftKey
+      ? i === 0
+        ? items.length - 1
+        : i - 1
+      : i === items.length - 1
+        ? 0
+        : i + 1;
     e.preventDefault();
     items[next].focus();
   }
+
+  const me = useHeaderSession();
+  const onSignOut = useSignOut(() => close(false));
+  const who = me ? (me.isDemo ? `Demo ${me.role}` : me.displayName) : "";
 
   return (
     <header
@@ -203,7 +246,12 @@ export function TopNav({ overlay = false }: TopNavProps) {
 
         <nav aria-label="Primary" className="topnav__links">
           <ul ref={listRef}>
-            <li ref={indicatorRef} className="topnav__indicator" aria-hidden="true" data-on="false" />
+            <li
+              ref={indicatorRef}
+              className="topnav__indicator"
+              aria-hidden="true"
+              data-on="false"
+            />
             {NAV_LINKS.map((l) => {
               const id = l.href.split("#")[1];
               return (
@@ -223,9 +271,32 @@ export function TopNav({ overlay = false }: TopNavProps) {
 
         <div className="topnav__actions">
           <ThemeToggle />
-          <Button href="/demo" className="topnav__cta">
-            Try demo
-          </Button>
+          {me ? (
+            <>
+              <span className="topnav__who" title={who}>
+                {who}
+              </span>
+              <Button href={dashboardPath(me.role)} className="topnav__cta">
+                Dashboard
+              </Button>
+              {!me.isDemo && (
+                <Link href="/account" className="topnav__text-link">
+                  Account
+                </Link>
+              )}
+              <button
+                type="button"
+                className="topnav__text-link topnav__signout"
+                onClick={onSignOut}
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Button href="/demo" className="topnav__cta">
+              Try demo
+            </Button>
+          )}
           <button
             ref={toggleRef}
             type="button"
@@ -260,9 +331,35 @@ export function TopNav({ overlay = false }: TopNavProps) {
             </li>
           ))}
         </ul>
-        <Button href="/demo" size="lg" className="topnav__mobile-cta">
-          Try demo
-        </Button>
+        {me ? (
+          <div className="topnav__mobile-session">
+            <p className="topnav__mobile-who">Signed in as {who}</p>
+            <Button
+              href={dashboardPath(me.role)}
+              size="lg"
+              className="topnav__mobile-cta"
+              onClick={() => close(false)}
+            >
+              Dashboard
+            </Button>
+            {!me.isDemo && (
+              <Link href="/account" className="topnav__mobile-link" onClick={() => close(false)}>
+                Account
+              </Link>
+            )}
+            <button
+              type="button"
+              className="topnav__mobile-link topnav__signout"
+              onClick={onSignOut}
+            >
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <Button href="/demo" size="lg" className="topnav__mobile-cta">
+            Try demo
+          </Button>
+        )}
       </nav>
     </header>
   );

@@ -123,13 +123,72 @@ export function write(path: string, body?: unknown, method = "POST"): Promise<Re
 export async function startDemoSession(role: Role): Promise<Me> {
   const res = await write("/v1/demo/session", { role });
   const me = (await res.json()) as Me;
-  lastRole.set(me.role);
+  markSignedIn(me);
   return me;
 }
 
+/** Remember a fresh sign-in: the role hint for later visits, and the header's session. */
+export function markSignedIn(me: Me): void {
+  lastRole.set(me.role);
+  sessionStore.set({
+    kind: "signed-in",
+    me: {
+      role: me.role,
+      displayName: me.displayName,
+      isDemo: me.isDemo,
+      needsNewPasskey: me.needsNewPasskey,
+    },
+  });
+}
+
 export async function getMe(): Promise<Me> {
-  const res = await call("/v1/me");
-  return (await res.json()) as Me;
+  try {
+    const res = await call("/v1/me");
+    const me = (await res.json()) as Me;
+    sessionStore.set({ kind: "signed-in", me });
+    return me;
+  } catch (e) {
+    if (e instanceof ApiFailure && e.error.kind === "unauthenticated")
+      sessionStore.set({ kind: "none" });
+    throw e;
+  }
+}
+
+// ---- who is signed in, for the header
+
+export type SessionState = { kind: "unknown" } | { kind: "none" } | { kind: "signed-in"; me: Me };
+
+let session: SessionState = { kind: "unknown" };
+const listeners = new Set<() => void>();
+
+export const sessionStore = {
+  get: (): SessionState => session,
+  set(next: SessionState) {
+    session = next;
+    listeners.forEach((l) => l());
+  },
+  subscribe(l: () => void) {
+    listeners.add(l);
+    return () => listeners.delete(l);
+  },
+};
+
+/**
+ * Asks the API who is signed in, but only when this browser has signed in
+ * before. A first visit never calls the API, so it never sees a 401.
+ */
+export async function refreshSession(): Promise<void> {
+  if (session.kind !== "unknown") return;
+  if (lastRole.get() === null) {
+    sessionStore.set({ kind: "none" });
+    return;
+  }
+  try {
+    await getMe();
+  } catch {
+    // Expired or API down: the header just shows "Try demo".
+    if (sessionStore.get().kind === "unknown") sessionStore.set({ kind: "none" });
+  }
 }
 
 export async function signOut(): Promise<void> {
@@ -137,6 +196,7 @@ export async function signOut(): Promise<void> {
     await write("/v1/logout");
   } finally {
     lastRole.set(null);
+    sessionStore.set({ kind: "none" });
   }
 }
 
@@ -178,6 +238,14 @@ const REJECTED: Record<string, string> = {
     "You can't remove your only passkey without recovery codes. Add another passkey or regenerate codes first.",
   not_for_demo: "Demo accounts don't have passkeys. Create an account to use this.",
   no_passkey: "Add a passkey first.",
+  forbidden: "You don't have access to that.",
+  read_only_demo: "The demo admin is read-only: decisions are disabled.",
+  already_pending: "You already have a verification request waiting for review.",
+  already_verified: "You're already verified.",
+  already_decided: "Someone already decided this request. Reload to see the result.",
+  reason_required: "Give a reason (up to 200 characters) when rejecting.",
+  invalid_doc_type: "Choose a document type.",
+  invalid_status: "That filter isn't available.",
   not_found: "That passkey no longer exists.",
 };
 
