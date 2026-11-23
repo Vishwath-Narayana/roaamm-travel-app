@@ -26,7 +26,9 @@ public class ReadOnlyDemoInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
-        if (SAFE.contains(request.getMethod()) || ALWAYS_ALLOWED.contains(request.getRequestURI())) {
+        // /v1/auth creates or signs into a real account; it never writes as the demo user.
+        if (SAFE.contains(request.getMethod()) || ALWAYS_ALLOWED.contains(request.getRequestURI())
+                || request.getRequestURI().startsWith("/v1/auth/")) {
             return true;
         }
         boolean readOnly = sessions.currentUser(SessionCookie.read(request))

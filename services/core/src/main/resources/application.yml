@@ -55,3 +55,21 @@ roaamm:
     # Demo session creation per client IP, per window. In memory: resets on restart.
     max-per-window: 10
     window: 10m
+  # Every /v1/auth and /v1/me passkey call, per client IP.
+  auth-rate-limit:
+    max-per-window: 30
+    window: 10m
+  # Recovery codes are guessable only by brute force; keep it slow.
+  recovery-rate-limit:
+    max-per-window: 5
+    window: 1h
+  passkey:
+    rp-id: roaamm.plinthwell.com
+    rp-name: ROAAMM
+    challenge-ttl: 5m
+    # Deletes and recovery code regeneration need a passkey check this recent.
+    fresh-auth-window: 5m
+    # Signups pause when this many real accounts exist.
+    max-real-accounts: 300
+    # Real accounts with no sign-in for this long are deleted. Demo users never are.
+    inactive-after: 90d

@@ -4,7 +4,8 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("roaamm")
-public record AuthProperties(String webOrigin, Session session, DemoRateLimit demoRateLimit) {
+public record AuthProperties(String webOrigin, Session session, DemoRateLimit demoRateLimit,
+        DemoRateLimit authRateLimit, DemoRateLimit recoveryRateLimit) {
 
     public record Session(Duration ttl, int maxPerDemoUser) {}
 
