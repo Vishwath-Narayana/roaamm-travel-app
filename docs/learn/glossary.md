@@ -55,6 +55,9 @@ later but does not yet.
   their count grows, so the number can only go down.
 - **SPA (single-page app):** one HTML page; JavaScript draws
   each "page" by reading the URL. ROAAMM is an SPA with no server rendering.
+- **Metric-matched fallback font (`size-adjust`):** a local font (here
+  Arial) scaled to the web font's widths, so text shown before the web font
+  loads takes the same space, and the swap does not shift the page.
 - **LCP (Largest Contentful Paint):** the time until the biggest thing on
   screen (here, the hero photo) is drawn. A key speed measure.
 - **Lighthouse:** Google's tool that scores a page for performance,

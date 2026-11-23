@@ -28,7 +28,7 @@
   --inverse-fg: var(--bg);
 
   --font-display: "Inter Tight Variable", "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Inter Variable", "Inter Fallback", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
 

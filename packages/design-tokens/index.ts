@@ -30,7 +30,7 @@ export const color = {
 
 export const font = {
   display: '"Inter Tight Variable", "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif',
-  sans: '"Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif',
+  sans: '"Inter Variable", "Inter Fallback", system-ui, -apple-system, "Segoe UI", sans-serif',
   serif: '"Instrument Serif", "Iowan Old Style", Georgia, serif',
   mono: '"JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace',
   weight: { regular: 400, medium: 500, semibold: 600, bold: 700, extrabold: 800 },

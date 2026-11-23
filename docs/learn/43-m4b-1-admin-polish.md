@@ -55,7 +55,8 @@ flowchart LR
 ## New terms
 
 Design token scale, ratchet, layout shift (CLS), tabular numbers, tap target,
-bottom sheet, `aria-disabled`, translucent tint. All are in the
+bottom sheet, `aria-disabled`, translucent tint, metric-matched fallback font
+(`size-adjust`). All are in the
 [glossary](glossary.md).
 
 ## Mistakes and fixes
@@ -80,6 +81,17 @@ are part of commits `770f879` (the console) and `16c8140` (the lint).
   shorter than real cards, and three lists arriving at different times. Fix:
   every KPI row has a fixed height, and the lists render once everything has
   answered. The worst state is now 0.0003.
+- **Green on a Mac, red in CI: the font swap.** The first CI runs of PR #28
+  failed the new UI check with 0.015 to 0.023 layout shift at 768 and 390 px
+  ([run 45213494396](https://github.com/Vishwath-Narayana/roaamm-travel-app/actions/runs/45213494396),
+  [run 45214804019](https://github.com/Vishwath-Narayana/roaamm-travel-app/actions/runs/45214804019)).
+  On the Linux runner the fallback font is wider than Inter, so sentences
+  near their wrap point took an extra line until Inter loaded, then jumped
+  back. A Mac's fallback is close to Inter, so it never showed locally. The
+  first fix (a one-line banner, `1d0194d`) only removed one sentence. The real
+  fix is a metric-matched fallback font ("Inter Fallback": Arial or Liberation
+  Sans with `size-adjust` per weight), and the check now answers web fonts
+  500 ms late, so every machine paints with that fallback first.
 - **Group labels squashed into a 1 px line** on the tablet rail counted as
   clipped text. Fix: hide the label for sighted users only (it still names
   its list) and draw a separate rule.

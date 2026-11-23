@@ -112,7 +112,10 @@ on any miss and on this table going stale.
 
 The existing font stack, no new web font: Inter (`--font-sans`) for all UI text,
 JetBrains Mono (`--font-mono`) for sample references and short ids. Every number,
-count, date, time and id uses `font-variant-numeric: tabular-nums`. Only three
+count, date, time and id uses `font-variant-numeric: tabular-nums`.
+Until Inter arrives, text is drawn in "Inter Fallback" (`styles/fonts.css`):
+Arial, or Liberation Sans on Linux, scaled per weight with `size-adjust` to
+Inter's measured widths, so the font swap moves nothing. Only three
 weights exist: 400, 500 and 600.
 
 | Role | Size / line height | Weight, tracking | Elements |
