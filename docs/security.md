@@ -62,7 +62,7 @@ Details and reasons: [ADR 0004](adr/0004-auth-sessions-m2a.md) (sessions, demo l
 - **Sessions:** opaque 32-byte random tokens, stored only as SHA-256 hashes in Postgres, 8 hours, in a `__Host-roaamm_session` cookie (`HttpOnly; Secure; SameSite=Lax`, host-only on `roaamm-api`). **No JWTs.** How the edge checks sessions is decided in M5.
 - **Fresh check:** deleting a passkey or regenerating recovery codes needs a passkey check within the last 5 minutes. The last passkey can't be deleted without unused recovery codes.
 - **Demo login** ("Try demo"): one click, a shared sandbox user per role, simulated data only. The demo admin is read-only.
-- **Admin:** signup can never create an admin (refused by the API and by a database constraint). Real admin accounts arrive with the admin features; every admin action will be written to `audit_log`.
+- **Admin:** signup can never create an admin (refused by the API). The owner promotes their own passkey account once with a documented SQL update ([runbook](runbooks/first-admin.md)). Every admin decision is written to the append-only `admin_audit_log` (database triggers refuse update, delete and truncate). Real admins can write; the demo admin is read-only.
 
 ## 6. Web and API hardening (target: OWASP ASVS level 2)
 - **TLS 1.3** only, HSTS with preload, all subdomains on Cloudflare.
@@ -74,17 +74,17 @@ Details and reasons: [ADR 0004](adr/0004-auth-sessions-m2a.md) (sessions, demo l
 - **Secrets:** Wrangler secrets, GitHub Actions encrypted secrets, server environment from a root-only file. Nothing in the repo (gitleaks in CI).
 - **Supply chain:** pinned dependencies, Dependabot, CodeQL, cargo-deny, OWASP Dependency-Check, actions pinned to commit SHAs.
 - **Server:** the core runs on Google Cloud Run, so there is no VM, OS or SSH of ours to patch or expose. Public traffic arrives through the `roaamm-api` Cloudflare Worker, which allows CORS only from the web origin. Deploys use keyless Workload Identity Federation. Runs as a non-root user in a distroless image.
-- **Mock ID documents:** encrypted in the browser to the **admins' public key** (an X25519 sealed box) before upload to R2. Only admins can view them in the browser. Deleted 30 days after a decision.
+- **ID verification is simulated** ([ADR 0006](adr/0006-simulated-verification.md)): no real ID document, number or photo is ever collected or stored, only a document type and a server-made sample reference. The submit endpoint ignores any other field. Rejected requests are deleted after 30 days.
 
 ## 7. Threat model (STRIDE summary)
 | Threat | Example | Mitigation | What remains |
 |---|---|---|---|
 | **S**poofing | Pretending to be a user or device | Passkeys, AS-signed device credentials, MLS signatures, safety numbers | Users who never compare safety numbers depend on the AS being honest |
 | **T**ampering | Changing ciphertext or reordering it | MLS authenticated encryption and signatures, strict per-room order in the DS | None for content |
-| **R**epudiation | Admin abuse | `audit_log`, admin passkeys | — |
-| **I**nformation disclosure | Breach of server or database | Server holds only ciphertext and metadata, ID documents sealed to admins, TLS everywhere | **Metadata**: who talks to whom and when, room membership, IP addresses (shown only in Cloudflare logs) |
+| **R**epudiation | Admin abuse | Append-only `admin_audit_log` (triggers block update, delete, truncate), admin passkeys | The database owner can still change rows directly |
+| **I**nformation disclosure | Breach of server or database | Server holds only ciphertext and metadata, no ID documents at all (verification is simulated), TLS everywhere | **Metadata**: who talks to whom and when, room membership, IP addresses (shown only in Cloudflare logs) |
 | **D**enial of service | Floods, connection storms | Cloudflare's network, rate limits, Turnstile, frame limits, jittered reconnects | Free-tier quotas can run out (shown in the UI) |
-| **E**levation of privilege | Normal user reaching admin endpoints | Role checks on the server for every endpoint, separate admin scope, security tests | — |
+| **E**levation of privilege | Normal user reaching admin endpoints; signup creating an admin; the shared demo admin changing data; an admin of one scope reading the other | Role checks on every `/v1/admin` endpoint (403), signup refuses `admin`, demo admin read-only guard, **queue scoping**: every admin query filters on `is_demo` (demo admin sees only demo rows, real admin only real rows; other scope is 404), tests for each role and both scope directions | A real admin is promoted by hand in the database ([runbook](runbooks/first-admin.md)) |
 | **Malicious JavaScript (web E2EE limit)** | An attacker with access to the deployment ships JavaScript that leaks keys | Strict CSP, SRI, reproducible builds, **asset hashes published in GitHub releases**, a "verify this build" page comparing live asset hashes with the release, deploys only from CI with protected branches | **A hostile operator can still ship bad code.** This applies to all browser-based E2EE and is stated openly. |
 
 ## 8. Security testing

@@ -64,7 +64,9 @@ each signup.
 - **recovery_codes:** SHA-256 hashes only.
 - **No email, phone number or IP address.** A database constraint refuses a
   real user with the admin role: **admin can never be created through
-  signup.**
+  signup.** *Update (M3, ADR 0006):* migration V5 relaxes that constraint so
+  the owner can promote their own account with the documented runbook; the
+  API still refuses `admin` at signup.
 
 ### Recovery codes
 8 codes at signup, 16 characters each from `23456789ABCDEFGHJKMNPQRSTWXYZ`

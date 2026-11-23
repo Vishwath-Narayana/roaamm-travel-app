@@ -67,7 +67,9 @@ Full design, capacity math, latency budget and failure modes: [docs/system-desig
 
 | Feature | Status |
 |---|---|
-| Passkey sign-up, mock ID verification, Verified badge | planned (M2, M3) |
+| One-click demo login (traveller, guide, read-only admin) | done (M2a) |
+| Passkey sign-up and sign-in, recovery codes | done (M2b) |
+| Simulated ID verification (no real ID collected), admin queue, audit log | done (M3) |
 | Trips and discovery by overlapping dates | planned (M4) |
 | End-to-end encrypted 1:1 and group chat, images, voice notes | planned (M5, M6) |
 | End-to-end encrypted voice and video calls | planned (M7) |
@@ -75,7 +77,7 @@ Full design, capacity math, latency budget and failure modes: [docs/system-desig
 | Guides, hourly booking, Razorpay test-mode payments | planned (M9) |
 | Stories: trip posts, guide posts, reviews with photos | planned (M9.7) |
 | AI assistant over trip and availability data | planned (M9.5) |
-| Traveller, guide and admin dashboards | planned (M3 to M9) |
+| Traveller, guide and admin dashboards | started (M3); more in M4 to M9 |
 | System page with live latency and load-test report | planned (M10, M11) |
 
 ## Honest claims

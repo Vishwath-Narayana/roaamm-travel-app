@@ -403,7 +403,8 @@ class PasskeyFlowTest extends PostgresTest {
         accounts.purge();
         assertThat(jdbc.sql("SELECT count(*) FROM webauthn_credentials WHERE id = :id")
                 .param("id", a.key().credentialId).query(Integer.class).single()).isZero();
-        assertThat(jdbc.sql("SELECT count(*) FROM users WHERE is_demo").query(Integer.class).single()).isEqualTo(3);
+        assertThat(jdbc.sql("SELECT count(*) FROM users WHERE is_demo AND NOT is_sample").query(Integer.class).single())
+                .isEqualTo(3);
         login(a.key()).andExpect(status().isUnauthorized());
     }
 
@@ -414,7 +415,7 @@ class PasskeyFlowTest extends PostgresTest {
         List<String> columns = jdbc.sql("SELECT column_name FROM information_schema.columns WHERE table_name = 'users'")
                 .query(String.class).list();
         assertThat(columns).containsExactlyInAnyOrder("id", "role", "display_name", "is_demo", "created_at",
-                "user_handle", "last_active_at");
+                "user_handle", "last_active_at", "is_sample");
         assertThat(a.codes()).isNotEmpty();
     }
 }
