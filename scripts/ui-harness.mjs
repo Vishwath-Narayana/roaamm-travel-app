@@ -17,7 +17,8 @@ import puppeteer from "puppeteer-core";
 import { adminStub } from "./admin-stub.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname;
-export const DIST = join(ROOT, "apps/web/dist");
+// UI_DIST: check another build (e.g. main's, to prove a new check fails there).
+export const DIST = process.env.UI_DIST ?? join(ROOT, "apps/web/dist");
 const CHROME =
   process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const API = "https://roaamm-api.plinthwell.com";
@@ -84,6 +85,7 @@ function answer(path, params, mode) {
 
 export const VIEWPORTS = {
   1440: { width: 1440, height: 900, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
+  1024: { width: 1024, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
   768: { width: 768, height: 1024, deviceScaleFactor: 1, isMobile: true, hasTouch: true },
   390: { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
 };
@@ -141,6 +143,12 @@ const USER = "00000000-0000-4000-8000-000000000903";
 const click = (sel) => async (page) => {
   await page.click(sel);
   await new Promise((r) => setTimeout(r, 450));
+  // Lazy layers (the palette) start their entrance late: wait until every
+  // finite animation has finished, so nothing is shot mid-fade.
+  await page.evaluate(() => {
+    const finite = document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity);
+    return Promise.race([Promise.allSettled(finite.map((a) => a.finished)), new Promise((r) => setTimeout(r, 2000))]);
+  });
 };
 
 /**
@@ -150,6 +158,7 @@ const click = (sel) => async (page) => {
 export const SCREENS = [
   { name: "overview", route: A },
   { name: "verification", route: `${A}/verification` },
+  { name: "verification-rejected", route: `${A}/verification`, action: click('.adm-toolbar [role="tab"]:nth-child(3)') },
   { name: "drawer-verification", route: `${A}/verification?id=${V_PENDING}` },
   { name: "guides-board", route: `${A}/guide-applications` },
   { name: "guides-list", route: `${A}/guide-applications?view=list` },
@@ -169,4 +178,16 @@ export const SCREENS = [
   { name: "empty-users", route: `${A}/users`, mode: "empty" },
   { name: "error-overview", route: A, mode: "error" },
   { name: "error-users", route: `${A}/users`, mode: "error" },
+  { name: "real-users", route: `${A}/users`, mode: "real" },
+  { name: "real-drawer-application", route: `${A}/guide-applications?id=${APP_APPROVED}`, mode: "real" },
+];
+
+/** Table screens whose header must not move when any tab or filter changes. */
+export const TABLE_SCREENS = [
+  { name: "verification", route: `${A}/verification` },
+  { name: "real-verification", route: `${A}/verification`, mode: "real" },
+  { name: "guides-list", route: `${A}/guide-applications?view=list` },
+  { name: "users", route: `${A}/users` },
+  { name: "trips", route: `${A}/trips` },
+  { name: "audit", route: `${A}/audit` },
 ];

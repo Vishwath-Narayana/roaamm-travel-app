@@ -17,9 +17,19 @@
 //   - any computed font size, line height (checked as a size/line-height
 //     pair), font weight, padding, gap, border width or corner radius that is
 //     not on the token scale
+// and, since M4b.2:
+//   - not exactly one h1 on the page (every state, every width)
+//   - a visible drag handle, or any other small pill-shaped bar outside a
+//     dialog, at 768 px and above
+//   - KPI numbers in one row of the Overview not on the same baseline (phone)
+//   - the top-bar avatar's right edge not on the content's right edge
+//   - a Sample chip anywhere in the console (the banner says it once)
+//   - a table header cell that moves when a tab or filter changes (every
+//     table screen, every tab and filter option, at 768, 1024 and 1440 px)
+//   - an Audit Subject cell that is clipped at 1024 or 1440 px
 // UI_CHECK_INJECT_CSS="<css>" adds a stylesheet to every page first: a way to
 // prove the check catches a regression (it must then fail).
-import { DIST, SCREENS, launch, open, serve } from "./ui-harness.mjs";
+import { DIST, SCREENS, TABLE_SCREENS, launch, open, serve } from "./ui-harness.mjs";
 
 // Fonts arrive 500 ms late by default (the worst case on a slow CI runner):
 // a layout that only holds once the web font has loaded fails here, every time.
@@ -42,7 +52,7 @@ if (!existsSync(`${DIST}/index.html`)) {
 }
 
 /** Runs inside the page. Returns a list of problems. */
-function audit({ phone }) {
+function audit({ phone, width }) {
   const SPACE = new Set([0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64]);
   const PAIRS = { 11: 16, 12: 16, 13: 20, 14: 20, 16: 24, 20: 28, 28: 36 };
   const WEIGHTS = new Set(["400", "500", "600"]);
@@ -146,6 +156,52 @@ function audit({ phone }) {
     }
   }
 
+  // Exactly one h1 per page, at every width (the top bar's title on phones).
+  const h1s = document.querySelectorAll("h1");
+  if (h1s.length !== 1) out.push({ kind: "h1", el: "page", detail: `${h1s.length} h1 elements (${[...h1s].map((h) => JSON.stringify(h.textContent.trim())).join(", ")}); expected exactly 1` });
+
+  // From 768 px: no drag handle, and no other small pill-shaped bar outside a
+  // dialog (a stray handle-like element at the bottom of every screen).
+  if (width >= 768) {
+    for (const el of document.querySelectorAll(".adm-sheet__handle")) if (visible(el)) add("handle", el, "a sheet drag handle is visible at 768 px or wider");
+    for (const el of document.querySelectorAll("body *")) {
+      if (el.closest('[role="dialog"]') || !visible(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height > 8 || r.width < 3 * r.height || r.width > 96) continue;
+      const cs = getComputedStyle(el);
+      const filled = cs.backgroundColor !== "rgba(0, 0, 0, 0)" || cs.backgroundImage !== "none";
+      if (filled && px(cs.borderTopLeftRadius) >= r.height / 2) add("handle", el, `a ${Math.round(r.width)} x ${Math.round(r.height)} px pill at ${Math.round(r.left)},${Math.round(r.top)}`);
+    }
+  }
+
+  // KPI numbers in one visual row share a baseline (phone, Overview).
+  if (phone) {
+    const rows = new Map();
+    for (const n of document.querySelectorAll(".adm-kpi__number")) {
+      const card = n.closest(".adm-kpi").getBoundingClientRect();
+      const key = Math.round(card.top);
+      rows.set(key, [...(rows.get(key) ?? []), n.getBoundingClientRect().bottom]);
+    }
+    for (const [top, bottoms] of rows) {
+      if (Math.max(...bottoms) - Math.min(...bottoms) > 0.5) out.push({ kind: "kpi", el: ".adm-kpi__number", detail: `numbers in the row at y=${top} sit at ${bottoms.map((b) => b.toFixed(1)).join(" / ")}` });
+    }
+  }
+
+  // The top-bar avatar ends where the content ends.
+  const avatar = document.querySelector(".adm-topbar .adm-avatar--btn");
+  const main = document.querySelector(".adm-main");
+  if (avatar && main) {
+    const mr = main.getBoundingClientRect();
+    const contentRight = mr.right - px(getComputedStyle(main).paddingRight);
+    const ar = avatar.getBoundingClientRect().right;
+    if (Math.abs(ar - contentRight) > 0.5) add("avatar", avatar, `right edge at ${ar.toFixed(1)}px, content ends at ${contentRight.toFixed(1)}px`);
+  }
+
+  // No Sample chip: the demo banner is the one place that says "simulated".
+  for (const el of document.querySelectorAll(".adm .adm-chip, .adm .adm-pill, .adm-chip--sample")) {
+    if (el.matches(".adm-chip--sample") || /^sample$/i.test(el.textContent.trim())) add("sample", el, "a Sample chip is rendered");
+  }
+
   // Icons that collapsed to nothing (e.g. max-width: 100% in a 0-wide box).
   for (const svg of roots.flatMap((r) => [...r.querySelectorAll("svg[width]")])) {
     const parent = svg.parentElement;
@@ -203,7 +259,7 @@ async function worker() {
     try {
       if (process.env.UI_CHECK_INJECT_CSS) await page.addStyleTag({ content: process.env.UI_CHECK_INJECT_CSS });
       if (job.s.action) await job.s.action(page);
-      const problems = await page.evaluate(audit, { phone: job.width === 390 });
+      const problems = await page.evaluate(audit, { phone: job.width === 390, width: job.width });
       const cls = await page.evaluate(() => window.__cls);
       results.push({ ...job, problems, cls });
     } finally {
@@ -216,6 +272,66 @@ try {
 } finally {
   await browser.close();
   server.close();
+}
+
+// ---- table layout: header cells never move; the audit subject is never clipped.
+
+/** Left edge and width of every header cell of the table, to 0.1 px. */
+const headerBoxes = (page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll(".adm-table thead tr > *")].map((c) => {
+      const r = c.getBoundingClientRect();
+      return `${(c.textContent.trim() || "·").slice(0, 12)}@${r.left.toFixed(1)}+${r.width.toFixed(1)}`;
+    }),
+  );
+
+const layout = [];
+if (!only || only.some((n) => TABLE_SCREENS.some((t) => t.name === n))) {
+  const server2 = await serve();
+  const origin2 = `http://127.0.0.1:${server2.address().port}`;
+  const browser2 = await launch();
+  try {
+    for (const t of TABLE_SCREENS) {
+      if (only && !only.includes(t.name)) continue;
+      for (const width of [768, 1024, 1440]) {
+        const { page, close } = await open(browser2, origin2, t.route, { width, mode: t.mode ?? "demo", scale: 1 });
+        const problems = [];
+        try {
+          const first = await headerBoxes(page);
+          if (first.length === 0) problems.push("no table header rendered");
+          const controls = await page.$$('.adm-toolbar [role="tab"], .adm-toolbar .adm-seg__btn');
+          for (let i = 0; i < controls.length; i++) {
+            const label = (await controls[i].evaluate((b) => b.textContent.trim())) || `option ${i + 1}`;
+            await controls[i].click();
+            await new Promise((r) => setTimeout(r, 350));
+            const now = await headerBoxes(page);
+            if (now.join("|") !== first.join("|")) problems.push(`after "${label}": ${now.join(" ")} (was ${first.join(" ")})`);
+          }
+          if (t.name === "audit" && width >= 1024) {
+            const clipped = await page.evaluate(() => {
+              const heads = [...document.querySelectorAll(".adm-table thead tr > *")];
+              const col = heads.findIndex((h) => h.textContent.trim() === "Subject");
+              if (col < 0) return ["no Subject column"];
+              return [...document.querySelectorAll(".adm-table tbody tr")].flatMap((tr) => {
+                const cell = tr.children[col];
+                const name = cell?.querySelector(".adm-subject__name");
+                return [cell, name]
+                  .filter((el) => el && el.scrollWidth > el.clientWidth)
+                  .map((el) => `Subject "${cell.textContent.trim()}" clipped (${el.scrollWidth}px in ${el.clientWidth}px)`);
+              });
+            });
+            problems.push(...clipped);
+          }
+        } finally {
+          await close();
+        }
+        layout.push({ name: t.name, width, problems });
+      }
+    }
+  } finally {
+    await browser2.close();
+    server2.close();
+  }
 }
 
 results.sort((a, b) => SCREENS.indexOf(a.s) - SCREENS.indexOf(b.s) || a.width - b.width || a.theme.localeCompare(b.theme));
@@ -234,8 +350,20 @@ for (const r of results) {
   for (const p of unique.slice(0, verbose ? 999 : 12)) console.log(`     ${p.kind.padEnd(8)} ${p.el}: ${p.detail}`);
   if (!verbose && unique.length > 12) console.log(`     ... ${unique.length - 12} more`);
 }
+for (const l of layout) {
+  if (l.problems.length === 0) {
+    if (verbose) console.log(`ok   table ${l.name} @${l.width}`);
+    continue;
+  }
+  failed++;
+  kinds.table = (kinds.table ?? 0) + l.problems.length;
+  console.log(`FAIL table ${l.name} @${l.width}`);
+  for (const p of l.problems.slice(0, verbose ? 999 : 6)) console.log(`     table    ${p}`);
+}
 console.log(`\n${results.length} screen states checked (${SCREENS.length} screens x ${WIDTHS.join("/")} px x light/dark).`);
-console.log("Checks: page overflow, clipped text, collapsed icons, tap targets >= 44 px on phone, layout shift <= 0.01, font size/line height pairs, weights, padding, gap, border width, radius.");
+console.log("Checks: page overflow, clipped text, collapsed icons, tap targets >= 44 px on phone, layout shift <= 0.01, font size/line height pairs, weights, padding, gap, border width, radius,");
+console.log("        one h1, no drag handle or stray pill from 768 px, KPI baselines (phone), avatar on the content edge, no Sample chip.");
+console.log(`${layout.length} table layouts checked (${TABLE_SCREENS.length} screens x 768/1024/1440 px, every tab and filter): header cells never move; audit Subject never clipped at 1024/1440.`);
 const worstCls = Math.max(...results.map((r) => r.cls ?? 0));
 console.log(`Worst layout shift across all states: ${worstCls.toFixed(4)}`);
 if (failed) {
