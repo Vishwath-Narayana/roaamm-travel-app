@@ -140,6 +140,16 @@ class AdminConsoleTest extends PostgresTest {
         JsonNode planned = getOk(accounts.demo("admin"), "/v1/admin/trips?status=planned");
         assertThat(planned.get("items").valueStream().allMatch(n -> n.get("status").asString().equals("planned")))
                 .isTrue();
+        // Search (M4b): title, destination or owner name, in scope only.
+        JsonNode byOwner = getOk(accounts.demo("admin"), "/v1/admin/trips?q=traveller&size=50");
+        assertThat(byOwner.get("items").valueStream().allMatch(n -> n.get("owner").asString().equals("Demo traveller")))
+                .isTrue();
+        assertThat(byOwner.get("total").asLong()).isGreaterThanOrEqualTo(3);
+        JsonNode byPlace = getOk(accounts.demo("admin"), "/v1/admin/trips?q=kyoto");
+        assertThat(byPlace.get("items").valueStream().map(n -> n.get("title").asString()).toList())
+                .contains("Temples in autumn").doesNotContain("Real admin can see me");
+        assertThat(getOk(admin.cookie(), "/v1/admin/trips?q=Temples").get("items")).isEmpty();
+        mvc.perform(get("/v1/admin/trips?q=" + "x".repeat(41)).cookie(admin.cookie())).andExpect(status().isBadRequest());
         mvc.perform(get("/v1/admin/trips?status=lost").cookie(admin.cookie())).andExpect(status().isBadRequest());
         mvc.perform(get("/v1/admin/trips?sort=owner").cookie(admin.cookie())).andExpect(status().isBadRequest());
         // Read-only: there is no write endpoint for admins on trips.
