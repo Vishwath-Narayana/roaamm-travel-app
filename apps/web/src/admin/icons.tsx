@@ -1,5 +1,10 @@
-// Small line icons for the admin console only (the landing page never loads these).
+// The admin console's one icon set: 24 px grid, round caps and joins, and a
+// 1.5 px stroke at every rendered size (non-scaling, docs/design-system.md).
+// The few glyphs the site also uses are re-exported from components/icons so
+// the console imports every icon from this module.
 import type { SVGProps } from "react";
+
+export { CloseIcon, MarkIcon, MenuIcon, SearchIcon } from "../components/icons";
 
 type P = SVGProps<SVGSVGElement> & { size?: number };
 
@@ -11,7 +16,7 @@ function Svg({ size = 16, children, ...rest }: P) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.8}
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -132,5 +137,26 @@ export const MoreIcon = (p: P) => (
 export const CommandIcon = (p: P) => (
   <Svg {...p}>
     <path d="M9 6a3 3 0 10-3 3h12a3 3 0 10-3-3v12a3 3 0 103-3H6a3 3 0 103 3z" />
+  </Svg>
+);
+export const InfoIcon = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5M12 8h.01" />
+  </Svg>
+);
+export const ArrowUpRightIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M7 17L17 7M9 7h8v8" />
+  </Svg>
+);
+export const CheckIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </Svg>
+);
+export const XIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M7 7l10 10M17 7L7 17" />
   </Svg>
 );

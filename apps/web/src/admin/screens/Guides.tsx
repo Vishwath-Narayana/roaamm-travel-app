@@ -16,12 +16,14 @@ import {
 } from "../../api/admin";
 import { navigate, useSearchParams } from "../../router";
 import { BulkBar, BulkResults } from "../BulkBar";
-import { READ_ONLY_LABEL, useAdmin } from "../context";
-import { KanbanIcon, ListIcon } from "../icons";
+import { FINAL_LABEL, READ_ONLY_LABEL, useAdmin } from "../context";
+import { ChevronIcon, KanbanIcon, ListIcon } from "../icons";
 import { MoveMenu, type MoveTarget } from "../MoveMenu";
 import { openDetail, withParam } from "../params";
 import {
   Chip,
+  Count,
+  DataTable,
   Drawer,
   Empty,
   ErrorState,
@@ -29,22 +31,31 @@ import {
   Pager,
   Pill,
   SampleChip,
+  Scroller,
+  SectionLabel,
   Segmented,
   SkeletonBlock,
-  SkeletonRows,
   Timeline,
   adminErrorMessage,
+  cleanTitle,
   fmtDate,
+  unavailable,
   useAdminData,
   useApiError,
+  useMedia,
+  type Column,
   type Step,
 } from "../ui";
 
 const NOTE_MAX = 300;
 const LIST_SIZE = 20;
 const COLUMN_SIZE = 50;
+/** Below 1024 px the board shows one column at a time, picked by equal-width tabs. */
+const ONE_COLUMN = "(max-width: 1023px)";
 
 type View = "kanban" | "list";
+
+const isOpen = (a: Application) => a.status === "submitted" || a.status === "in_review";
 
 export function Guides() {
   const { readOnly } = useAdmin();
@@ -88,8 +99,8 @@ export function Guides() {
           value={view}
           onChange={(v) => navigate(withParam("view", v === "list" ? "list" : null), { replace: true })}
           options={[
-            { value: "kanban", label: (<><KanbanIcon size={14} /> Board</>) },
-            { value: "list", label: (<><ListIcon size={14} /> List</>) },
+            { value: "kanban", label: (<><KanbanIcon size={16} /> Board</>) },
+            { value: "list", label: (<><ListIcon size={16} /> List</>) },
           ]}
         />
       </header>
@@ -127,45 +138,56 @@ export function Guides() {
 
 function Board({ version, readOnly, onMove }: { version: number; readOnly: boolean; onMove: (a: Application, to: MoveTarget) => void }) {
   const [column, setColumn] = useState<AppStatus>("submitted");
+  const oneColumn = useMedia(ONE_COLUMN);
   const { state, reload } = useAdminData(`guide-board:${version}`, async (s) => {
     const lists = await Promise.all(APP_STATUSES.map((status) => applications({ status, size: COLUMN_SIZE }, s)));
     return Object.fromEntries(APP_STATUSES.map((st, i) => [st, lists[i]!])) as Record<AppStatus, Awaited<ReturnType<typeof applications>>>;
   });
-  if (state.kind === "error" && !state.data) return <ErrorState message={state.message} onRetry={reload} />;
+  if (state.kind === "error" && !state.data) {
+    return (
+      <section className="adm-card">
+        <ErrorState message={state.message} onRetry={reload} />
+      </section>
+    );
+  }
   const data = state.data;
+  const shown = oneColumn ? [column] : APP_STATUSES;
   return (
     <>
-      {/* Phones show one column at a time. */}
-      <div className="adm-board__switch">
+      {oneColumn && (
         <Segmented<AppStatus>
           label="Column"
           value={column}
           onChange={setColumn}
+          fill
           options={APP_STATUSES.map((s) => ({
             value: s,
             label: (
               <>
-                {STATUS_TEXT[s]}
-                <span className="adm-count">{data ? data[s].counts[s] : "–"}</span>
+                <span className="adm-seg__text">{STATUS_TEXT[s]}</span>
+                <Count n={data?.[s].counts[s]} />
               </>
             ),
           }))}
         />
-      </div>
+      )}
       {!data && <Loading what="guide applications" />}
-      <div className="adm-board" data-column={column}>
-        {APP_STATUSES.map((s) => {
+      <div className="adm-board" data-columns={shown.length}>
+        {shown.map((s) => {
           const list = data?.[s];
           return (
             <section key={s} className="adm-board__col" data-col={s} aria-labelledby={`col-${s}`}>
-              <header className={`adm-board__head adm-board__head--${s}`}>
+              <header className={`adm-board__head adm-board__head--${s}`} data-hidden={oneColumn || undefined}>
+                <span className="adm-board__dot" aria-hidden="true" />
                 <h2 id={`col-${s}`}>{STATUS_TEXT[s]}</h2>
-                <span className="adm-count">{list ? list.counts[s] : "–"}</span>
+                <Count n={list?.counts[s]} />
               </header>
               {!list ? (
                 <SkeletonBlock lines={5} />
               ) : list.items.length === 0 ? (
-                <Empty>No applications.</Empty>
+                <div className="adm-board__empty">
+                  <Empty>No applications.</Empty>
+                </div>
               ) : (
                 <ul className="adm-board__cards">
                   {list.items.map((a) => (
@@ -175,7 +197,7 @@ function Board({ version, readOnly, onMove }: { version: number; readOnly: boole
                   ))}
                 </ul>
               )}
-              {list && list.hasMore && <p className="adm-muted adm-small">Showing the newest {COLUMN_SIZE}. Use the list view for the rest.</p>}
+              {list && list.hasMore && <p className="adm-note">Showing the newest {COLUMN_SIZE}. Use the list view for the rest.</p>}
             </section>
           );
         })}
@@ -184,16 +206,19 @@ function Board({ version, readOnly, onMove }: { version: number; readOnly: boole
   );
 }
 
+/** A kanban card. The whole card opens the drawer; the move menu sits above that. */
 export function AppCard({ app, readOnly, onMove }: { app: Application; readOnly: boolean; onMove: (a: Application, to: MoveTarget) => void }) {
+  const title = cleanTitle(app.headline);
   return (
     <article className="adm-appcard" aria-labelledby={`app-${app.id}`}>
       <div className="adm-appcard__top">
         <Pill status={app.status} />
         {app.sample && <SampleChip />}
+        <ChevronIcon size={16} className="adm-appcard__chev" />
       </div>
       <h3 id={`app-${app.id}`} className="adm-appcard__title">
-        <button type="button" className="adm-rowlink" onClick={() => openDetail(app.id)}>
-          {app.headline}
+        <button type="button" className="adm-rowlink adm-stretch" onClick={() => openDetail(app.id)}>
+          {title}
         </button>
       </h3>
       <p className="adm-appcard__who">{app.applicant}</p>
@@ -205,8 +230,8 @@ export function AppCard({ app, readOnly, onMove }: { app: Application; readOnly:
         ))}
       </ul>
       <div className="adm-appcard__foot">
-        <span className="adm-muted adm-small">{fmtDate(app.createdAt)}</span>
-        <MoveMenu status={app.status} label={app.headline} readOnly={readOnly} onMove={(to) => onMove(app, to)} />
+        <span className="adm-appcard__date">{fmtDate(app.createdAt)}</span>
+        <MoveMenu status={app.status} label={title} readOnly={readOnly} onMove={(to) => onMove(app, to)} />
       </div>
     </article>
   );
@@ -227,11 +252,8 @@ function ListView({ version, readOnly, onMove }: { version: number; readOnly: bo
   );
   useEffect(() => setSelected(new Set()), [filter, page, version]);
   useEffect(() => setPage(0), [filter]);
-  const rows = state.data?.items ?? [];
-  const open = (a: Application) => a.status === "submitted" || a.status === "in_review";
-  const openRows = rows.filter(open);
-  const names = Object.fromEntries(rows.map((r) => [r.id, r.applicant]));
-  const allOpenSelected = openRows.length > 0 && openRows.every((r) => selected.has(r.id));
+  const rows = state.data?.items;
+  const names = Object.fromEntries((rows ?? []).map((r) => [r.id, r.applicant]));
 
   async function onBulk(decision: Decision, note?: string) {
     setBusy(true);
@@ -248,18 +270,43 @@ function ListView({ version, readOnly, onMove }: { version: number; readOnly: bo
   }
 
   const counts = state.data?.counts;
+  const columns: Column<Application>[] = [
+    {
+      key: "title",
+      header: "Application",
+      primary: true,
+      cell: (a) => (
+        <>
+          <span className="adm-cell__text">{cleanTitle(a.headline)}</span>
+          {a.sample && <SampleChip />}
+        </>
+      ),
+    },
+    { key: "applicant", header: "Applicant", wide: true, cell: (a) => a.applicant },
+    { key: "cities", header: "Cities", wide: true, cell: (a) => a.cities.join(", ") },
+    { key: "submitted", header: "Submitted", cell: (a) => <span className="adm-num">{fmtDate(a.createdAt)}</span> },
+    { key: "status", header: "Status", cell: (a) => <Pill status={a.status} /> },
+    {
+      key: "actions",
+      header: <span className="visually-hidden">Actions</span>,
+      cell: (a) => <MoveMenu status={a.status} label={cleanTitle(a.headline)} readOnly={readOnly} onMove={(to) => onMove(a, to)} />,
+    },
+  ];
+
   return (
     <div className="adm-card adm-card--flush">
       <div className="adm-toolbar">
-        <Segmented<AppStatus | "all">
-          label="Status"
-          value={filter}
-          onChange={setFilter}
-          options={[
-            { value: "all", label: `All ${counts ? counts.total : ""}` },
-            ...APP_STATUSES.map((s) => ({ value: s, label: `${STATUS_TEXT[s]} ${counts ? counts[s] : ""}` })),
-          ]}
-        />
+        <Scroller>
+          <Segmented<AppStatus | "all">
+            label="Status"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: "all", label: (<>All<Count n={counts?.total} /></>) },
+              ...APP_STATUSES.map((s) => ({ value: s, label: (<>{STATUS_TEXT[s]}<Count n={counts?.[s]} /></>) })),
+            ]}
+          />
+        </Scroller>
       </div>
       {error && (
         <p className="adm-inline-error" role="alert">
@@ -270,80 +317,41 @@ function ListView({ version, readOnly, onMove }: { version: number; readOnly: bo
       {state.kind === "error" && !state.data ? (
         <ErrorState message={state.message} onRetry={reload} />
       ) : (
-        <div className="adm-table-wrap">
+        <>
           {state.kind === "loading" && <Loading what="guide applications" />}
-          <table className="adm-table" aria-busy={state.kind === "loading"}>
-            <caption className="visually-hidden">Guide applications, newest first</caption>
-            <thead>
-              <tr>
-                <th scope="col" className="adm-table__check">
-                  {!readOnly && openRows.length > 0 ? (
-                    <input
-                      type="checkbox"
-                      aria-label="Select every open application on this page"
-                      checked={allOpenSelected}
-                      onChange={() => setSelected(allOpenSelected ? new Set() : new Set(openRows.map((r) => r.id)))}
-                    />
-                  ) : (
-                    <span className="visually-hidden">Selection</span>
-                  )}
-                </th>
-                <th scope="col">Application</th>
-                <th scope="col">Applicant</th>
-                <th scope="col">Cities</th>
-                <th scope="col">Submitted</th>
-                <th scope="col">Status</th>
-                <th scope="col">
-                  <span className="visually-hidden">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {!state.data && <SkeletonRows cols={7} />}
-              {state.data &&
-                rows.map((a) => (
-                  <tr key={a.id} aria-selected={selected.has(a.id)} className={selected.has(a.id) ? "is-selected" : undefined}>
-                    <td className="adm-table__check" data-label="Select">
-                      {!readOnly && open(a) && (
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${a.applicant}`}
-                          checked={selected.has(a.id)}
-                          onChange={() =>
-                            setSelected((s) => {
-                              const n = new Set(s);
-                              if (n.has(a.id)) n.delete(a.id);
-                              else n.add(a.id);
-                              return n;
-                            })
-                          }
-                        />
-                      )}
-                    </td>
-                    <th scope="row" data-label="Application">
-                      <button type="button" className="adm-rowlink" onClick={() => openDetail(a.id)}>
-                        {a.headline}
-                      </button>
-                      {a.sample && <SampleChip />}
-                    </th>
-                    <td data-label="Applicant">{a.applicant}</td>
-                    <td data-label="Cities">{a.cities.join(", ")}</td>
-                    <td data-label="Submitted">{fmtDate(a.createdAt)}</td>
-                    <td data-label="Status">
-                      <Pill status={a.status} />
-                    </td>
-                    <td data-label="Actions">
-                      <MoveMenu status={a.status} label={a.headline} readOnly={readOnly} onMove={(to) => onMove(a, to)} />
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-          {state.data && rows.length === 0 && <Empty>No applications here.</Empty>}
-        </div>
+          <DataTable
+            caption="Guide applications, newest first"
+            columns={columns}
+            rows={rows}
+            busy={state.kind === "loading"}
+            onOpen={(a) => openDetail(a.id)}
+            selection={{
+              selected,
+              onChange: setSelected,
+              blocked: (a) => (readOnly ? READ_ONLY_LABEL : isOpen(a) ? null : FINAL_LABEL),
+              allLabel: "Select every open application on this page",
+              rowLabel: (a) => `Select ${a.applicant}`,
+            }}
+            phone={(a) => ({
+              title: cleanTitle(a.headline),
+              extra: a.sample ? <SampleChip /> : undefined,
+              pill: <Pill status={a.status} />,
+              meta: [a.applicant, <span className="adm-num" key="d">{fmtDate(a.createdAt)}</span>],
+            })}
+            empty="No applications here."
+          />
+        </>
       )}
       {state.data && (
-        <Pager page={page} hasMore={state.data.hasMore} size={LIST_SIZE} shown={rows.length} total={state.data.total} onPage={setPage} />
+        <Pager
+          page={page}
+          hasMore={state.data.hasMore}
+          size={LIST_SIZE}
+          shown={state.data.items.length}
+          total={state.data.total}
+          noun={["application", "applications"]}
+          onPage={setPage}
+        />
       )}
       <BulkBar count={selected.size} readOnly={readOnly} busy={busy} onDecide={onBulk} onClear={() => setSelected(new Set())} />
     </div>
@@ -406,13 +414,13 @@ function ApplicationDrawer({
 }) {
   const { readOnly } = useAdmin();
   const { state, reload } = useAdminData(`application:${id}`, (s) => application(id, s));
-  const [mode, setMode] = useState<"idle" | "approve" | "reject">(startRejecting ? "reject" : "idle");
+  const [mode, setMode] = useState<"idle" | "approve" | "reject">(startRejecting && !readOnly ? "reject" : "idle");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toError = useApiError();
   const noteId = useId();
-  const roId = useId();
+  const formId = useId();
   const a = state.data;
 
   async function run(action: () => Promise<unknown>) {
@@ -447,14 +455,50 @@ function ApplicationDrawer({
     void run(() => decideApplication(id, decision, n || undefined));
   }
 
-  const isOpen = a && (a.status === "submitted" || a.status === "in_review");
+  const open = a && isOpen(a);
+  const ro = unavailable(readOnly ? READ_ONLY_LABEL : null);
+  const footer = a ? (
+    open ? (
+      <div className="adm-actions">
+        {mode === "idle" ? (
+          <>
+            <button type="button" className="adm-btn adm-btn--primary" disabled={busy} onClick={() => setMode("approve")} {...ro}>
+              Approve…
+            </button>
+            <button type="button" className="adm-btn adm-btn--danger" disabled={busy} onClick={() => setMode("reject")} {...ro}>
+              Reject…
+            </button>
+            {a.status === "submitted" && (
+              <button type="button" className="adm-btn adm-btn--secondary" disabled={busy} onClick={() => void run(() => reviewApplication(id))} {...ro}>
+                Move to review
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <button type="submit" form={formId} className={`adm-btn ${mode === "reject" ? "adm-btn--danger" : "adm-btn--primary"}`} disabled={busy} {...ro}>
+              {mode === "reject" ? "Confirm reject" : "Confirm approve"}
+            </button>
+            <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setMode("idle")}>
+              Cancel
+            </button>
+          </>
+        )}
+      </div>
+    ) : (
+      <p className="adm-final" role="status">
+        {a.status === "approved" ? "Approved. " : "Rejected. "}Decisions are final and recorded in the audit log.
+      </p>
+    )
+  ) : undefined;
+
   return (
-    <Drawer title={a ? a.headline : "Guide application"} onClose={onClose}>
+    <Drawer title={a ? cleanTitle(a.headline) : "Guide application"} onClose={onClose} footer={footer}>
       {state.kind === "error" && !a && <ErrorState message={state.message} onRetry={reload} />}
       {!a && state.kind === "loading" && <SkeletonBlock lines={8} />}
       {a && (
         <>
-          <div className="adm-drawer__chips">
+          <div className="adm-chips-row">
             <Pill status={a.status} />
             {a.sample && <SampleChip />}
             <Chip tone={a.applicantVerified ? "good" : "warn"}>{a.applicantVerified ? "Verified" : "Not verified"}</Chip>
@@ -471,69 +515,42 @@ function ApplicationDrawer({
             <dt>Bio</dt>
             <dd className="adm-pre">{a.bio}</dd>
           </dl>
-          <h3 className="adm-drawer__h3">Timeline</h3>
-          <Timeline label="Application timeline" steps={applicationSteps(a)} />
-          {isOpen ? (
+          <section className="adm-section">
+            <SectionLabel>Timeline</SectionLabel>
+            <Timeline label="Application timeline" steps={applicationSteps(a)} />
+          </section>
+          {open && (
             <form
-              className="adm-decision"
+              id={formId}
+              className="adm-section"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (readOnly) return;
                 submit(mode === "reject" ? "reject" : "approve");
               }}
             >
-              <h3 className="adm-drawer__h3">Decision</h3>
-              {readOnly && (
-                <p id={roId} className="adm-ro-note">
-                  {READ_ONLY_LABEL}
-                </p>
-              )}
+              <SectionLabel>Decision</SectionLabel>
               {!a.sample && a.applicantRole === "traveller" && !readOnly && (
-                <p className="adm-muted adm-small">Approving makes {a.applicant} a guide. The role change is written to the audit log.</p>
+                <p className="adm-note">Approving makes {a.applicant} a guide. The role change is written to the audit log.</p>
               )}
-              {mode !== "idle" && (
+              {mode !== "idle" ? (
                 <div className="adm-field">
                   <label htmlFor={noteId}>
                     Note {mode === "reject" ? "(required" : "(optional"}, up to {NOTE_MAX} characters)
                   </label>
-                  <textarea id={noteId} rows={3} value={note} maxLength={NOTE_MAX + 20} onChange={(e) => setNote(e.target.value)} disabled={readOnly} data-autofocus />
+                  <textarea id={noteId} rows={3} value={note} maxLength={NOTE_MAX + 20} onChange={(e) => setNote(e.target.value)} data-autofocus />
                 </div>
+              ) : (
+                (a.sample || a.applicantRole !== "traveller" || readOnly) && (
+                  <p className="adm-note">Approve or reject from the bar below. A rejection needs a note.</p>
+                )
               )}
               {error && (
                 <p className="adm-field-error" role="alert">
                   {error}
                 </p>
               )}
-              <div className="adm-decision__actions">
-                {mode === "idle" ? (
-                  <>
-                    {a.status === "submitted" && (
-                      <button type="button" className="adm-btn adm-btn--secondary" disabled={readOnly || busy} aria-describedby={readOnly ? roId : undefined} onClick={() => void run(() => reviewApplication(id))}>
-                        Move to review
-                      </button>
-                    )}
-                    <button type="button" className="adm-btn adm-btn--primary" disabled={readOnly || busy} aria-describedby={readOnly ? roId : undefined} onClick={() => setMode("approve")}>
-                      Approve…
-                    </button>
-                    <button type="button" className="adm-btn adm-btn--danger" disabled={readOnly || busy} aria-describedby={readOnly ? roId : undefined} onClick={() => setMode("reject")}>
-                      Reject…
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button type="submit" className={`adm-btn ${mode === "reject" ? "adm-btn--danger" : "adm-btn--primary"}`} disabled={readOnly || busy}>
-                      {mode === "reject" ? "Confirm reject" : "Confirm approve"}
-                    </button>
-                    <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setMode("idle")}>
-                      Cancel
-                    </button>
-                  </>
-                )}
-              </div>
             </form>
-          ) : (
-            <p className="adm-final" role="status">
-              {a.status === "approved" ? "Approved. " : "Rejected. "}Decisions are final and recorded in the audit log.
-            </p>
           )}
         </>
       )}

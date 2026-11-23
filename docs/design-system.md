@@ -12,7 +12,7 @@ this document, it is not allowed.
 |---|---|---|
 | `node scripts/check-tokens.mjs` | Admin CSS: any raw hex, `rgb()`/`hsl()` or named colour; any raw `px` outside a media query; padding, margin and gap not from the spacing scale; font size, line height, weight, tracking or radius not from their scale; an undefined `var()`. Site CSS: its raw hex and raw px counts may not grow past `scripts/token-baseline.json`. | CI, `web` job |
 | `node scripts/check-contrast.mjs` | Any token pair below its minimum, in either theme (table below), and a stale table in this file. | CI, `web` job |
-| `node scripts/check-ui-tokens.mjs` | In a real browser, on every admin screen at 390, 768 and 1440, light and dark: page-level horizontal overflow, clipped text, a tap target under 44 x 44 px on phone, and any computed font size, line height, weight, padding, gap, radius or border width that is off the scale. | CI, `web` job |
+| `node scripts/check-ui-tokens.mjs` | In headless Chrome (the same harness and API stub as the console check), on all 21 admin screens and states (demo, real admin, empty, error, drawers, palette, phone menu) at 390, 768 and 1440 px, light and dark: page-level horizontal overflow, clipped or spilling text, an icon that renders at 0 px, a tap target under 44 x 44 px on phone (counting the transparent hit area), layout shift above 0.01, and any computed font size and line height pair, weight, padding, gap, radius or border width that is off the scale. | CI, `web` job |
 
 The marketing pages predate this system. Their stylesheets are ratcheted, not
 strict: the counts in `scripts/token-baseline.json` can only go down
@@ -34,6 +34,7 @@ opaque blocks.
 | `--ui-hover` | `#f5f5f5` | `#0f0f0f` | Row and item hover |
 | `--ui-selected` | `#f0f0f0` | `#141414` | Selected row, active nav item |
 | `--ui-track` | `#f5f5f5` | `#0a0a0a` | Segmented control and tab track |
+| `--ui-segment` | `#ffffff` | `#141414` | The active segment or tab (the raised pill) |
 | `--ui-border` | `#e5e5e5` | `#262626` | Card borders, dividers, decorative outlines |
 | `--ui-border-raised` | `#e5e5e5` | `#333333` | Raised surfaces, the active segment |
 | `--ui-border-control` | `#808080` | `#6b6b6b` | Form controls (inputs, search, checkboxes, textareas) |
@@ -63,7 +64,7 @@ selected row included). Only the text colour changes between themes.
 | warning | `rgb(251 191 36 / 0.14)` | `#8a4100` | `#fbbf24` | `#f59e0b` | Pending, submitted, admin role |
 | review | `rgb(167 139 250 / 0.14)` | `#6d28d9` | `#a78bfa` | `#8b5cf6` | In review, ongoing |
 | danger | `rgb(248 113 113 / 0.14)` | `#b42318` | `#f87171` | `#ef4444` | Rejected, cancelled, errors |
-| sample | `rgb(45 212 191 / 0.14)` | `#0b5e66` | `#2dd4bf` | `#14b8a6` | Sample chip, demo scope |
+| sample | `rgb(45 212 191 / 0.14)` | `#0b5e66` | `#2dd4bf` | (no dot: chips only) | Sample chip, demo scope |
 | info | `rgb(96 165 250 / 0.14)` | `#1d4ed8` | `#60a5fa` | `#3b82f6` | Planned, guide role, cities |
 | neutral | `rgb(0 0 0 / 0.06)` / `rgb(255 255 255 / 0.1)` | `--ui-text-2` | `--ui-text-2` | `#808080` / `#8c8c8c` | Counts, pending and open numbers, roles |
 
@@ -74,7 +75,7 @@ the neutral pill, never success green: a waiting queue is not good news.
 
 Computed from the tokens by `scripts/check-contrast.mjs`, never eyeballed. Each
 row reports the worst surface the pair can appear on (page, card, raised, row
-hover, row selected), with translucent tints composited over it first. CI fails
+hover, row selected, active segment), with translucent tints composited over it first. CI fails
 on any miss and on this table going stale.
 
 <!-- contrast:start -->
@@ -183,6 +184,30 @@ marked low priority hide below 1280 px so tables never scroll sideways.
 | `--ui-icon-sm` / `--ui-icon-md` | 16 / 20 px | Inline icons / nav icons |
 | `--ui-icon-stroke` | 1.5 px | Every icon, at every size (`vector-effect: non-scaling-stroke`) |
 
+Every other size token, for completeness:
+
+| Token | Value | Used for |
+|---|---|---|
+| `--ui-rail` | 64 px | Collapsed sidebar (and every tablet) |
+| `--ui-palette` | 560 px | Command palette width |
+| `--ui-menu-min` | 192 px | Popover menu minimum width |
+| `--ui-kanban-col-min` | 264 px | Kanban column minimum width |
+| `--ui-kanban-card-min` | 148 px | Kanban card minimum height |
+| `--ui-facts-label` | 112 px | Label column of a drawer's fact list |
+| `--ui-search-min` | 240 px | Search field and the top-bar search button |
+| `--ui-tip-max` | 240 px | Tooltip maximum width |
+| `--ui-cell-max` | 240 px | A subject cell's maximum width in a table |
+| `--ui-avatar` / `--ui-logo` | 24 / 32 px | Initials avatar / logo mark (both 1:1) |
+| `--ui-dot` | 6 px | Status dot |
+| `--ui-check` | 16 px | Checkbox |
+| `--ui-step` | 24 px | Timeline marker |
+| `--ui-notch-w` / `--ui-notch-h` | 2 / 16 px | Active nav notch |
+| `--ui-handle-w` / `--ui-handle-h` | 36 / 4 px | Bottom-sheet drag handle |
+| `--ui-banner-phone` | 40 px | Maximum height of the phone demo banner |
+| `--ui-skeleton-h` | 12 px | Loading placeholder bar |
+| `--ui-border-w` | 1 px | Every border |
+| `--ui-focus-w` / `--ui-focus-offset` | 2 / 2 px | Focus ring |
+
 Icons: one set, drawn on a 24 px grid with round caps and joins
 (`apps/web/src/admin/icons.tsx`, which re-exports the few shared glyphs from
 `components/icons.tsx`).
@@ -207,12 +232,22 @@ Every interactive element shows a 2 px ring (`--ui-focus-w`) with a 2 px offset
 (`--ui-focus-offset`) on `:focus-visible`, in `--ui-focus`. The ring is at least
 3:1 against every surface it can sit on (table above).
 
+Two documented exceptions, both still a 2 px `--ui-focus` ring: the command
+palette's search field sits flush with the palette's rounded edge, so its ring
+is drawn inside the field (offset -2 px) instead of being clipped; and a kanban
+card's title button covers the whole card, so the ring is drawn around the card.
+Opening a drawer, sheet or the palette moves focus to the dialog itself, or to
+the field marked `data-autofocus` (the palette input, a reject note), so no ring
+shows before anything is used.
+
 ## Aspect ratios
 
 Avatars and the logo mark are 1:1 (`aspect-ratio: 1`, fixed width and height,
-`flex: none`), so they never stretch or squash. KPI cards in one row share one
-height (grid rows stretch). Kanban cards share a minimum height
-(`--ui-kanban-card-min`).
+`flex: none`), so they never stretch or squash. The logo mark is the ROAAMM mark
+(the compass ring and route from the favicon) at 32 x 32 px. KPI cards in one
+row share one height (grid rows stretch), and every row inside a KPI card has
+a fixed height whether its data has arrived or not, so nothing moves when it
+does. Kanban cards share a minimum height (`--ui-kanban-card-min`).
 
 ## Components
 
@@ -232,6 +267,10 @@ shadow in light mode). Never a solid black block.
 
 **Table**: one component (`DataTable`) for every list, so every table follows
 the same alignment rule: the first column starts at the card padding (20 px).
+One column (the row header) absorbs the spare width and truncates with an
+ellipsis; cells never wrap. Below 1280 px, low-priority columns step aside, a
+subject cell is capped at `--ui-cell-max` (240 px) and row menu buttons show
+their icon only (the label stays for screen readers).
 Header row 40 px, rows 48 px, caption text in the header, dense text in cells.
 Rows that open a drawer have a hover fill, a pointer cursor and a trailing
 chevron. Tables with bulk actions show a checkbox column on every row; for the

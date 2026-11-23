@@ -93,7 +93,7 @@ function ratio(a, b) {
 
 const hex = (c) => "#" + c.slice(0, 3).map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
 
-const SURFACES = ["page", "card", "raised", "hover", "selected"];
+const SURFACES = ["page", "card", "raised", "hover", "selected", "segment"];
 const STATUSES = ["neutral", "success", "warning", "review", "danger", "sample", "info"];
 
 /**

@@ -10,7 +10,7 @@ import {
   type Decision,
   type VerificationStatus,
 } from "../../api/admin";
-import { DOC_LABEL, type DocType } from "../../api/verification";
+import { DOC_LABEL, type AdminRequest, type DocType } from "../../api/verification";
 import { useSearchParams } from "../../router";
 import { BulkBar, BulkResults } from "../BulkBar";
 import { READ_ONLY_LABEL, useAdmin } from "../context";
@@ -18,27 +18,34 @@ import { openDetail } from "../params";
 import { Tabs } from "../Tabs";
 import {
   Chip,
+  Count,
+  DataTable,
   Drawer,
-  Empty,
   ErrorState,
   Loading,
   Pager,
   Pill,
+  Scroller,
   SearchBox,
+  SectionLabel,
   SkeletonBlock,
-  SkeletonRows,
   Timeline,
   adminErrorMessage,
   fmtDate,
+  unavailable,
   useAdminData,
   useApiError,
   useDebounced,
+  type Column,
   type Step,
 } from "../ui";
 
 const LABEL: Record<VerificationStatus, string> = { pending: "Pending", verified: "Verified", rejected: "Rejected" };
 const REASON_MAX = 200;
 const PAGE_SIZE = 20; // fixed by the API for this queue
+
+const roleText = (r: AdminRequest) => (r.userRole === "guide" ? "Guide" : "Traveller");
+const docText = (r: AdminRequest) => DOC_LABEL[r.docType as DocType] ?? r.docType;
 
 export function Verification() {
   const { readOnly } = useAdmin();
@@ -61,19 +68,8 @@ export function Verification() {
   useEffect(() => setSelected(new Set()), [tab, q, page]);
   useEffect(() => setPage(0), [tab, q]);
 
-  const rows = state.data?.items ?? [];
-  const names = Object.fromEntries(rows.map((r) => [r.id, r.userDisplayName]));
-  const selectable = tab === "pending" && !readOnly;
-  const allOnPage = rows.length > 0 && rows.every((r) => selected.has(r.id));
-
-  function toggle(id: string) {
-    setSelected((s) => {
-      const n = new Set(s);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }
+  const rows = state.data?.items;
+  const names = Object.fromEntries((rows ?? []).map((r) => [r.id, r.userDisplayName]));
 
   async function onBulk(decision: Decision, note?: string) {
     setBusy(true);
@@ -91,6 +87,24 @@ export function Verification() {
 
   const counts = state.data?.counts;
   const idBase = useId();
+  const columns: Column<AdminRequest>[] = [
+    {
+      key: "person",
+      header: "Person",
+      primary: true,
+      cell: (r) => (
+        <>
+          <span className="adm-cell__text">{r.userDisplayName}</span>
+          <Chip>{roleText(r)}</Chip>
+        </>
+      ),
+    },
+    { key: "doc", header: "Document", cell: docText },
+    { key: "ref", header: "Sample ref", wide: true, cell: (r) => <span className="mono adm-ref">{r.sampleRef}</span> },
+    { key: "submitted", header: "Submitted", cell: (r) => <span className="adm-num">{fmtDate(r.createdAt)}</span> },
+    { key: "status", header: "Status", cell: (r) => <Pill status={r.status} /> },
+    { key: "decided", header: "Decided", wide: true, cell: (r) => <span className="adm-num">{r.decidedAt ? fmtDate(r.decidedAt) : "—"}</span> },
+  ];
 
   return (
     <div className="adm-page">
@@ -102,21 +116,23 @@ export function Verification() {
       </header>
       <div className="adm-card adm-card--flush">
         <div className="adm-toolbar">
-          <Tabs
-            label="Verification status"
-            idBase={idBase}
-            value={tab}
-            onChange={setTab}
-            tabs={VERIFICATION_STATUSES.map((s) => ({
-              value: s,
-              label: (
-                <>
-                  {LABEL[s]}
-                  <span className="adm-count">{counts ? counts[s] : "–"}</span>
-                </>
-              ),
-            }))}
-          />
+          <Scroller>
+            <Tabs
+              label="Verification status"
+              idBase={idBase}
+              value={tab}
+              onChange={setTab}
+              tabs={VERIFICATION_STATUSES.map((s) => ({
+                value: s,
+                label: (
+                  <>
+                    {LABEL[s]}
+                    <Count n={counts?.[s]} />
+                  </>
+                ),
+              }))}
+            />
+          </Scroller>
           <SearchBox value={search} onChange={setSearch} label="Search by name" placeholder="Search by name" />
         </div>
         <div id={`${idBase}-panel`} role="tabpanel" aria-labelledby={`${idBase}-tab-${tab}`}>
@@ -129,75 +145,44 @@ export function Verification() {
           {state.kind === "error" && !state.data ? (
             <ErrorState message={state.message} onRetry={reload} />
           ) : (
-            <div className="adm-table-wrap">
+            <>
               {state.kind === "loading" && <Loading what="verification requests" />}
-              <table className="adm-table" aria-busy={state.kind === "loading"}>
-                <caption className="visually-hidden">
-                  {LABEL[tab]} verification requests, newest first (simulated sample IDs)
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col" className="adm-table__check">
-                      {selectable ? (
-                        <input
-                          type="checkbox"
-                          aria-label="Select every row on this page"
-                          checked={allOnPage}
-                          onChange={() => setSelected(allOnPage ? new Set() : new Set(rows.map((r) => r.id)))}
-                        />
-                      ) : (
-                        <span className="visually-hidden">Selection</span>
-                      )}
-                    </th>
-                    <th scope="col">Person</th>
-                    <th scope="col">Document</th>
-                    <th scope="col">Sample ref</th>
-                    <th scope="col">Submitted</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Decided</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!state.data && <SkeletonRows cols={7} />}
-                  {state.data &&
-                    rows.map((r) => (
-                      <tr key={r.id} aria-selected={selected.has(r.id)} className={selected.has(r.id) ? "is-selected" : undefined}>
-                        <td className="adm-table__check" data-label="Select">
-                          {selectable && (
-                            <input
-                              type="checkbox"
-                              aria-label={`Select ${r.userDisplayName}`}
-                              checked={selected.has(r.id)}
-                              onChange={() => toggle(r.id)}
-                            />
-                          )}
-                        </td>
-                        <th scope="row" data-label="Person">
-                          <button type="button" className="adm-rowlink" onClick={() => openDetail(r.id)}>
-                            {r.userDisplayName}
-                          </button>
-                          <Chip>{r.userRole === "guide" ? "Guide" : "Traveller"}</Chip>
-                        </th>
-                        <td data-label="Document">{DOC_LABEL[r.docType as DocType] ?? r.docType}</td>
-                        <td data-label="Sample ref" className="mono adm-muted">
-                          {r.sampleRef}
-                        </td>
-                        <td data-label="Submitted">{fmtDate(r.createdAt)}</td>
-                        <td data-label="Status">
-                          <Pill status={r.status} />
-                        </td>
-                        <td data-label="Decided">{r.decidedAt ? fmtDate(r.decidedAt) : "—"}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-              {state.data && rows.length === 0 && (
-                <Empty>{q ? `No ${tab} requests match “${q}”.` : `No ${tab} requests.`}</Empty>
-              )}
-            </div>
+              <DataTable
+                caption={`${LABEL[tab]} verification requests, newest first (simulated sample IDs)`}
+                columns={columns}
+                rows={rows}
+                busy={state.kind === "loading"}
+                onOpen={(r) => openDetail(r.id)}
+                selection={
+                  tab === "pending"
+                    ? {
+                        selected,
+                        onChange: setSelected,
+                        blocked: () => (readOnly ? READ_ONLY_LABEL : null),
+                        allLabel: "Select every row on this page",
+                        rowLabel: (r) => `Select ${r.userDisplayName}`,
+                      }
+                    : undefined
+                }
+                phone={(r) => ({
+                  title: r.userDisplayName,
+                  pill: <Pill status={r.status} />,
+                  meta: [roleText(r), <span className="adm-num" key="d">{fmtDate(r.createdAt)}</span>],
+                })}
+                empty={q ? `No ${tab} requests match “${q}”.` : `No ${tab} requests.`}
+              />
+            </>
           )}
           {state.data && (
-            <Pager page={page} hasMore={state.data.hasMore} size={PAGE_SIZE} shown={rows.length} total={q ? null : counts?.[tab]} onPage={setPage} />
+            <Pager
+              page={page}
+              hasMore={state.data.hasMore}
+              size={PAGE_SIZE}
+              shown={state.data.items.length}
+              total={q ? null : counts?.[tab]}
+              noun={["request", "requests"]}
+              onPage={setPage}
+            />
           )}
         </div>
       </div>
@@ -218,7 +203,7 @@ function VerificationDrawer({ id, onClose, onChanged }: { id: string; onClose: (
   const [error, setError] = useState<string | null>(null);
   const toError = useApiError();
   const reasonId = useId();
-  const roId = useId();
+  const formId = useId();
 
   async function decide(decision: Decision) {
     if (decision === "reject" && (reason.trim().length === 0 || reason.trim().length > REASON_MAX)) {
@@ -244,7 +229,7 @@ function VerificationDrawer({ id, onClose, onChanged }: { id: string; onClose: (
   const r = state.data;
   const steps: Step[] = r
     ? [
-        { label: "Request submitted", state: "done", at: r.createdAt, detail: `${DOC_LABEL[r.docType as DocType] ?? r.docType} · ${r.sampleRef}` },
+        { label: "Request submitted", state: "done", at: r.createdAt, detail: `${docText(r)} · ${r.sampleRef}` },
         r.status === "pending"
           ? { label: "Waiting for a decision", state: "current" }
           : {
@@ -262,83 +247,91 @@ function VerificationDrawer({ id, onClose, onChanged }: { id: string; onClose: (
       ]
     : [];
   const audit = r?.history ?? [];
+  const ro = unavailable(readOnly ? READ_ONLY_LABEL : null);
+  const pending = r?.status === "pending";
+
+  const footer = r ? (
+    pending ? (
+      <div className="adm-actions">
+        {!rejecting ? (
+          <>
+            <button type="submit" form={formId} className="adm-btn adm-btn--primary" disabled={busy} {...ro}>
+              Approve
+            </button>
+            <button type="button" className="adm-btn adm-btn--danger" disabled={busy} onClick={() => setRejecting(true)} {...ro}>
+              Reject…
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="submit" form={formId} className="adm-btn adm-btn--danger" disabled={busy} {...ro}>
+              Confirm reject
+            </button>
+            <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setRejecting(false)}>
+              Cancel
+            </button>
+          </>
+        )}
+      </div>
+    ) : (
+      <p className="adm-final" role="status">
+        This request is decided. Decisions are final and recorded in the audit log.
+      </p>
+    )
+  ) : undefined;
 
   return (
-    <Drawer title={r ? r.userDisplayName : "Verification request"} onClose={onClose}>
+    <Drawer title={r ? r.userDisplayName : "Verification request"} onClose={onClose} footer={footer}>
       {state.kind === "error" && !r && <ErrorState message={state.message} onRetry={reload} />}
       {!r && state.kind === "loading" && <SkeletonBlock lines={6} />}
       {r && (
         <>
+          <div className="adm-chips-row">
+            <Pill status={r.status} />
+            <Chip>{roleText(r)}</Chip>
+          </div>
           <dl className="adm-facts">
-            <dt>Status</dt>
-            <dd>
-              <Pill status={r.status} />
-            </dd>
-            <dt>Role</dt>
-            <dd>{r.userRole === "guide" ? "Guide" : "Traveller"}</dd>
             <dt>Document</dt>
-            <dd>{DOC_LABEL[r.docType as DocType] ?? r.docType} (simulated)</dd>
+            <dd>{docText(r)} (simulated)</dd>
             <dt>Sample ref</dt>
-            <dd className="mono">{r.sampleRef}</dd>
+            <dd className="mono adm-ref">{r.sampleRef}</dd>
+            <dt>Submitted</dt>
+            <dd className="adm-num">{fmtDate(r.createdAt)}</dd>
           </dl>
-          <h3 className="adm-drawer__h3">Timeline</h3>
-          <Timeline label="Verification timeline" steps={steps} />
-          {audit.length > 0 && (
-            <p className="adm-muted adm-small">
-              Audit log: {audit.length} entr{audit.length === 1 ? "y" : "ies"} for this request.
-            </p>
-          )}
-          {r.status === "pending" ? (
+          <section className="adm-section">
+            <SectionLabel>Timeline</SectionLabel>
+            <Timeline label="Verification timeline" steps={steps} />
+            {audit.length > 0 && (
+              <p className="adm-note">
+                Audit log: {audit.length} entr{audit.length === 1 ? "y" : "ies"} for this request.
+              </p>
+            )}
+          </section>
+          {pending && (
             <form
-              className="adm-decision"
+              id={formId}
+              className="adm-section"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (readOnly) return;
                 void decide(rejecting ? "reject" : "approve");
               }}
             >
-              <h3 className="adm-drawer__h3">Decision</h3>
-              {readOnly && (
-                <p id={roId} className="adm-ro-note">
-                  {READ_ONLY_LABEL}
-                </p>
-              )}
-              {rejecting && (
+              <SectionLabel>Decision</SectionLabel>
+              {rejecting ? (
                 <div className="adm-field">
                   <label htmlFor={reasonId}>Reason (required, up to {REASON_MAX} characters)</label>
-                  <textarea id={reasonId} value={reason} rows={3} maxLength={REASON_MAX + 20} onChange={(e) => setReason(e.target.value)} disabled={readOnly} data-autofocus />
+                  <textarea id={reasonId} value={reason} rows={3} maxLength={REASON_MAX + 20} onChange={(e) => setReason(e.target.value)} data-autofocus />
                 </div>
+              ) : (
+                <p className="adm-note">Approve verifies the person. Rejecting needs a reason, which they will see.</p>
               )}
               {error && (
                 <p className="adm-field-error" role="alert">
                   {error}
                 </p>
               )}
-              <div className="adm-decision__actions">
-                {!rejecting ? (
-                  <>
-                    <button type="submit" className="adm-btn adm-btn--primary" disabled={readOnly || busy} aria-describedby={readOnly ? roId : undefined}>
-                      Approve
-                    </button>
-                    <button type="button" className="adm-btn adm-btn--danger" disabled={readOnly || busy} aria-describedby={readOnly ? roId : undefined} onClick={() => setRejecting(true)}>
-                      Reject…
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button type="submit" className="adm-btn adm-btn--danger" disabled={readOnly || busy}>
-                      Confirm reject
-                    </button>
-                    <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setRejecting(false)}>
-                      Cancel
-                    </button>
-                  </>
-                )}
-              </div>
             </form>
-          ) : (
-            <p className="adm-final" role="status">
-              This request is decided. Decisions are final and recorded in the audit log.
-            </p>
           )}
         </>
       )}

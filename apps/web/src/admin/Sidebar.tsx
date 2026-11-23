@@ -22,7 +22,7 @@ export function NavGroups({
         title={collapsed ? n.label : undefined}
         onClick={onNavigate}
       >
-        <n.icon size={18} />
+        <n.icon size={20} />
         <span className="adm-nav__label">{n.label}</span>
       </Link>
     </li>
@@ -47,8 +47,8 @@ export function NavGroups({
       <ul className="adm-nav__list" aria-labelledby={`${id}-soon`}>
         {SOON.map((s) => (
           <li key={s.label}>
-            <span className="adm-nav__item adm-nav__item--soon" aria-disabled="true" title={collapsed ? `${s.label} (${s.milestone})` : undefined}>
-              <s.icon size={18} />
+            <span className="adm-nav__item adm-nav__item--soon" aria-disabled="true" title={`${s.label}: planned for ${s.milestone}`}>
+              <s.icon size={20} />
               <span className="adm-nav__label">
                 {s.label}
                 <span className="adm-nav__ms">{s.milestone}</span>

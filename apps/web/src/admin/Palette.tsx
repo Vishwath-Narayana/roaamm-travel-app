@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { users, type AdminUser } from "../api/admin";
 import { navigate } from "../router";
 import { PAGES } from "./nav";
-import { UsersIcon } from "./icons";
+import { ChevronIcon, SearchIcon, UsersIcon } from "./icons";
 import { useDebounced, useDialogFocus } from "./ui";
 
 type Option = { id: string; label: string; hint: string; href: string; kind: "page" | "user" };
@@ -29,16 +29,18 @@ export function Palette({ onClose }: { onClose: () => void }) {
     }
     const controller = new AbortController();
     setSearching(true);
-    users({ q, size: 6 }, controller.signal).then(
-      (p) => {
-        if (!controller.signal.aborted) setFound(p.items);
-      },
-      () => {
-        if (!controller.signal.aborted) setFound([]);
-      },
-    ).finally(() => {
-      if (!controller.signal.aborted) setSearching(false);
-    });
+    users({ q, size: 6 }, controller.signal)
+      .then(
+        (p) => {
+          if (!controller.signal.aborted) setFound(p.items);
+        },
+        () => {
+          if (!controller.signal.aborted) setFound([]);
+        },
+      )
+      .finally(() => {
+        if (!controller.signal.aborted) setSearching(false);
+      });
     return () => controller.abort();
   }, [q]);
 
@@ -85,28 +87,37 @@ export function Palette({ onClose }: { onClose: () => void }) {
 
   const activeId = options[active] ? `${listId}-${options[active]!.id}` : undefined;
   return (
-    <div className="adm-palette-layer">
-      <div className="adm-drawer-backdrop" onClick={onClose} aria-hidden="true" />
-      <div ref={ref} className="adm-palette" role="dialog" aria-modal="true" aria-labelledby={labelId}>
+    <div className="adm-layer">
+      <div className="adm-backdrop" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={ref}
+        className="adm-palette"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={labelId}
+      >
         <h2 id={labelId} className="visually-hidden">
           Go to a page or find a user
         </h2>
-        <input
-          className="adm-palette__input"
-          type="text"
-          role="combobox"
-          aria-expanded="true"
-          aria-controls={listId}
-          aria-activedescendant={activeId}
-          aria-autocomplete="list"
-          aria-label="Go to a page or find a user by name"
-          placeholder="Go to a page or find a user…"
-          value={text}
-          maxLength={40}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onKey}
-          data-autofocus
-        />
+        <div className="adm-palette__field">
+          <SearchIcon size={16} />
+          <input
+            className="adm-palette__input"
+            type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls={listId}
+            aria-activedescendant={activeId}
+            aria-autocomplete="list"
+            aria-label="Go to a page or find a user by name"
+            placeholder="Go to a page or find a user…"
+            value={text}
+            maxLength={40}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKey}
+            data-autofocus
+          />
+        </div>
         <ul id={listId} role="listbox" aria-label="Results" className="adm-palette__list">
           {options.map((o, i) => (
             <li
@@ -118,14 +129,18 @@ export function Palette({ onClose }: { onClose: () => void }) {
               onMouseMove={() => setActive(i)}
               onClick={() => choose(o)}
             >
-              {o.kind === "user" && <UsersIcon size={14} />}
+              {o.kind === "user" ? <UsersIcon size={16} /> : <ChevronIcon size={16} />}
               <span>{o.label}</span>
               <span className="adm-palette__hint">{o.hint}</span>
             </li>
           ))}
         </ul>
         <p className="adm-palette__foot" role="status">
-          {searching ? "Searching users…" : options.length === 0 ? "No matches." : "↑ ↓ to move, Enter to open, Esc to close"}
+          {searching
+            ? "Searching users…"
+            : options.length === 0
+              ? "No matches."
+              : "↑ ↓ to move, Enter to open, Esc to close"}
         </p>
       </div>
     </div>

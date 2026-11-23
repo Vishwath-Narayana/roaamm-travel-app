@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { BULK_MAX, STATUS_TEXT, type BulkResult, type Decision } from "../api/admin";
 import { READ_ONLY_LABEL } from "./context";
+import { unavailable } from "./ui";
 
 const NOTE_MAX = 300;
 
@@ -30,7 +31,8 @@ export function BulkBar({
   const errId = useId();
   if (count === 0) return null;
   const tooMany = count > BULK_MAX;
-  const disabled = readOnly || busy || tooMany;
+  const disabled = busy || tooMany;
+  const ro = unavailable(readOnly ? READ_ONLY_LABEL : null);
   const trimmed = note.trim();
   const noteError =
     trimmed.length === 0 ? "A note is required to reject." : trimmed.length > NOTE_MAX ? `Use at most ${NOTE_MAX} characters.` : null;
@@ -48,16 +50,16 @@ export function BulkBar({
             className="adm-btn adm-btn--primary"
             disabled={disabled}
             onClick={() => onDecide("approve")}
+            {...ro}
           >
             Approve {count}
           </button>
-          <button type="button" className="adm-btn adm-btn--danger" disabled={disabled} onClick={() => setRejecting(true)}>
+          <button type="button" className="adm-btn adm-btn--danger" disabled={disabled} onClick={() => setRejecting(true)} {...ro}>
             Reject…
           </button>
           <button type="button" className="adm-btn adm-btn--ghost" onClick={onClear}>
             Clear
           </button>
-          {readOnly && <span className="adm-bulk__ro">{READ_ONLY_LABEL}</span>}
         </div>
       ) : (
         <form
@@ -65,7 +67,7 @@ export function BulkBar({
           onSubmit={(e) => {
             e.preventDefault();
             setTouched(true);
-            if (noteError || disabled) return;
+            if (noteError || disabled || readOnly) return;
             onDecide("reject", trimmed);
             setRejecting(false);
             setNote("");
@@ -91,7 +93,7 @@ export function BulkBar({
             </p>
           )}
           <div className="adm-bulk__actions">
-            <button type="submit" className="adm-btn adm-btn--danger" disabled={disabled}>
+            <button type="submit" className="adm-btn adm-btn--danger" disabled={disabled} {...ro}>
               Confirm: reject {count}
             </button>
             <button
