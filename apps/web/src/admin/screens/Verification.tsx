@@ -260,20 +260,20 @@ function VerificationDrawer({ id, onClose, onChanged }: { id: string; onClose: (
       <div className="adm-actions">
         {!rejecting ? (
           <>
-            <button type="submit" form={formId} className="adm-btn adm-btn--primary" disabled={busy} {...ro}>
-              Approve
-            </button>
             <button type="button" className="adm-btn adm-btn--danger" disabled={busy} onClick={() => setRejecting(true)} {...ro}>
               Reject…
+            </button>
+            <button type="submit" form={formId} className="adm-btn adm-btn--primary" disabled={busy} {...ro}>
+              Approve
             </button>
           </>
         ) : (
           <>
-            <button type="submit" form={formId} className="adm-btn adm-btn--danger" disabled={busy} {...ro}>
-              Confirm reject
-            </button>
             <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setRejecting(false)}>
               Cancel
+            </button>
+            <button type="submit" form={formId} className="adm-btn adm-btn--danger" disabled={busy} {...ro}>
+              Confirm reject
             </button>
           </>
         )}
@@ -306,6 +306,7 @@ function VerificationDrawer({ id, onClose, onChanged }: { id: string; onClose: (
       }
       onClose={onClose}
       footer={footer}
+      footNote={readOnly && pending ? READ_ONLY_LABEL : undefined}
     >
       {state.kind === "error" && !r && <ErrorState message={state.message} onRetry={reload} />}
       {!r && state.kind === "loading" && <SkeletonBlock lines={6} />}

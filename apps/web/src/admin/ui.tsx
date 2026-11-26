@@ -804,12 +804,17 @@ function useDragToClose(panel: RefObject<HTMLElement | null>, onClose: () => voi
   return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp };
 }
 
-/** The summary at the top of a detail drawer: who or what, its status, three key facts. */
+/**
+ * The summary at the top of a detail drawer: who or what, an optional
+ * subtitle (who it belongs to), its status, and two or three key facts. A
+ * `wide` fact (long dates) takes a row of its own above the others.
+ */
 export type Summary = {
   /** An avatar or an icon, 40 px. */
   lead: ReactNode;
+  subtitle?: ReactNode;
   pill?: ReactNode;
-  facts: [label: string, value: ReactNode][];
+  facts: [label: string, value: ReactNode, wide?: "wide"][];
 };
 
 /** A 40 px round icon for a drawer summary (things without a person: trips, applications). */
@@ -823,8 +828,9 @@ export function SummaryIcon({ children }: { children: ReactNode }) {
 
 /**
  * The detail drawer (desktop and tablet: a 480 px panel on the right) that is
- * a full-height bottom sheet on phones, with a drag handle and a sticky action
- * bar. `kind="menu"` is the phone navigation sheet: content height only.
+ * a bottom sheet on phones, with a drag handle: full height with a sticky
+ * action bar when it has a `footer`, content height (at most 85%) without.
+ * `kind="menu"` is the phone navigation sheet.
  * With a `summary`, the bar shows `label` (what kind of thing this is) and the
  * body opens with the summary, whose heading (`title`) names the dialog.
  * Linkable: callers open it from a ?id= query parameter.
@@ -836,6 +842,7 @@ export function Drawer({
   onClose,
   children,
   footer,
+  footNote,
   kind = "drawer",
   closeLabel = "Close details",
 }: {
@@ -845,6 +852,8 @@ export function Drawer({
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  /** One line above the footer's buttons, e.g. why they are disabled. */
+  footNote?: ReactNode;
   kind?: "drawer" | "menu";
   closeLabel?: string;
 }) {
@@ -853,12 +862,23 @@ export function Drawer({
   const isPhone = useIsPhone();
   useDialogFocus(ref, true, onClose);
   const drag = useDragToClose(ref, onClose);
+  // Phone: a sheet without a footer hugs its content (at most 85% of the
+  // screen); with a footer it stays full height so the action bar never moves.
+  const fit = kind === "menu" || !footer;
   return (
     <div className="adm-layer">
       <div className="adm-backdrop" onClick={onClose} aria-hidden="true" />
-      <div ref={ref} className={`adm-sheet adm-sheet--${kind}`} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
-        <div className="adm-sheet__top" {...drag}>
-          {/* The handle exists only on phones, where the sheet can be dragged down. */}
+      <div
+        ref={ref}
+        className={`adm-sheet adm-sheet--${kind}${fit ? " adm-sheet--fit" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+      >
+        <div className="adm-sheet__top" {...(isPhone ? drag : {})}>
+          {/* The grabber is rendered on phones only (below 768 px), where the
+              sheet can be dragged down: from 768 px it is not in the DOM at all. */}
           {isPhone && <span className="adm-sheet__handle" aria-hidden="true" />}
           <header className="adm-sheet__head">
             {summary ? (
@@ -882,12 +902,13 @@ export function Drawer({
                   <h2 id={titleId} className="adm-summary__name">
                     {title}
                   </h2>
+                  {summary.subtitle && <p className="adm-summary__sub">{summary.subtitle}</p>}
                   {summary.pill}
                 </div>
               </div>
-              <dl className="adm-summary__facts">
-                {summary.facts.map(([k, v]) => (
-                  <div key={k} className="adm-summary__fact">
+              <dl className="adm-summary__facts" data-cols={summary.facts.filter((f) => !f[2]).length}>
+                {summary.facts.map(([k, v, wide]) => (
+                  <div key={k} className={`adm-summary__fact${wide ? " adm-summary__fact--wide" : ""}`}>
                     <dt>{k}</dt>
                     <dd>{v}</dd>
                   </div>
@@ -897,7 +918,12 @@ export function Drawer({
           )}
           {children}
         </div>
-        {footer && <div className="adm-sheet__foot">{footer}</div>}
+        {footer && (
+          <div className="adm-sheet__foot">
+            {footNote && <p className="adm-sheet__note">{footNote}</p>}
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

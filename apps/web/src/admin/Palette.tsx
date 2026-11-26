@@ -140,7 +140,7 @@ export function Palette({ onClose }: { onClose: () => void }) {
             ? "Searching users…"
             : options.length === 0
               ? "No matches."
-              : "↑ ↓ to move, Enter to open, Esc to close"}
+              : <span className="adm-palette__keys">↑ ↓ to move, Enter to open, Esc to close</span>}
         </p>
       </div>
     </div>

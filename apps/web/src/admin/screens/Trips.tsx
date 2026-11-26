@@ -94,7 +94,8 @@ export function Trips() {
           <Pager page={page} hasMore={state.data.hasMore} size={SIZE} shown={state.data.items.length} total={state.data.total} noun={["trip", "trips"]} onPage={setPage} />
         )}
       </div>
-      {openId && <TripDrawer trip={rows?.find((t) => t.id === openId)} loading={!rows} onClose={() => openDetail(null)} />}
+      {/* Opened once the rows are here: the sheet sizes to its content, so it must not grow while loading. */}
+      {openId && rows && <TripDrawer trip={rows.find((t) => t.id === openId)} loading={false} onClose={() => openDetail(null)} />}
     </div>
   );
 }
@@ -114,7 +115,7 @@ function TripDrawer({ trip: t, loading, onClose }: { trip?: AdminTrip; loading: 
           ),
           pill: <Pill status={t.status} />,
           facts: [
-            ["Dates", <span className="adm-num">{dates(t)}</span>],
+            ["Dates", <span className="adm-num">{dates(t)}</span>, "wide"],
             ["Destination", t.destination],
             ["Owner", t.owner],
           ],

@@ -94,13 +94,21 @@ export const VIEWPORTS = {
  * A new page at `route` in its own browser context.
  * theme: "light" | "dark" (stored choice and OS preference both set).
  */
-export async function open(browser, origin, route, { width = 1440, theme = "light", mode = "demo", scale } = {}) {
+export async function open(
+  browser,
+  origin,
+  route,
+  { width = 1440, theme = "light", mode = "demo", scale, viewport, reducedMotion = false } = {},
+) {
   const context = await browser.createBrowserContext();
   const page = await context.newPage();
-  const vp = { ...VIEWPORTS[width] };
+  const vp = { ...(viewport ?? VIEWPORTS[width]) };
   if (scale) vp.deviceScaleFactor = scale;
   await page.setViewport(vp);
-  await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: theme }]);
+  await page.emulateMediaFeatures([
+    { name: "prefers-color-scheme", value: theme },
+    { name: "prefers-reduced-motion", value: reducedMotion ? "reduce" : "no-preference" },
+  ]);
   await page.evaluateOnNewDocument((t) => {
     try {
       localStorage.setItem("roaamm-theme", t);
@@ -139,6 +147,7 @@ const A = "/app/admin";
 const V_PENDING = "00000000-0000-4000-8000-000000000201";
 const APP_APPROVED = "00000000-0000-4000-8000-000000000503";
 const USER = "00000000-0000-4000-8000-000000000903";
+const TRIP = "00000000-0000-4000-8000-000000000402";
 
 const click = (sel) => async (page) => {
   await page.click(sel);
@@ -166,6 +175,7 @@ export const SCREENS = [
   { name: "users", route: `${A}/users` },
   { name: "drawer-user", route: `${A}/users?id=${USER}` },
   { name: "trips", route: `${A}/trips` },
+  { name: "drawer-trip", route: `${A}/trips?id=${TRIP}` },
   { name: "audit", route: `${A}/audit` },
   { name: "palette", route: A, action: click(".adm-cmdk") },
   { name: "menu-sheet", route: A, action: click(".adm-topbar__menu"), widths: [390] },

@@ -124,8 +124,8 @@ describe("AdminApp", () => {
     at("/app/admin/verification?id=a1");
     expect(await screen.findByRole("note")).toHaveTextContent("Demo, read-only.");
     await screen.findByText("Sample guide Kofi");
-    // One indicator for the page, not one per row.
-    expect(screen.queryAllByText("Demo is read-only")).toHaveLength(0);
+    // One indicator for the page, not one per row (the open drawer has its own one-line note).
+    expect(screen.queryAllByText("Demo is read-only").filter((el) => !el.closest('[role="dialog"]'))).toHaveLength(0);
     // The selection column is there (same alignment as a real admin's), but disabled.
     const boxes = screen.getAllByRole("checkbox");
     expect(boxes.length).toBe(3);
@@ -141,6 +141,8 @@ describe("AdminApp", () => {
     const approve = await within(dialog).findByRole("button", { name: "Approve" });
     expect(approve).toHaveAttribute("aria-disabled", "true");
     expect(approve).toHaveAccessibleDescription("Demo is read-only");
+    // One line above the action bar says why the buttons are disabled.
+    expect(within(dialog).getByText("Demo is read-only")).toHaveClass("adm-sheet__note");
     await user.click(approve);
     expect(calls.some((c) => c.init?.method === "POST")).toBe(false);
     expect(within(dialog).getByRole("button", { name: "Reject…" })).toHaveAttribute(

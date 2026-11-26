@@ -258,8 +258,11 @@ card) so every number in a row sits on the same baseline.
 **Pill** (status): 20 px high, 8 px side padding, full radius, caption text
 (500), a 6 px dot in the status colour, tint fill. Always has text; colour is
 only a hint. **Chip** (role, city, audit subject type): same, 6 px radius,
-no dot. There is no Sample chip: the demo banner is the one place that says
-the data is simulated. **Verified** is not a chip: a 16 px check in
+no dot. Chips are neutral grey unless their colour means something: city chips
+are neutral, because blue is reserved for information and links. There is no
+Sample chip in the admin console: the demo banner is the one place that says
+the data is simulated. (The traveller and guide apps label sample rows with a
+Sample chip, because there real and sample rows can sit side by side.) **Verified** is not a chip: a 16 px check in
 `--ui-success`, or a muted dash for "not verified", each with an accessible
 name.
 
@@ -272,14 +275,30 @@ with the tooltip "Demo is read-only".
 
 **Button**: 32 px (40 on phone), 8 px radius, 12 px side padding, dense text
 (500). Primary (`--ui-primary`), secondary (card fill and border), ghost, and
-danger (danger tint and text).
+danger (a `--ui-danger` outline and text, tint on hover). Only the primary
+action is filled. Unavailable buttons of every variant look the same: a flat
+`--ui-track` fill, `--ui-border` and tertiary text.
+
+**Action bar** (drawer footer): the primary action last, at the right end;
+then danger (Reject), then secondary (Move to review); Cancel replaces them
+during a confirm step and sits left of the confirm button. Right-aligned from
+768 px; on phones an equal-width row. For the demo admin a one-line "Demo is
+read-only" note sits above the buttons, which keep their tooltip.
+
+**KPI delta**: one rule. The chip is green (`--ui-success`) only for a good
+change: a growth number (users, trips) with more new items in the last 30
+days than in the prior 30 days. Everything else is neutral grey: queues
+(pending verifications, open applications, where more is not good news), no
+change, fewer, and none. The footnote compares with the prior period in words:
+"vs 2 in the previous 30 days" (desktop), "vs 2 prior 30 days" (phone).
 
 **Segmented control and tabs**: a `--ui-track` well with 4 px padding; the
 active segment is a soft raised pill (card fill, `--ui-border-raised`, the card
 shadow in light mode). Never a solid black block. Below 1024 px every tab row
 and segmented control fills the row with equal segments (as wide as the search
 field below it); if the widest label does not fit, the row scrolls sideways,
-fades only the edge that has more, and keeps the selected option in view.
+fades only the edge that has more (a 16 px fade, so the last label is never
+covered), and keeps the selected option in view.
 
 **Table**: one component (`DataTable`) for every list, so every table follows
 the same alignment rule: the first column starts at the card padding (20 px).
@@ -306,18 +325,33 @@ date" and the city chips (no status pill: the column says it); about 112 px
 with a one-line title.
 
 **Drawer and sheet**: one component. Desktop and tablet: a 480 px panel on the
-right. Phone: a full-height bottom sheet with 16 px top corners, a drag handle
-(drag down to close; rendered only on phones) and a sticky action bar that
-respects the safe-area insets. The phone menu is the same sheet, with 44 px
-rows. A detail drawer opens with a summary: a 40 px avatar or icon, the name
-(the dialog's heading), the status pill and three key facts; details and the
-timeline follow.
+right. Phone: a bottom sheet with 16 px top corners and a drag handle (drag
+down to close). The handle is rendered only below 768 px: from 768 px it is
+not in the DOM at all, and check-ui-tokens fails if anything fixed sits at
+the bottom centre of the viewport with no dialog open. A sheet with a footer
+is full height with a sticky action bar that respects the safe-area insets; a
+sheet without one hugs its content, at most 85% of the screen. The phone menu
+is the same sheet, with 44 px rows. A detail drawer opens with a summary: a
+40 px avatar or icon, the name (the dialog's heading), an optional subtitle
+(who it belongs to, so a long name never widens a fact), the status pill and
+two or three key facts; a long fact (a date range) takes its own full-width
+row. Details and the timeline follow, without repeating the summary.
 
 **Page title**: exactly one h1 per page. From 768 px it heads the page; below
 768 px the top bar's title is the h1. Below 640 px the page lead is kept for
 screen readers only.
 
-**Sidebar**: the active item is marked by its highlighted background alone.
+**Sidebar**: hover is always subtler than active. Hover: the `--ui-hover`
+fill only (text colour and weight unchanged). Active: the `--ui-selected`
+fill, full-strength text and weight 500.
+
+**Search field**: one focus ring, on the field (`:focus-within`); the input
+inside never draws its own. On phones its border is `--ui-border`, the same
+as the segmented controls above it. This is the one form control below the
+3:1 border rule: it stays identifiable by its search icon and placeholder,
+and its focus ring is 3:1. The command palette shows its "↑ ↓ to move" key
+hint only on devices with a keyboard and pointer (not below 768 px or on
+touch).
 
 **Demo banner**: the one page-level read-only indicator. Desktop: a calm
 bordered strip. Below 1024 px: the short form on one line that never wraps (a

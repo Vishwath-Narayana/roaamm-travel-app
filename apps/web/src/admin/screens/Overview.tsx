@@ -14,10 +14,13 @@ import { Link } from "../../router";
 import {
   ArrowUpRightIcon,
   BadgeCheckIcon,
+  CheckIcon,
   ChevronIcon,
+  ClockIcon,
   CompassIcon,
   MapIcon,
   UsersIcon,
+  XIcon,
 } from "../icons";
 import {
   Empty,
@@ -26,7 +29,6 @@ import {
   Pill,
   SkeletonBlock,
   fmtDate,
-  initials,
   Loading,
   relTime,
   useAdminData,
@@ -87,7 +89,10 @@ export function KpiCard({
   queue: boolean;
 }) {
   const fresh = kpi?.last30 ?? 0;
-  const tone = queue || fresh === 0 ? "neutral" : "good";
+  // One rule (docs/design-system.md): green only for a good change, that is
+  // more new items than the prior 30 days on a growth number. Queues, no
+  // change and fewer are neutral grey.
+  const tone = !queue && kpi && fresh > kpi.prev30 ? "good" : "neutral";
   return (
     <li className="adm-kpi">
       <div className="adm-kpi__top">
@@ -124,7 +129,7 @@ export function KpiCard({
           <>
             <span className="adm-long">vs {number.format(kpi.prev30)} in the previous 30 days</span>
             <span className="adm-short" aria-hidden="true">
-              vs {number.format(kpi.prev30)} before
+              vs {number.format(kpi.prev30)} prior 30 days
             </span>
           </>
         ) : (
@@ -247,15 +252,29 @@ export function Overview() {
   );
 }
 
+/** A small muted icon for the kind of action (no avatar: the actor is named in the row). */
+function ActionIcon({ action }: { action: string }) {
+  const Icon = action.endsWith(".approve")
+    ? CheckIcon
+    : action.endsWith(".reject")
+      ? XIcon
+      : action === "guide_application.review"
+        ? ClockIcon
+        : CompassIcon;
+  return (
+    <span className="adm-activity__icon" aria-hidden="true">
+      <Icon size={16} />
+    </span>
+  );
+}
+
 /** One audit entry: who did what to whom, and when. Opens the subject's drawer. */
 export function ActivityRow({ entry: a }: { entry: AuditRow }) {
   const who = a.admin ?? "Deleted account";
   const href = subjectHref(a);
   const body = (
     <>
-      <span className="adm-avatar" aria-hidden="true">
-        {initials(who)}
-      </span>
+      <ActionIcon action={a.action} />
       <span className="adm-activity__what">
         <span className="adm-activity__action">{ACTION_TEXT[a.action] ?? a.action}</span>
         <span className="adm-activity__who">

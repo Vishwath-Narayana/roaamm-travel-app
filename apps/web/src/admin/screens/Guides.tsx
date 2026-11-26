@@ -237,7 +237,7 @@ export function AppCard({ app, readOnly, onMove }: { app: Application; readOnly:
       <ul className="adm-chips" aria-label="Cities">
         {app.cities.map((c) => (
           <li key={c}>
-            <Chip tone="info">{c}</Chip>
+            <Chip>{c}</Chip>
           </li>
         ))}
       </ul>
@@ -460,25 +460,25 @@ function ApplicationDrawer({
       <div className="adm-actions">
         {mode === "idle" ? (
           <>
-            <button type="button" className="adm-btn adm-btn--primary" disabled={busy} onClick={() => setMode("approve")} {...ro}>
-              Approve…
-            </button>
-            <button type="button" className="adm-btn adm-btn--danger" disabled={busy} onClick={() => setMode("reject")} {...ro}>
-              Reject…
-            </button>
             {a.status === "submitted" && (
               <button type="button" className="adm-btn adm-btn--secondary" disabled={busy} onClick={() => void run(() => reviewApplication(id))} {...ro}>
                 Move to review
               </button>
             )}
+            <button type="button" className="adm-btn adm-btn--danger" disabled={busy} onClick={() => setMode("reject")} {...ro}>
+              Reject…
+            </button>
+            <button type="button" className="adm-btn adm-btn--primary" disabled={busy} onClick={() => setMode("approve")} {...ro}>
+              Approve…
+            </button>
           </>
         ) : (
           <>
-            <button type="submit" form={formId} className={`adm-btn ${mode === "reject" ? "adm-btn--danger" : "adm-btn--primary"}`} disabled={busy} {...ro}>
-              {mode === "reject" ? "Confirm reject" : "Confirm approve"}
-            </button>
             <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setMode("idle")}>
               Cancel
+            </button>
+            <button type="submit" form={formId} className={`adm-btn ${mode === "reject" ? "adm-btn--danger" : "adm-btn--primary"}`} disabled={busy} {...ro}>
+              {mode === "reject" ? "Confirm reject" : "Confirm approve"}
             </button>
           </>
         )}
@@ -501,9 +501,9 @@ function ApplicationDrawer({
               <CompassIcon size={20} />
             </SummaryIcon>
           ),
+          subtitle: a.applicant,
           pill: <Pill status={a.status} />,
           facts: [
-            ["Applicant", a.applicant],
             ["Submitted", <span className="adm-num">{fmtDate(a.createdAt)}</span>],
             ["Decided", <span className="adm-num">{a.decidedAt ? fmtDate(a.decidedAt) : "—"}</span>],
           ],
@@ -511,6 +511,7 @@ function ApplicationDrawer({
       }
       onClose={onClose}
       footer={footer}
+      footNote={readOnly && open ? READ_ONLY_LABEL : undefined}
     >
       {state.kind === "error" && !a && <ErrorState message={state.message} onRetry={reload} />}
       {!a && state.kind === "loading" && <SkeletonBlock lines={8} />}
@@ -519,11 +520,10 @@ function ApplicationDrawer({
           <section className="adm-section">
             <SectionLabel>Details</SectionLabel>
             <dl className="adm-facts">
+              {/* The name is the summary's subtitle: here only what it adds. */}
               <dt>Applicant</dt>
               <dd className="adm-inline">
-                <span>
-                  {a.applicant} <span className="adm-muted">({a.applicantRole})</span>
-                </span>
+                <span>{a.applicantRole === "guide" ? "Guide" : a.applicantRole === "admin" ? "Admin" : "Traveller"}</span>
                 <VerifiedMark verified={a.applicantVerified} text />
               </dd>
               <dt>Languages</dt>
