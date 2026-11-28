@@ -19,7 +19,7 @@ RUN ./gradlew --no-daemon --version
 COPY src src
 RUN ./gradlew --no-daemon nativeCompile
 
-FROM gcr.io/distroless/base-debian13:nonroot@sha256:a08d9054afbaf1af9b90fd02cdc7b32236319b5376d374505a41548d42b0c5db
+FROM gcr.io/distroless/base-debian13:nonroot@sha256:7088bf1cdc94a65af4e0d5ad94518ed489a372dec1ece38ff4411c6c15fb5864
 COPY --from=build /src/build/native/nativeCompile/roaamm-core /app/roaamm-core
 # Flyway cannot scan classpath resources inside a native image ("unsupported
 # protocol: resource"), so the migrations ship as plain files next to the binary.
