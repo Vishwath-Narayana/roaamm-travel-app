@@ -36,11 +36,19 @@ repository, its pull requests or its CI runs. Treat it as unknown.
 | 12 | [31-m2a-database-demo-login.md](31-m2a-database-demo-login.md) | M2a: Postgres, Flyway, cookie sessions, one-click demo |
 | 13 | [32-m2b-passkeys.md](32-m2b-passkeys.md) | M2b: passkey accounts and recovery codes |
 | 14 | [40-m3-verification-admin.md](40-m3-verification-admin.md) | M3: simulated ID verification, admin queue, audit log |
-| 15 | [43-m4b-1-admin-polish.md](43-m4b-1-admin-polish.md) | M4b.1: the design system, the admin console rebuilt on it, and its checks |
-| 16 | [44-m4b-2-admin-polish.md](44-m4b-2-admin-polish.md) | M4b.2: fixed table columns, one h1, calmer cards and rows, drawer summaries, eight more UI checks |
+| 15 | [47-m4a-trips-guides-core.md](47-m4a-trips-guides-core.md) | M4a: trips, guide applications and the admin API (written in M4c) |
+| 16 | [48-m4b-admin-console.md](48-m4b-admin-console.md) | M4b: the admin console UI (written in M4c) |
+| 17 | [43-m4b-1-admin-polish.md](43-m4b-1-admin-polish.md) | M4b.1: the design system, the admin console rebuilt on it, and its checks |
+| 18 | [44-m4b-2-admin-polish.md](44-m4b-2-admin-polish.md) | M4b.2: fixed table columns, one h1, calmer cards and rows, drawer summaries, eight more UI checks |
+| 19 | [45-m4c-traveller-and-guide-ui.md](45-m4c-traveller-and-guide-ui.md) | M4c: the traveller and guide apps on one shared app shell, last admin polish |
+| 20 | [46-m4-accounts-trips-and-admin.md](46-m4-accounts-trips-and-admin.md) | All of M4 in one note: what was built, how it fits, security, tests |
 
 M1.9 was merged after M2-prep, because it needed the API proxy. It is still
 listed with the other M1 notes because it is a landing page change.
+
+The M4a and M4b notes were written after M4c, so their numbers (47, 48) come
+after the M4c notes; they are listed here in the order the work happened. The
+combined M4 note (46) uses its own seven sections instead of the seven below.
 
 ## The rule: every milestone PR adds its own note
 

@@ -12,7 +12,7 @@ this document, it is not allowed.
 |---|---|---|
 | `node scripts/check-tokens.mjs` | Admin CSS: any raw hex, `rgb()`/`hsl()` or named colour; any raw `px` outside a media query; padding, margin and gap not from the spacing scale; font size, line height, weight, tracking or radius not from their scale; an undefined `var()`. Site CSS: its raw hex and raw px counts may not grow past `scripts/token-baseline.json`. | CI, `web` job |
 | `node scripts/check-contrast.mjs` | Any token pair below its minimum, in either theme (table below), and a stale table in this file. | CI, `web` job |
-| `node scripts/check-ui-tokens.mjs` | In headless Chrome (the same harness and API stub as the console check), on all 24 admin screens and states (demo, real admin, empty, error, drawers, palette, phone menu, a second Verification tab) at 390, 768 and 1440 px, light and dark: page-level horizontal overflow, clipped or spilling text, an icon that renders at 0 px, a tap target under 44 x 44 px on phone (counting the transparent hit area), layout shift above 0.01, any computed font size and line height pair, weight, padding, gap, radius or border width that is off the scale; not exactly one h1; a drag handle or other small pill-shaped bar outside a dialog from 768 px; KPI numbers in one row on different baselines (phone); the top-bar avatar not ending on the content edge; any Sample chip. Then, on the six table screens at 768, 1024 and 1440 px, it clicks every tab and filter option and fails if any header cell moves, and fails if an Audit Subject cell is clipped at 1024 or 1440 px. | CI, `web` job |
+| `node scripts/check-ui-tokens.mjs` | In headless Chrome (the same harness and API stubs as the console check), on all 56 screens and states (since M4c: the 25 admin states plus 31 traveller and guide states: demo, real, empty, error, each guide application status, forms with errors, the confirm dialog, no-access pages, the phone menu and palette) (demo, real admin, empty, error, drawers, palette, phone menu, a second Verification tab) at 390, 768 and 1440 px, light and dark: page-level horizontal overflow, clipped or spilling text, an icon that renders at 0 px, a tap target under 44 x 44 px on phone (counting the transparent hit area), layout shift above 0.01, any computed font size and line height pair, weight, padding, gap, radius or border width that is off the scale; not exactly one h1; a drag handle or other small pill-shaped bar outside a dialog from 768 px; KPI numbers in one row on different baselines (phone); the top-bar avatar not ending on the content edge; any Sample chip. Then, on the six table screens at 768, 1024 and 1440 px, it clicks every tab and filter option and fails if any header cell moves, and fails if an Audit Subject cell is clipped at 1024 or 1440 px. | CI, `web` job |
 
 The marketing pages predate this system. Their stylesheets are ratcheted, not
 strict: the counts in `scripts/token-baseline.json` can only go down
@@ -336,6 +336,25 @@ is the same sheet, with 44 px rows. A detail drawer opens with a summary: a
 (who it belongs to, so a long name never widens a fact), the status pill and
 two or three key facts; a long fact (a date range) takes its own full-width
 row. Details and the timeline follow, without repeating the summary.
+
+**App shell** (M4c): the admin console, the traveller app and the guide app
+share one shell (`AppShell`): the same sidebar, top bar, phone menu sheet,
+theme toggle and palette, configured per area. A signed-in user of another
+role sees a "No access" page with a link to their own home, never a silent
+redirect.
+
+**Form**: a label above each control; a hint and then the error below it
+(`--ui-danger`, dense text), linked with `aria-describedby` and marked
+`aria-invalid`. Errors appear after the first submit and then follow the
+edits; focus moves to the first invalid field. Inputs are 32 px (44 px and
+16 px text on phones, so iOS does not zoom). The submit button says
+"Saving…" while it waits and a toast confirms. Actions: secondary
+("Discard") then primary, left-aligned; an equal-width row on phones.
+
+**Confirm dialog**: a centred `alertdialog` (raised surface, 12 px radius,
+the pop shadow) with a title, one sentence, and two buttons: the safe one
+(secondary, focused first) and the change (danger outline). Escape and the
+backdrop cancel.
 
 **Page title**: exactly one h1 per page. From 768 px it heads the page; below
 768 px the top bar's title is the h1. Below 640 px the page lead is kept for

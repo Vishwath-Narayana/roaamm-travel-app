@@ -89,6 +89,23 @@ are in [docs/adr/](../adr). Here is each one in a few plain lines.
 - **Why:** every other route was logging "preloaded but not used". The fix
   kept Lighthouse at 91 and LCP unchanged.
 
+## [ADR 0008: Guide applications, the guide role change and bulk decisions](../adr/0008-guide-applications.md)
+
+- **Chose:** only a verified traveller may apply; one open application per
+  real user (a partial unique index); approving a **real** application makes
+  the user a guide in the same transaction and writes a second audit row.
+  Bulk decisions take 1 to 25 ids, and each row is decided in its own
+  transaction with its own audit row. There is no bulk delete.
+- **Rejected:** letting anyone pick "guide" at signup without review, and one
+  transaction for a whole bulk decision (one bad row would undo the rest).
+- **Why:** becoming a guide needs a reviewed path, and the shared demo users
+  must never change for everyone: the role update is
+  `WHERE NOT is_demo AND role = 'traveller'`, so a demo or sample user's role
+  can never change.
+- **Also:** shared demo users are capped, not blocked (newest 20 rows, gone
+  after 24 h); the demo traveller is a simulated verified traveller so the
+  demo can show the flow. Added to this page in M4c (it was missing).
+
 ## [ADR 0009: One CSS tokens file, enforced by checks](../adr/0009-one-tokens-file.md)
 
 - **Chose:** `apps/web/src/styles/tokens.css` is the only place raw colours
