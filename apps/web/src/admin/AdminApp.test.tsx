@@ -289,7 +289,7 @@ describe("AdminApp", () => {
     expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "true");
   });
 
-  it("sends a 401 to the sign-in page and other roles to their dashboard", async () => {
+  it("sends a 401 to the sign-in page and shows other roles a no-access page with a way home", async () => {
     mockApi({ "/v1/me": [[401, { error: "unauthenticated" }]] });
     at("/app/admin");
     await waitFor(() => expect(window.location.pathname).toBe("/login"));
@@ -299,7 +299,13 @@ describe("AdminApp", () => {
       "/v1/me": [[200, { role: "traveller", displayName: "Demo traveller", isDemo: true }]],
     });
     at("/app/admin/users");
-    await waitFor(() => expect(window.location.pathname).toBe("/app/traveller"));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("You are signed in as the demo traveller. This area is for admins.");
+    expect(within(alert).getByRole("link", { name: "Go to your home" })).toHaveAttribute("href", "/app/traveller");
+    expect(screen.getByRole("heading", { level: 1, name: "No access" })).toBeInTheDocument();
+    // Nothing of the console loads for a wrong role.
+    expect(window.location.pathname).toBe("/app/admin/users");
+    expect(screen.queryByRole("table")).toBeNull();
   });
 
   it("shows a not-found page inside the shell for an unknown section", async () => {

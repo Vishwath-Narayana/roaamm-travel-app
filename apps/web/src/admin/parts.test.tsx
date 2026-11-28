@@ -6,6 +6,7 @@ import { BulkBar } from "./BulkBar";
 import { AdminContext } from "./context";
 import { MoveMenu, moveTargets } from "./MoveMenu";
 import { Palette } from "./Palette";
+import { ADMIN_PALETTE } from "./AdminApp";
 import { applicationSteps } from "./screens/Guides";
 import { subjectHref } from "./screens/Audit";
 import { ActivityRow, KpiCard } from "./screens/Overview";
@@ -325,7 +326,7 @@ describe("Palette", () => {
           onSignedOut: () => {},
         }}
       >
-        <Palette onClose={onClose} />
+        <Palette config={ADMIN_PALETTE} onClose={onClose} />
       </AdminContext.Provider>,
     );
     return onClose;
@@ -402,7 +403,7 @@ describe("KPI delta (one rule)", () => {
   const card = (kpi: { value: number; last30: number; prev30: number }, queue = false) =>
     render(
       <ul>
-        <KpiCard label="Users" short="Users" kpi={kpi} icon={UsersIcon} href="/x" queue={queue} />
+        <KpiCard label="Users" short="Users" kpi={{ ...kpi, change: null }} icon={UsersIcon} href="/x" queue={queue} />
       </ul>,
     ).container.querySelector(".adm-delta")!;
 

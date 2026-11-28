@@ -188,7 +188,7 @@ export function Pill({ status }: { status: string }) {
   );
 }
 
-export type ChipTone = "neutral" | "info" | "good" | "warn" | "bad" | "review";
+export type ChipTone = "neutral" | "info" | "good" | "warn" | "bad" | "review" | "sample";
 
 export function Chip({ tone = "neutral", children }: { tone?: ChipTone; children: ReactNode }) {
   return <span className={`adm-chip adm-chip--${tone}`}>{children}</span>;
@@ -276,16 +276,24 @@ export function Loading({ what }: { what: string }) {
   );
 }
 
-/** The one page-level read-only indicator for the demo admin. */
-export function DemoBanner() {
+/** The one page-level read-only indicator (the demo accounts, an admin viewing as a traveller). */
+export function DemoBanner({
+  title = "Demo, read-only.",
+  text = "Everything here is simulated sample data; actions are shown but disabled.",
+  short = "Read-only demo",
+}: {
+  title?: string;
+  text?: string;
+  short?: string;
+}) {
   return (
     <p className="adm-banner" role="note">
       <InfoIcon size={16} className="adm-banner__icon" />
       <span className="adm-banner__long">
-        <strong>Demo, read-only.</strong> Everything here is simulated sample data; actions are shown but disabled.
+        <strong>{title}</strong> {text}
       </span>
       <span className="adm-banner__short" aria-hidden="true">
-        <strong>Read-only demo</strong> · simulated data
+        <strong>{short}</strong> · simulated data
       </span>
     </p>
   );

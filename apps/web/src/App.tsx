@@ -1,14 +1,14 @@
 import { lazy, Suspense, type ComponentType } from "react";
-import { isRole } from "./api/session";
 import { Shell } from "./layouts/Shell";
 import { Landing } from "./pages/Landing";
 import { NotFound } from "./pages/NotFound";
 import { useRoute, useRouteFocus } from "./router";
 
-// Dashboards load on demand so the landing page bundle stays small.
-const Dashboard = lazy(() =>
-  import("./pages/app/Dashboard").then((m) => ({ default: m.Dashboard })),
+// The signed-in apps load on demand so the landing page bundle stays small.
+const TravellerApp = lazy(() =>
+  import("./member/TravellerApp").then((m) => ({ default: m.TravellerApp })),
 );
+const GuideApp = lazy(() => import("./member/GuideApp").then((m) => ({ default: m.GuideApp })));
 
 // Signup, sign-in and account pages carry the passkey code: loaded on demand too.
 const Signup = lazy(() => import("./pages/auth/Signup").then((m) => ({ default: m.Signup })));
@@ -42,14 +42,19 @@ export function App() {
       </Suspense>
     );
   }
-  const app = /^\/app\/([a-z]+)$/.exec(path);
-  if (app && isRole(app[1])) {
+  // The traveller and guide apps: the admin console's shell, role-guarded (M4c).
+  if (path === "/app/traveller" || path.startsWith("/app/traveller/")) {
     return (
-      <Shell>
-        <Suspense fallback={null}>
-          <Dashboard key={app[1]} role={app[1]} />
-        </Suspense>
-      </Shell>
+      <Suspense fallback={null}>
+        <TravellerApp path={path} />
+      </Suspense>
+    );
+  }
+  if (path === "/app/guide" || path.startsWith("/app/guide/")) {
+    return (
+      <Suspense fallback={null}>
+        <GuideApp path={path} />
+      </Suspense>
     );
   }
   const LazyPage = LAZY_ROUTES[path];
