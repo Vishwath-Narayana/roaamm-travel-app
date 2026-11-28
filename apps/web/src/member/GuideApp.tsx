@@ -93,39 +93,43 @@ function Overview() {
   return (
     <div className="adm-page">
       <PageHead title="Overview" lead="Your guide account at a glance." />
+      {/* Everything below the head renders once the profile has answered:
+          nothing exists below a growing card to be pushed (no layout shift). */}
       <Loaded>
         {({ app, sample }) => (
-          <section className="adm-card adm-card__body" aria-labelledby="g-app">
-            <header className="adm-card__head">
-              <h2 id="g-app">Guide application</h2>
-              <span className="adm-inline">
-                {app && <Pill status="approved" />}
-                {sample && <SampleChip />}
-              </span>
-            </header>
-            <p className="adm-note">
-              {app
-                ? `Approved on ${fmtDate(app.decidedAt)}. Travellers will find you by your headline, languages and cities.`
-                : "No approved application on file. Guides are created when an admin approves a traveller's application."}
-            </p>
-            {app && (
-              <p>
-                <Link href={`${G_BASE}/profile`} className="adm-btn adm-btn--secondary">
-                  See your profile
-                </Link>
+          <>
+            <section className="adm-card adm-card__body" aria-labelledby="g-app">
+              <header className="adm-card__head">
+                <h2 id="g-app">Guide application</h2>
+                <span className="adm-inline">
+                  {app && <Pill status="approved" />}
+                  {sample && <SampleChip />}
+                </span>
+              </header>
+              <p className="adm-note">
+                {app
+                  ? `Approved on ${fmtDate(app.decidedAt)}. Travellers will find you by your headline, languages and cities.`
+                  : "No approved application on file. Guides are created when an admin approves a traveller's application."}
               </p>
-            )}
-          </section>
+              {app && (
+                <p>
+                  <Link href={`${G_BASE}/profile`} className="adm-btn adm-btn--secondary">
+                    See your profile
+                  </Link>
+                </p>
+              )}
+            </section>
+            <div className="adm-grid-2">
+              <Soon icon={<TicketIcon size={20} />} title="Upcoming bookings">
+                Tours travellers book with you, with dates and times.
+              </Soon>
+              <Soon icon={<ClockIcon size={20} />} title="Earnings">
+                What you earn per tour, paid through test checkout.
+              </Soon>
+            </div>
+          </>
         )}
       </Loaded>
-      <div className="adm-grid-2">
-        <Soon icon={<TicketIcon size={20} />} title="Upcoming bookings">
-          Tours travellers book with you, with dates and times.
-        </Soon>
-        <Soon icon={<ClockIcon size={20} />} title="Earnings">
-          What you earn per tour, paid through test checkout.
-        </Soon>
-      </div>
     </div>
   );
 }
