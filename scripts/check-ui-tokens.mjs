@@ -176,7 +176,7 @@ function audit({ phone, width }) {
 
   // M4c: from 768 px with no dialog open, the bottom centre of the viewport
   // is page content or empty, never something fixed (a stray pill or grabber).
-  if (width >= 768 && !document.querySelector('[role="dialog"]')) {
+  if (width >= 768 && !document.querySelector('[role="dialog"], [role="alertdialog"]')) {
     const at = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 12);
     for (let n = at; n && n !== document.body; n = n.parentElement) {
       if (getComputedStyle(n).position === "fixed") {
@@ -243,8 +243,9 @@ function audit({ phone, width }) {
     if (Math.abs(ar - contentRight) > 0.5) add("avatar", avatar, `right edge at ${ar.toFixed(1)}px, content ends at ${contentRight.toFixed(1)}px`);
   }
 
-  // No Sample chip: the demo banner is the one place that says "simulated".
-  for (const el of document.querySelectorAll(".adm .adm-chip, .adm .adm-pill, .adm-chip--sample")) {
+  // No Sample chip in the admin console: its demo banner is the one place that
+  // says "simulated". (The traveller and guide apps label sample rows on purpose.)
+  for (const el of location.pathname.startsWith("/app/admin") ? document.querySelectorAll(".adm .adm-chip, .adm .adm-pill, .adm-chip--sample") : []) {
     if (el.matches(".adm-chip--sample") || /^sample$/i.test(el.textContent.trim())) add("sample", el, "a Sample chip is rendered");
   }
 

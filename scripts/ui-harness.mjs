@@ -15,6 +15,7 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import puppeteer from "puppeteer-core";
 import { adminStub } from "./admin-stub.mjs";
+import { MEMBER_MODES, memberMe, memberStub } from "./member-stub.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 // UI_DIST: check another build (e.g. main's, to prove a new check fails there).
@@ -70,6 +71,13 @@ const cors = (origin) => ({
 
 /** [status, body] the stub API answers in `mode`. */
 function answer(path, params, mode) {
+  if (MEMBER_MODES.has(mode)) {
+    if (path === "/v1/me") return [200, { ...memberMe(mode), needsNewPasskey: false }];
+    const member = memberStub(path, params, mode);
+    if (member) return member;
+    if (!path.startsWith("/v1/admin/")) return [200, { status: "none" }];
+    return [200, adminStub(path, params, { scope: "demo" }) ?? { items: [], page: 0, hasMore: false }];
+  }
   if (path === "/v1/me") {
     return [
       200,
@@ -149,15 +157,19 @@ const APP_APPROVED = "00000000-0000-4000-8000-000000000503";
 const USER = "00000000-0000-4000-8000-000000000903";
 const TRIP = "00000000-0000-4000-8000-000000000402";
 
-const click = (sel) => async (page) => {
-  await page.click(sel);
+/** Waits for the click's effect: lazy layers start their entrance late, so
+ * wait until every finite animation has finished (nothing is shot mid-fade). */
+const settle = async (page) => {
   await new Promise((r) => setTimeout(r, 450));
-  // Lazy layers (the palette) start their entrance late: wait until every
-  // finite animation has finished, so nothing is shot mid-fade.
   await page.evaluate(() => {
     const finite = document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity);
     return Promise.race([Promise.allSettled(finite.map((a) => a.finished)), new Promise((r) => setTimeout(r, 2000))]);
   });
+};
+
+const click = (sel) => async (page) => {
+  await page.click(sel);
+  await settle(page);
 };
 
 /**
@@ -192,6 +204,59 @@ export const SCREENS = [
   { name: "real-drawer-application", route: `${A}/guide-applications?id=${APP_APPROVED}`, mode: "real" },
 ];
 
+const T = "/app/traveller";
+const G = "/app/guide";
+const REAL_TRIP = "00000000-0000-4000-8000-000000000601";
+const SAMPLE_TRIP = "00000000-0000-4000-8000-000000000402";
+
+/** Clicks the first button or link whose text is `text`, then waits like click(). */
+const clickText = (text) => async (page) => {
+  // A real pointer click: layout shift right after input does not count, as in Lighthouse.
+  for (const h of await page.$$("main button, main a")) {
+    if ((await h.evaluate((b) => b.textContent.trim())) === text) {
+      await h.click();
+      break;
+    }
+  }
+  await settle(page);
+};
+
+/** The traveller and guide apps (M4c): every page and state. */
+export const MEMBER_SCREENS = [
+  { name: "traveller-overview", route: T, mode: "traveller" },
+  { name: "traveller-trips", route: `${T}/trips`, mode: "traveller" },
+  { name: "traveller-trips-real", route: `${T}/trips`, mode: "traveller-real" },
+  { name: "traveller-trips-empty", route: `${T}/trips`, mode: "traveller-empty" },
+  { name: "traveller-trips-error", route: `${T}/trips`, mode: "traveller-error" },
+  { name: "traveller-trip-new", route: `${T}/trips/new`, mode: "traveller-real" },
+  { name: "traveller-trip-new-invalid", route: `${T}/trips/new`, mode: "traveller-real", action: clickText("Create trip") },
+  { name: "traveller-trip-new-demo", route: `${T}/trips/new`, mode: "traveller" },
+  { name: "traveller-trip-detail", route: `${T}/trips/${REAL_TRIP}`, mode: "traveller-real" },
+  { name: "traveller-trip-detail-sample", route: `${T}/trips/${SAMPLE_TRIP}`, mode: "traveller" },
+  { name: "traveller-trip-edit", route: `${T}/trips/${REAL_TRIP}/edit`, mode: "traveller-real" },
+  { name: "traveller-trip-cancel", route: `${T}/trips/${REAL_TRIP}`, mode: "traveller-real", action: clickText("Cancel trip") },
+  { name: "become-guide-form", route: `${T}/become-a-guide`, mode: "traveller-real" },
+  { name: "become-guide-demo", route: `${T}/become-a-guide`, mode: "traveller" },
+  { name: "become-guide-unverified", route: `${T}/become-a-guide`, mode: "app-unverified" },
+  { name: "become-guide-submitted", route: `${T}/become-a-guide`, mode: "app-submitted" },
+  { name: "become-guide-in-review", route: `${T}/become-a-guide`, mode: "app-in_review" },
+  { name: "become-guide-approved", route: `${T}/become-a-guide`, mode: "app-approved" },
+  { name: "become-guide-rejected", route: `${T}/become-a-guide`, mode: "app-rejected" },
+  { name: "become-guide-resubmit", route: `${T}/become-a-guide`, mode: "app-rejected", action: clickText("Edit and resubmit") },
+  { name: "traveller-viewas-admin", route: `${T}/trips`, mode: "admin-viewas" },
+  { name: "no-access-traveller", route: `${T}/trips`, mode: "guide" },
+  { name: "no-access-guide", route: G, mode: "traveller" },
+  { name: "guide-overview", route: G, mode: "guide" },
+  { name: "guide-overview-real", route: G, mode: "guide-real" },
+  { name: "guide-profile", route: `${G}/profile`, mode: "guide" },
+  { name: "guide-profile-real", route: `${G}/profile`, mode: "guide-real" },
+  { name: "guide-availability", route: `${G}/availability`, mode: "guide" },
+  { name: "guide-bookings", route: `${G}/bookings`, mode: "guide" },
+  { name: "traveller-menu-sheet", route: T, mode: "traveller", action: click(".adm-topbar__menu"), widths: [390] },
+  { name: "traveller-palette", route: T, mode: "traveller", action: click(".adm-cmdk") },
+];
+SCREENS.push(...MEMBER_SCREENS);
+
 /** Table screens whose header must not move when any tab or filter changes. */
 export const TABLE_SCREENS = [
   { name: "verification", route: `${A}/verification` },
@@ -200,4 +265,5 @@ export const TABLE_SCREENS = [
   { name: "users", route: `${A}/users` },
   { name: "trips", route: `${A}/trips` },
   { name: "audit", route: `${A}/audit` },
+  { name: "traveller-trips-real", route: "/app/traveller/trips", mode: "traveller-real" },
 ];

@@ -17,6 +17,7 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import puppeteer from "puppeteer-core";
 import { adminStub } from "./admin-stub.mjs";
+import { memberStub } from "./member-stub.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const DIST = join(ROOT, "apps/web/dist");
@@ -29,7 +30,15 @@ const ROUTES = [
   "/signup",
   "/account",
   "/app/traveller",
+  "/app/traveller/trips",
+  "/app/traveller/trips/new",
+  "/app/traveller/trips/00000000-0000-4000-8000-000000000402",
+  "/app/traveller/trips/00000000-0000-4000-8000-000000000402/edit",
+  "/app/traveller/become-a-guide",
   "/app/guide",
+  "/app/guide/profile",
+  "/app/guide/availability",
+  "/app/guide/bookings",
   "/app/admin",
   // The admin console (M4b), signed in as the demo admin with simulated data.
   "/app/admin/verification",
@@ -87,7 +96,9 @@ const EMPTY_PAGE = { items: [], page: 0, hasMore: false };
 function apiStub(path, role, params) {
   if (path === "/v1/me")
     return { role, displayName: `Demo ${role}`, isDemo: true, needsNewPasskey: false };
-  if (path === "/v1/verification/me") return { status: "none" };
+  // The traveller and guide apps: the demo user's own trips, application and ID check.
+  const member = role === "admin" ? null : memberStub(path, params, role);
+  if (member) return member[1];
   if (path.startsWith("/v1/admin/")) return adminStub(path, params) ?? EMPTY_PAGE;
   return null;
 }
