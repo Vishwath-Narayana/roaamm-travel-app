@@ -102,6 +102,14 @@ All found while building M4c, before or in this PR's commits.
 - **A tap area that leaked sideways.** The × on a chosen language had a
   44 px hit area that stuck out of its chip, so the UI check saw clipped
   text on phones. Now the whole chip is the remove button.
+- **Green on a Mac, red in CI, again.** The first CI run of this PR failed
+  the UI check on the guide overview at 390 px: 0.0214 layout shift
+  ([run 46146145971](https://github.com/Vishwath-Narayana/roaamm-travel-app/actions/runs/46146145971)).
+  On the slower runner the "Coming in M9" cards painted before the
+  application card had grown from its skeleton, so they were pushed down.
+  Locally the data arrived first and it never showed. Fix (`4f772e0`): the
+  cards render together once the profile has answered, the same rule as the
+  other overviews.
 - **A late lead line.** The edit page's lead showed the trip title once it
   arrived, which pushed the form down (0.012 CLS at 768 px). The lead is now
   fixed text.
