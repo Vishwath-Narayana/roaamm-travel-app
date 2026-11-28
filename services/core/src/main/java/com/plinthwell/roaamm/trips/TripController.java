@@ -51,9 +51,10 @@ public class TripController {
 
     @GetMapping("/v1/trips")
     public TripListView list(@RequestParam(defaultValue = "all") String when,
+            @RequestParam(required = false) String status, @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page, @RequestParam(required = false) Integer size,
             HttpServletRequest request) {
-        var l = service.list(current(request), when, page, size);
+        var l = service.list(current(request), when, status, q, page, size);
         var p = l.page();
         return new TripListView(p.items().stream().map(TripView::of).toList(), p.page(), p.size(), p.hasMore(),
                 p.total(), l.counts(), l.max());

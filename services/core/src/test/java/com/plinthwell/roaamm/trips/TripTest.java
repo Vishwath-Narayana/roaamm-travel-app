@@ -136,6 +136,61 @@ public class TripTest extends PostgresTest {
     }
 
     @Test
+    void theListFiltersByStatusAndSearchWithinTheOwnersTripsOnly() throws Exception {
+        var owner = accounts.real("Filter owner", "traveller");
+        var other = accounts.real("Filter other", "traveller");
+        String kyoto = createId(owner.cookie(), "Temples in autumn");
+        Map<String, Object> lisbon = trip("Food weekend");
+        lisbon.put("destination", "Lisbon, Portugal");
+        String lisbonId = body(create(owner.cookie(), lisbon).andExpect(status().isCreated())).get("id").asString();
+        update(owner.cookie(), lisbonId, Map.of("status", "cancelled")).andExpect(status().isOk());
+        // Another user's trip that matches the same search and status never shows up.
+        String theirs = createId(other.cookie(), "Temples in spring");
+        update(other.cookie(), theirs, Map.of("status", "cancelled")).andExpect(status().isOk());
+
+        JsonNode cancelled = body(mvc.perform(get("/v1/trips?status=cancelled").cookie(owner.cookie()))
+                .andExpect(status().isOk()));
+        assertThat(cancelled.get("items").valueStream().map(n -> n.get("id").asString()).toList())
+                .containsExactly(lisbonId);
+        assertThat(cancelled.get("total").asLong()).isEqualTo(1);
+        assertThat(cancelled.at("/counts/total").asLong()).isEqualTo(2);
+
+        JsonNode search = body(mvc.perform(get("/v1/trips?q=temples").cookie(owner.cookie()))
+                .andExpect(status().isOk()));
+        assertThat(search.get("items").valueStream().map(n -> n.get("id").asString()).toList())
+                .containsExactly(kyoto);
+        assertThat(search.get("total").asLong()).isEqualTo(1);
+        // Searches the destination too; % is a literal character, not a wildcard.
+        JsonNode place = body(mvc.perform(get("/v1/trips?q=lisbon&status=cancelled").cookie(owner.cookie()))
+                .andExpect(status().isOk()));
+        assertThat(place.get("items")).hasSize(1);
+        JsonNode literal = body(mvc.perform(get("/v1/trips?q=%25").cookie(owner.cookie()))
+                .andExpect(status().isOk()));
+        assertThat(literal.get("items")).isEmpty();
+
+        mvc.perform(get("/v1/trips?status=lost").cookie(owner.cookie())).andExpect(status().isBadRequest())
+                .andExpect(content().json("{\"error\":\"invalid_status\"}", JsonCompareMode.STRICT));
+        mvc.perform(get("/v1/trips?q=" + "x".repeat(41)).cookie(owner.cookie()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void cancellingIsAnUpdateTheOwnerAloneCanMake() throws Exception {
+        var owner = accounts.real("Cancel owner", "traveller");
+        var stranger = accounts.real("Cancel stranger", "traveller");
+        String id = createId(owner.cookie(), "To cancel");
+        update(stranger.cookie(), id, Map.of("status", "cancelled")).andExpect(status().isNotFound());
+        JsonNode same = body(mvc.perform(get("/v1/trips/" + id).cookie(owner.cookie())).andExpect(status().isOk()));
+        assertThat(same.get("status").asString()).isEqualTo("planned");
+        JsonNode done = body(update(owner.cookie(), id, Map.of("status", "cancelled")).andExpect(status().isOk()));
+        assertThat(done.get("status").asString()).isEqualTo("cancelled");
+        // End before start is refused on edit as well.
+        update(owner.cookie(), id, Map.of("startDate", today().plusDays(9).toString(),
+                "endDate", today().plusDays(8).toString())).andExpect(status().isBadRequest())
+                .andExpect(content().json("{\"error\":\"invalid_dates\"}", JsonCompareMode.STRICT));
+    }
+
+    @Test
     void onlyTravellersAndGuidesHaveTrips() throws Exception {
         var admin = accounts.realAdmin("Trip admin");
         mvc.perform(get("/v1/trips").cookie(admin.cookie())).andExpect(status().isForbidden());

@@ -125,14 +125,18 @@ class AdminConsoleTest extends PostgresTest {
     @Test
     void tripsListIsReadOnlyAndScoped() throws Exception {
         var traveller = accounts.real("Trip lister", "traveller");
+        // The trip has notes, so "no notes in the admin view" is a real check, not an empty one.
+        var withNotes = com.plinthwell.roaamm.trips.TripTest.trip("Real admin can see me");
+        withNotes.put("notes", "Private plan: meet at the north gate (simulated).");
         mvc.perform(browser(post("/v1/trips")).cookie(traveller.cookie()).content(json.writeValueAsString(
-                com.plinthwell.roaamm.trips.TripTest.trip("Real admin can see me")))).andExpect(status().isCreated());
+                withNotes))).andExpect(status().isCreated());
         var admin = accounts.realAdmin("Trips admin");
 
         JsonNode real = getOk(admin.cookie(), "/v1/admin/trips?size=50");
         assertThat(real.get("items").valueStream().map(n -> n.get("title").asString()).toList())
                 .contains("Real admin can see me").doesNotContain("Temples in autumn");
         assertThat(real.get("items").valueStream().noneMatch(n -> n.has("notes"))).isTrue();
+        assertThat(real.toString()).doesNotContain("north gate");
 
         JsonNode demo = getOk(accounts.demo("admin"), "/v1/admin/trips?size=50&sort=start_asc");
         assertThat(demo.get("items").valueStream().map(n -> n.get("title").asString()).toList())
