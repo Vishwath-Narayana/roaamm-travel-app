@@ -13,6 +13,9 @@ later but does not yet.
 - **`aria-disabled`:** marks a control as unavailable but keeps it
   focusable, so it can still explain itself in a tooltip. Plain `disabled`
   takes it out of the keyboard order.
+- **App shell:** the frame around every page of a signed-in area (sidebar,
+  top bar, menu); only the middle changes between pages. The admin, traveller
+  and guide apps share one (`AppShell`, M4c).
 - **AVIF / WebP:** modern image formats that are much smaller than JPEG at
   the same quality.
 - **Bottom sheet:** a panel that slides up from the bottom of a phone
@@ -25,6 +28,10 @@ later but does not yet.
   jumps while a page loads. ROAAMM keeps it at or below 0.01.
 - **Console warning / error:** a message the browser writes to the
   developer console. CI fails if any appear.
+- **Command palette:** a search box opened with Cmd/Ctrl+K that jumps to a
+  page (and, in the admin console, finds a user by name).
+- **Confirm dialog (`alertdialog`):** a small modal that asks before a change
+  that is hard to undo, like cancelling a trip.
 - **CORS (Cross-Origin Resource Sharing):** browser rules for when a page
   on one host may call another host. The server answers with
   `Access-Control-Allow-*` headers.
@@ -48,6 +55,8 @@ later but does not yet.
     Domain, so the cookie stays on one exact host.
 - **Design tokens:** named values (colours, spacing, font sizes, motion
   timings) that all components share, defined once.
+- **Detail drawer:** a side panel (a bottom sheet on
+  phones) with one row's details and actions, opened from `?id=` in the URL.
 - **Discoverable credential:** a passkey that the device can find by
   itself, so sign-in needs no username.
 - **Edge fade (`mask-image`):** a gradient mask that fades the edge of a row
@@ -191,6 +200,8 @@ later but does not yet.
 - **Postgres:** the relational database.
 - **Trigger:** a database function that runs on insert, update or delete,
   and can refuse the change.
+- **Partial unique index:** a unique index that only covers rows matching a
+  condition. Used for "one open guide application per real user".
 - **Unique index:** stops two rows having the same value; used to allow
   only one pending verification request per real user.
 
@@ -249,8 +260,14 @@ later but does not yet.
   messages, not the server. Planned (M6).
 - **Fresh check (reauth):** asking for a passkey again within 5 minutes
   before a risky action.
+- **IDOR (insecure direct object reference):** reading or changing someone
+  else's data by changing an id in a URL. ROAAMM's member queries always
+  filter by the signed-in user and answer 404 for anything else.
 - **MLS (Messaging Layer Security, RFC 9420):** a standard for group
   end-to-end encryption. Planned with OpenMLS (M6).
+- **Role guard:** a check that lets only one role into an area and shows a
+  clear "No access" page to everyone else. The server's role checks are the
+  real boundary; the guard only picks the page.
 - **Rate limit:** a cap on how many requests one IP can make in a time
   window.
 - **Recovery code:** a one-time code to sign in if you lose your passkey.
@@ -268,12 +285,26 @@ later but does not yet.
 
 ## Project words
 
+- **Audit log:** the append-only table of every admin decision: who did what
+  to whom, and when. Admin timelines are built from it.
+- **Bulk decision:** approving or rejecting up to 25 rows in one request; each
+  row is still decided and logged on its own.
 - **Demo user:** one of three shared sandbox accounts (traveller, guide,
   admin). Every visitor of a role shares it.
+- **Guide application:** a verified traveller's request to become a guide
+  (headline, bio, languages, cities), reviewed by an admin.
+- **Kanban board:** columns of cards, one per status; the admin's view of
+  guide applications.
+- **Open application:** a guide application that is submitted or in review.
 - **Real user:** an account made with a passkey on `/signup`.
 - **Sample person / seed row:** simulated people and requests added by
   migration V5 so the demo admin queue is never empty.
+- **Sample row (`is_sample`):** a fixed simulated demo row (the demo
+  traveller's three trips, the sample applications). It cannot be changed and
+  is never cleaned up; the traveller and guide apps mark it with a Sample chip.
 - **Scope (`is_demo`):** every verification row is demo or real; each admin
   sees only its own scope.
+- **Viewing as:** an admin opening the traveller app read-only, to see what
+  a traveller sees. Admins have no trips of their own.
 - **Simulated verification:** a request holds only a document type and a
   made-up `SAMPLE-` reference. No real ID is ever collected.

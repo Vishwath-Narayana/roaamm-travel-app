@@ -26,7 +26,7 @@ export function clearAdminCache(): void {
   cache.clear();
 }
 
-function query(params: Record<string, string | number | boolean | null | undefined>): string {
+export function query(params: Record<string, string | number | boolean | null | undefined>): string {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== null && v !== undefined && v !== "") q.set(k, String(v));

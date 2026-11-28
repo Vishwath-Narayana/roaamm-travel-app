@@ -174,6 +174,52 @@ function audit({ phone, width }) {
     }
   }
 
+  // M4c: from 768 px with no dialog open, the bottom centre of the viewport
+  // is page content or empty, never something fixed (a stray pill or grabber).
+  if (width >= 768 && !document.querySelector('[role="dialog"], [role="alertdialog"]')) {
+    const at = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 12);
+    for (let n = at; n && n !== document.body; n = n.parentElement) {
+      if (getComputedStyle(n).position === "fixed") {
+        add("pill", n, `fixed element at the bottom centre (${name(at)})`);
+        break;
+      }
+    }
+    if (document.querySelector(".adm-sheet__handle")) out.push({ kind: "pill", el: ".adm-sheet__handle", detail: "a grabber is in the DOM at 768 px or wider" });
+  }
+
+  // M4c (7): the application summary names the applicant once, as a subtitle,
+  // and keeps two facts (Submitted, Decided).
+  const sum = document.querySelector('[role="dialog"] .adm-summary');
+  if (sum && /Guide application/.test(document.querySelector(".adm-sheet__label")?.textContent ?? "")) {
+    const facts = [...sum.querySelectorAll(".adm-summary__fact dt")].map((d) => d.textContent.trim());
+    if (!sum.querySelector(".adm-summary__sub")) add("summary", sum, "no applicant subtitle under the title");
+    if (facts.join(",") !== "Submitted,Decided") add("summary", sum, `facts are ${facts.join(", ")}; expected Submitted, Decided`);
+  }
+
+  // M4c (8): on phone a sheet without a footer hugs its content (<= 85% of
+  // the viewport, no blank space); a sheet with a footer stays full height.
+  if (phone) {
+    const sheet = document.querySelector(".adm-sheet--drawer");
+    if (sheet) {
+      const r = sheet.getBoundingClientRect();
+      const body = sheet.querySelector(".adm-sheet__body");
+      if (!sheet.querySelector(".adm-sheet__foot")) {
+        if (r.height > window.innerHeight * 0.85 + 1) add("sheet", sheet, `footerless sheet is ${Math.round(r.height)} px tall (max 85% = ${Math.round(window.innerHeight * 0.85)})`);
+        if (body && body.scrollHeight <= body.clientHeight && body.clientHeight - body.scrollHeight > 1) add("sheet", sheet, "blank space below the content");
+        if (Math.abs(r.bottom - window.innerHeight) > 1) add("sheet", sheet, "sheet is not anchored to the bottom");
+      }
+    }
+  }
+
+  // M4c (10): a sideways filter row fades at most 16 px at its edges.
+  if (phone) {
+    for (const el of document.querySelectorAll(".adm-scroller[data-fade]")) {
+      const m = getComputedStyle(el).maskImage || getComputedStyle(el).webkitMaskImage || "";
+      const stops = [...m.matchAll(/(\d+(?:\.\d+)?)px/g)].map((x) => parseFloat(x[1]));
+      if (stops.some((v) => v > 16 && v < el.clientWidth - 16)) add("fade", el, `edge fade wider than 16 px: ${m}`);
+    }
+  }
+
   // KPI numbers in one visual row share a baseline (phone, Overview).
   if (phone) {
     const rows = new Map();
@@ -197,8 +243,9 @@ function audit({ phone, width }) {
     if (Math.abs(ar - contentRight) > 0.5) add("avatar", avatar, `right edge at ${ar.toFixed(1)}px, content ends at ${contentRight.toFixed(1)}px`);
   }
 
-  // No Sample chip: the demo banner is the one place that says "simulated".
-  for (const el of document.querySelectorAll(".adm .adm-chip, .adm .adm-pill, .adm-chip--sample")) {
+  // No Sample chip in the admin console: its demo banner is the one place that
+  // says "simulated". (The traveller and guide apps label sample rows on purpose.)
+  for (const el of location.pathname.startsWith("/app/admin") ? document.querySelectorAll(".adm .adm-chip, .adm .adm-pill, .adm-chip--sample") : []) {
     if (el.matches(".adm-chip--sample") || /^sample$/i.test(el.textContent.trim())) add("sample", el, "a Sample chip is rendered");
   }
 
@@ -334,6 +381,65 @@ if (!only || only.some((n) => TABLE_SCREENS.some((t) => t.name === n))) {
   }
 }
 
+// ---- interactions (M4c): one focus ring on search fields (2), and sidebar
+// hover subtler than the active item (5). Both themes, 1440 and 390 px.
+const interactions = [];
+if (!only || only.includes("interactions")) {
+  const server3 = await serve();
+  const origin3 = `http://127.0.0.1:${server3.address().port}`;
+  const browser3 = await launch();
+  try {
+    for (const theme of THEMES) {
+      for (const width of [1440, 390]) {
+        const { page, close } = await open(browser3, origin3, "/app/admin/trips", { width, theme, scale: 1 });
+        const problems = [];
+        try {
+          if (process.env.UI_CHECK_INJECT_CSS) await page.addStyleTag({ content: process.env.UI_CHECK_INJECT_CSS });
+          await page.focus(".adm-search input");
+          await page.keyboard.type("k");
+          const rings = await page.evaluate(() => {
+            const field = document.querySelector(".adm-search");
+            return [field, ...field.querySelectorAll("*")]
+              .filter((el) => {
+                const cs = getComputedStyle(el);
+                return cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0;
+              })
+              .map((el) => el.tagName.toLowerCase() + (el.className ? "." + String(el.className).split(" ")[0] : ""));
+          });
+          if (rings.join() !== "label.adm-search") problems.push(`search field focus rings: ${rings.join(", ") || "none"} (expected only the field)`);
+          if (width === 1440) {
+            const nav = await page.$('.adm-sidebar a.adm-nav__item:not([aria-current="page"])');
+            await nav.hover();
+            await new Promise((r) => setTimeout(r, 200));
+            const cmp = await page.evaluate(() => {
+              const lum = (c) => {
+                const [r, g, b] = c.match(/[\d.]+/g).map(Number);
+                return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+              };
+              const page = lum(getComputedStyle(document.querySelector(".adm-sidebar")).backgroundColor);
+              const hov = document.querySelector('.adm-sidebar a.adm-nav__item:hover');
+              const act = document.querySelector('.adm-sidebar .adm-nav__item[aria-current="page"]');
+              const h = getComputedStyle(hov);
+              const a = getComputedStyle(act);
+              return { hover: Math.abs(lum(h.backgroundColor) - page), active: Math.abs(lum(a.backgroundColor) - page), hw: h.fontWeight, aw: a.fontWeight, hc: h.color, ac: a.color };
+            });
+            if (!(cmp.hover < cmp.active)) problems.push(`sidebar hover fill (${cmp.hover.toFixed(1)}) is not subtler than active (${cmp.active.toFixed(1)})`);
+            if (cmp.aw !== "500" || cmp.hw !== "400") problems.push(`sidebar weights: active ${cmp.aw} (want 500), hover ${cmp.hw} (want 400)`);
+            if (cmp.hc === cmp.ac) problems.push("sidebar hover changes the text colour to the active colour");
+          }
+        } finally {
+          await close();
+        }
+        interactions.push({ name: `interactions ${theme}`, width, problems });
+      }
+    }
+  } finally {
+    await browser3.close();
+    server3.close();
+  }
+}
+layout.push(...interactions);
+
 results.sort((a, b) => SCREENS.indexOf(a.s) - SCREENS.indexOf(b.s) || a.width - b.width || a.theme.localeCompare(b.theme));
 let failed = 0;
 const kinds = {};
@@ -362,7 +468,9 @@ for (const l of layout) {
 }
 console.log(`\n${results.length} screen states checked (${SCREENS.length} screens x ${WIDTHS.join("/")} px x light/dark).`);
 console.log("Checks: page overflow, clipped text, collapsed icons, tap targets >= 44 px on phone, layout shift <= 0.01, font size/line height pairs, weights, padding, gap, border width, radius,");
-console.log("        one h1, no drag handle or stray pill from 768 px, KPI baselines (phone), avatar on the content edge, no Sample chip.");
+console.log("        one h1, no drag handle or stray pill from 768 px, KPI baselines (phone), avatar on the content edge, no Sample chip,");
+console.log("        nothing fixed at the bottom centre from 768 px, application summary subtitle, footerless sheets <= 85% (phone), 16 px scroller fades,");
+console.log("        one focus ring on search fields, sidebar hover subtler than active.");
 console.log(`${layout.length} table layouts checked (${TABLE_SCREENS.length} screens x 768/1024/1440 px, every tab and filter): header cells never move; audit Subject never clipped at 1024/1440.`);
 const worstCls = Math.max(...results.map((r) => r.cls ?? 0));
 console.log(`Worst layout shift across all states: ${worstCls.toFixed(4)}`);

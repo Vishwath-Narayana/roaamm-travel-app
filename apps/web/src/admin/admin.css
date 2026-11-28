@@ -313,7 +313,7 @@
   border-radius: var(--radius-md);
   color: var(--ui-text-2);
   text-decoration: none;
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
 }
 
 .adm-nav__item svg {
@@ -321,15 +321,16 @@
   height: var(--ui-icon-md);
 }
 
-a.adm-nav__item:hover {
+/* Hover is the lighter fill only. Active is the selected fill, full-strength
+   text and weight 500, so hover never looks like the current page. */
+a.adm-nav__item:hover:not([aria-current="page"]) {
   background: var(--ui-hover);
-  color: var(--ui-text);
 }
 
-/* The highlighted background alone marks the active item (no notch). */
 .adm-nav__item[aria-current="page"] {
   background: var(--ui-selected);
   color: var(--ui-text);
+  font-weight: var(--weight-medium);
 }
 
 .adm-nav__item--soon {
@@ -828,7 +829,13 @@ a.adm-line:hover .adm-line__chev {
 }
 
 .adm-activity {
-  grid-template-columns: var(--ui-avatar) minmax(0, 1fr) auto var(--ui-icon-sm);
+  grid-template-columns: var(--ui-icon-sm) minmax(0, 1fr) auto var(--ui-icon-sm);
+}
+
+.adm-activity__icon {
+  display: inline-grid;
+  place-items: center;
+  color: var(--ui-text-3);
 }
 
 .adm-activity__what {
@@ -1135,9 +1142,15 @@ a.adm-line:hover .adm-line__chev {
   opacity: 1;
 }
 
+/* One ring, on the field: the input inside never draws its own. */
 .adm-search:focus-within {
   outline: var(--ui-focus-w) solid var(--ui-focus);
   outline-offset: var(--ui-focus-offset);
+}
+
+.adm .adm-search input:focus,
+.adm .adm-search input:focus-visible {
+  outline: none;
 }
 
 /* ---- buttons */
@@ -1175,9 +1188,15 @@ a.adm-line:hover .adm-line__chev {
   background: var(--ui-hover);
 }
 
+/* Danger is an outline: only the primary action is filled. */
 .adm-btn--danger {
-  background: var(--ui-danger-tint);
+  border-color: var(--ui-danger);
+  background: transparent;
   color: var(--ui-danger);
+}
+
+.adm-btn--danger:hover:not(:disabled, [aria-disabled="true"]) {
+  background: var(--ui-danger-tint);
 }
 
 .adm-btn--ghost {
@@ -1189,11 +1208,13 @@ a.adm-line:hover .adm-line__chev {
   background: var(--ui-hover);
 }
 
+/* Unavailable looks the same whatever the variant: a flat muted control. */
 .adm-btn:disabled,
 .adm-btn[aria-disabled="true"] {
   border-color: var(--ui-border);
-  background: var(--ui-hover);
+  background: var(--ui-track);
   color: var(--ui-text-3);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -1824,6 +1845,18 @@ button.adm-row:active {
   background: var(--ui-raised);
 }
 
+/* Desktop: the actions sit at the right end, the primary one last. */
+.adm-sheet__foot .adm-actions {
+  justify-content: flex-end;
+}
+
+.adm-sheet__note {
+  margin-bottom: var(--sp-2);
+  color: var(--ui-text-3);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+}
+
 .adm-sheet__body > .adm-scope {
   justify-self: start;
 }
@@ -1879,12 +1912,28 @@ button.adm-row:active {
   overflow-wrap: anywhere;
 }
 
+.adm-summary__sub {
+  color: var(--ui-text-2);
+  font-size: var(--text-dense);
+  line-height: var(--leading-dense);
+  overflow-wrap: anywhere;
+}
+
 .adm-summary__facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--sp-3);
   padding-top: var(--sp-4);
   border-top: var(--ui-border-w) solid var(--ui-border);
+}
+
+.adm-summary__facts[data-cols="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* A long fact (a date range) gets its own full-width row. */
+.adm-summary__fact--wide {
+  grid-column: 1 / -1;
 }
 
 .adm-summary__fact {
@@ -2076,6 +2125,13 @@ button.adm-row:active {
   color: var(--ui-text-3);
   font-size: var(--text-caption);
   line-height: var(--leading-caption);
+}
+
+/* Touch screens have no arrow keys: no key hint there. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  .adm-palette__foot:has(.adm-palette__keys) {
+    display: none;
+  }
 }
 
 .adm-palette__foot {
@@ -2475,8 +2531,10 @@ button.adm-row:active {
     display: none;
   }
 
+  /* The same border as the segmented controls above it. */
   .adm-search {
     width: 100%;
+    border-color: var(--ui-border);
   }
 
   .adm-toolbar {
@@ -2497,15 +2555,15 @@ button.adm-row:active {
   }
 
   .adm-scroller[data-fade="start"] {
-    mask-image: linear-gradient(to right, transparent, var(--ui-text) var(--sp-8));
+    mask-image: linear-gradient(to right, transparent, var(--ui-text) var(--sp-4));
   }
 
   .adm-scroller[data-fade="end"] {
-    mask-image: linear-gradient(to left, transparent, var(--ui-text) var(--sp-8));
+    mask-image: linear-gradient(to left, transparent, var(--ui-text) var(--sp-4));
   }
 
   .adm-scroller[data-fade="both"] {
-    mask-image: linear-gradient(to right, transparent, var(--ui-text) var(--sp-8), var(--ui-text) calc(100% - var(--sp-8)), transparent);
+    mask-image: linear-gradient(to right, transparent, var(--ui-text) var(--sp-4), var(--ui-text) calc(100% - var(--sp-4)), transparent);
   }
 
   .adm-filters {
@@ -2575,6 +2633,44 @@ button.adm-row:active {
 /* ---- phone (below 768 px): a redesign, not a squeeze */
 
 @media (max-width: 767px) {
+  /* Forms: one column, 44 px fields, 16 px text (no zoom on focus). */
+  .adm .adm-form__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .adm .adm-input,
+  .adm textarea {
+    font-size: var(--text-title);
+    line-height: var(--leading-title);
+  }
+
+  .adm .adm-input {
+    height: var(--ui-tap);
+  }
+
+  /* .adm prefix: these must win over the base rules, which come later in this file. */
+  .adm .adm-form__actions {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  /* A disabled submit sits in its tooltip wrapper: the wrapper and the
+     button both take the full cell, so the row stays equal-width. */
+  .adm .adm-form__actions > span {
+    display: grid;
+  }
+
+  .adm-form__actions .adm-btn {
+    width: 100%;
+  }
+
+  .adm .adm-dialog .adm-actions {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
   .adm,
   .adm[data-collapsed="true"] {
     grid-template-columns: minmax(0, 1fr);
@@ -2657,7 +2753,7 @@ button.adm-row:active {
   }
 
   /* Every tappable target is at least 44 x 44 px: the hit area grows, the visual does not. */
-  .adm :is(.adm-btn, .adm-icon-btn, .icon-btn, .adm-cmdk, .adm-tabs__tab, .adm-seg__btn, .adm-avatar--btn, .adm-kpi__link, .adm-card__more, .adm-search)::before {
+  .adm :is(.adm-btn, .adm-icon-btn, .icon-btn, .adm-cmdk, .adm-tabs__tab, .adm-seg__btn, .adm-avatar--btn, .adm-kpi__link, .adm-card__more, .adm-search, .adm-chip--btn)::before {
     content: "";
     position: absolute;
     top: 50%;
@@ -2757,7 +2853,7 @@ button.adm-row:active {
       "what when chev";
   }
 
-  .adm-activity > .adm-avatar {
+  .adm-activity > .adm-activity__icon {
     display: none;
   }
 
@@ -2834,8 +2930,13 @@ button.adm-row:active {
     transition: transform var(--dur-sheet) var(--ease-ui);
   }
 
-  .adm-sheet--menu {
+  /* No footer: the sheet hugs its content, at most 85% of the screen. */
+  .adm-sheet--fit {
     top: auto;
+    max-height: 85dvh;
+  }
+
+  .adm-sheet--menu {
     max-height: calc(100dvh - var(--sp-6));
   }
 
@@ -2890,6 +2991,121 @@ button.adm-row:active {
   .adm-menu__item {
     min-height: var(--ui-tap);
   }
+}
+
+
+/* ---- traveller and guide apps (M4c): forms, the Sample chip, confirm dialog */
+
+/* Sample rows in the traveller and guide apps (the admin console never shows it). */
+.adm-chip--sample {
+  background: var(--ui-sample-tint);
+  color: var(--ui-sample);
+}
+
+.adm-form {
+  display: grid;
+  gap: var(--sp-5);
+  max-width: calc(var(--ui-drawer) + var(--ui-search-min));
+}
+
+.adm-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+
+.adm-field__hint {
+  color: var(--ui-text-3);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+}
+
+.adm-input,
+.adm select.adm-input {
+  width: 100%;
+  min-width: 0;
+  height: var(--ui-control-h);
+  padding: 0 var(--sp-3);
+  border: var(--ui-border-w) solid var(--ui-border-control);
+  border-radius: var(--radius-md);
+  background: var(--ui-card);
+  color: var(--ui-text);
+  font-size: var(--text-dense);
+  line-height: var(--leading-dense);
+}
+
+.adm .adm-input--auto {
+  width: auto;
+}
+
+.adm-input[aria-invalid="true"] {
+  border-color: var(--ui-danger);
+}
+
+.adm-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* A chosen language or city: the whole chip is its remove button. */
+.adm-chip--btn {
+  position: relative;
+  border: 0;
+  cursor: pointer;
+}
+
+.adm-chip--btn:hover {
+  color: var(--ui-text);
+}
+
+.adm-dialog-wrap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+  pointer-events: none;
+}
+
+.adm-dialog {
+  display: grid;
+  gap: var(--sp-4);
+  width: min(var(--ui-drawer), 100%);
+  padding: var(--ui-card-pad);
+  border: var(--ui-border-w) solid var(--ui-border-raised);
+  border-radius: var(--radius-lg);
+  background: var(--ui-raised);
+  box-shadow: var(--ui-shadow-pop);
+  pointer-events: auto;
+  animation: adm-fade var(--dur-sheet) var(--ease-ui);
+}
+
+.adm-dialog .adm-actions {
+  justify-content: flex-end;
+}
+
+.adm-card__body {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-3);
+}
+
+/* Links that look like buttons never take the site's link underline. */
+.adm a.adm-btn {
+  text-decoration: none;
+}
+
+.adm-placeholder {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-2);
+}
+
+/* "Coming in M9" cards: a compact state, not a full empty page. */
+.adm-placeholder .adm-state {
+  padding: var(--sp-4) 0;
 }
 
 /* ---- small phones (below 640 px): the page lead is for screen readers only,

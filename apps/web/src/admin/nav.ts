@@ -15,6 +15,8 @@ type Icon = ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
 
 export type NavItem = { slug: string; label: string; href: string; icon: Icon };
 export type SoonItem = { label: string; milestone: string; icon: Icon };
+/** One labelled group of the sidebar: pages, or features planned for later milestones. */
+export type NavGroup = { label: string; items?: NavItem[]; soon?: SoonItem[] };
 
 export const BASE = "/app/admin";
 
@@ -35,6 +37,12 @@ export const SOON: SoonItem[] = [
 ];
 
 export const PAGES: NavItem[] = [...MAIN, ...RECORDS];
+
+export const ADMIN_GROUPS: NavGroup[] = [
+  { label: "Main", items: MAIN },
+  { label: "Records", items: RECORDS },
+  { label: "Coming soon", soon: SOON },
+];
 
 /** The screen slug for a path under /app/admin, or null if it is not one. */
 export function slugOf(path: string): string | null {

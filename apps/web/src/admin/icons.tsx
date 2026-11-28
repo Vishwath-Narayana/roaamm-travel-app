@@ -80,6 +80,12 @@ export const TicketIcon = (p: P) => (
     <path d="M10 6v12" strokeDasharray="2 2" />
   </Svg>
 );
+export const CalendarIcon = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4" />
+  </Svg>
+);
 export const ServerIcon = (p: P) => (
   <Svg {...p}>
     <rect x="3" y="4" width="18" height="7" rx="2" />

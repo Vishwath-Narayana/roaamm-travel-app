@@ -10,7 +10,7 @@
 | **M1** | Design system + shell | Tokens, Tailwind theme, core components (button, card, input, glass nav, toasts), app shell + landing page (from WEB-* designs), ROAAMM wordmark, dark mode, motion rules, accessibility checks | Lighthouse ≥ 90; landing matches the design |
 | **M2** | Accounts | M2a: database, opaque cookie sessions, **Try demo** (ADR 0004). M2b: passkey sign-up and login, recovery codes, account page (ADR 0005) | New user can sign up with a passkey; demo login works; auth tests pass |
 | **M3** | Verification + admin | Simulated ID verification (a document type and a server-made sample reference, **no real ID collected**), scoped admin queue, append-only audit log, first-admin runbook (ADR 0006) | Admin approves a user and the status shows; demo and real data never mix; demo admin is read-only |
-| **M4** | Trips + discovery | Trips CRUD, overlap matching, discovery with filters, connection requests, edge-cached discovery | Two demo users find each other by dates |
+| **M4** | Trips + discovery | Trips CRUD, overlap matching, discovery with filters, connection requests, edge-cached discovery | Two demo users find each other by dates. **Done 2026-11-28** for trips, guide applications and the admin, traveller and guide apps; discovery is still open (see below) |
 | **M5** | Real-time transport | Rust edge: auth, rate limits, Session/Room DOs, hibernating WebSockets, send/ack/deliver/receipts/typing/presence, resume from cursor, metrics; web chat UI | Two browsers chat (still test ciphertext); a reconnect loses nothing |
 | **M6** | **E2EE chat (MLS)** | `roaamm-crypto` (OpenMLS) in WebAssembly + Web Worker, KeyPackage DO, device credentials (core = Authentication Service), 1:1 + groups, encrypted attachments, safety numbers, key backup | **Plaintext-leak test passes**; adding and removing members works; new device flow works |
 | **M7** | Calls | WebRTC 1:1 audio and video, MLS-encrypted call setup, TURN credentials, SFrame encryption (with "encrypted in transit" fallback label), call UI | Call connects in two browsers; relay path tested; SFrame verified |
@@ -19,6 +19,20 @@
 | **M10** | Observability + System page | OpenTelemetry → Grafana, Analytics Engine latency metrics, `roaamm-status` page (architecture, live p50/p95, connections, security summary, links) | Live latency visible publicly |
 | **M11** | **50k load test** | k6 scripts, runner matrix, Workers Paid month + spending limit, run, report, README headline | Report published; pass criteria met (or honest results with an analysis) |
 | **M12** | Hardening + polish | Security headers/CSP/Trusted Types, ZAP scan fixes, permission tests, "verify this build" page, nightly demo reset, performance tuning, README case study, short demo video | Security checklist complete; the site is ready to send to recruiters |
+
+## Progress
+
+- **M4: done on 2026-11-28**, in five pull requests: M4a (#26, the trips and
+  guide application API), M4b (#27, the admin console), M4b.1 (#28) and
+  M4b.2 (#29, the design system and its checks), and M4c (#33, the traveller and
+  guide apps). Study notes: [docs/learn/46](learn/46-m4-accounts-trips-and-admin.md)
+  and the per-PR notes it links.
+  - **Delivered beyond the original line:** guide applications with admin
+    review and the guide role change (ADR 0008), and the admin console.
+  - **Not delivered from the original line:** overlap matching, discovery
+    with filters, connection requests and edge-cached discovery. The "two demo
+    users find each other by dates" check has not been met. Which milestone
+    takes them is still to be decided.
 
 ## Resume bullet (to fill in with real numbers after M11)
 > **ROAAMM**: end-to-end encrypted, real-time travel platform (live at roaamm.plinthwell.com).

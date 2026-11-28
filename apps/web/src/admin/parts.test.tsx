@@ -6,8 +6,11 @@ import { BulkBar } from "./BulkBar";
 import { AdminContext } from "./context";
 import { MoveMenu, moveTargets } from "./MoveMenu";
 import { Palette } from "./Palette";
+import { ADMIN_PALETTE } from "./AdminApp";
 import { applicationSteps } from "./screens/Guides";
 import { subjectHref } from "./screens/Audit";
+import { ActivityRow, KpiCard } from "./screens/Overview";
+import { UsersIcon } from "./icons";
 import { Chip, Empty, ErrorState, Pager, Pill, Timeline, VerifiedMark, cleanTitle, relTime } from "./ui";
 
 const app = (over: Partial<Application> = {}): Application => ({
@@ -323,7 +326,7 @@ describe("Palette", () => {
           onSignedOut: () => {},
         }}
       >
-        <Palette onClose={onClose} />
+        <Palette config={ADMIN_PALETTE} onClose={onClose} />
       </AdminContext.Provider>,
     );
     return onClose;
@@ -393,5 +396,41 @@ describe("Palette", () => {
     const onClose = renderPalette();
     await userEvent.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe("KPI delta (one rule)", () => {
+  const card = (kpi: { value: number; last30: number; prev30: number }, queue = false) =>
+    render(
+      <ul>
+        <KpiCard label="Users" short="Users" kpi={{ ...kpi, change: null }} icon={UsersIcon} href="/x" queue={queue} />
+      </ul>,
+    ).container.querySelector(".adm-delta")!;
+
+  it("is green only when a growth number grew faster than the prior 30 days", () => {
+    expect(card({ value: 9, last30: 3, prev30: 2 })).toHaveClass("adm-delta--good");
+    expect(card({ value: 9, last30: 2, prev30: 2 })).toHaveClass("adm-delta--neutral");
+    expect(card({ value: 9, last30: 1, prev30: 2 })).toHaveClass("adm-delta--neutral");
+    expect(card({ value: 9, last30: 0, prev30: 0 })).toHaveClass("adm-delta--neutral");
+    // A queue growing is not good news.
+    expect(card({ value: 9, last30: 5, prev30: 1 }, true)).toHaveClass("adm-delta--neutral");
+  });
+
+  it("says what the comparison is on phones too", () => {
+    card({ value: 9, last30: 3, prev30: 2 });
+    expect(screen.getByText("vs 2 prior 30 days")).toBeInTheDocument();
+  });
+});
+
+describe("recent activity row", () => {
+  it("shows an action icon, not the actor's initials", () => {
+    const { container } = render(
+      <ActivityRow
+        entry={{ id: "e1", action: "verification.approve", admin: "Demo admin", target: "Sample traveller Mei", targetType: "verification", createdAt: new Date().toISOString() } as never}
+      />,
+    );
+    expect(container.querySelector(".adm-avatar")).toBeNull();
+    expect(container.querySelector(".adm-activity__icon svg")).not.toBeNull();
+    expect(container).toHaveTextContent("Demo admin");
   });
 });

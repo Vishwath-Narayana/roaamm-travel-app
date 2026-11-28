@@ -42,9 +42,14 @@ public class TripRepository {
                 .param("id", id).param("user", userId).query(TripRepository::trip).optional();
     }
 
-    /** {@code when}: all (newest start first), upcoming (soonest first) or past (most recent first). */
-    public List<Trip> listForUser(UUID userId, String when, LocalDate today, int limit, int offset) {
-        String filter = switch (when) {
+    /**
+     * {@code when}: all (newest start first), upcoming (soonest first) or past (most recent first).
+     * {@code status} (already checked) and {@code pattern} (an escaped ILIKE pattern over title and
+     * destination) narrow it further; null means no filter. Always the user's own trips only.
+     */
+    public List<Trip> listForUser(UUID userId, String when, String status, String pattern, LocalDate today,
+            int limit, int offset) {
+        String filter = memberFilter(status, pattern) + switch (when) {
             case "upcoming" -> " AND t.end_date >= :today AND t.status IN ('planned', 'ongoing')"
                     + " ORDER BY t.start_date, t.id";
             case "past" -> " AND (t.end_date < :today OR t.status IN ('completed', 'cancelled'))"
@@ -56,7 +61,22 @@ public class TripRepository {
         if (!"all".equals(when)) {
             spec = spec.param("today", Date.valueOf(today));
         }
-        return spec.query(TripRepository::trip).list();
+        return bindAdmin(spec, status, pattern).query(TripRepository::trip).list();
+    }
+
+    /** The user's own trips matching a status and/or search (for the list's total). */
+    public long countForUser(UUID userId, String status, String pattern) {
+        var spec = jdbc.sql("SELECT count(*) FROM trips t WHERE t.user_id = :user" + memberFilter(status, pattern))
+                .param("user", userId);
+        return bindAdmin(spec, status, pattern).query(Long.class).single();
+    }
+
+    private static String memberFilter(String status, String pattern) {
+        String s = status == null ? "" : " AND t.status = CAST(:status AS trip_status)";
+        if (pattern != null) {
+            s += " AND (t.title ILIKE :q ESCAPE '\\' OR t.destination ILIKE :q ESCAPE '\\')";
+        }
+        return s;
     }
 
     /** Trips per status for one user, plus "total". */

@@ -124,8 +124,8 @@ describe("AdminApp", () => {
     at("/app/admin/verification?id=a1");
     expect(await screen.findByRole("note")).toHaveTextContent("Demo, read-only.");
     await screen.findByText("Sample guide Kofi");
-    // One indicator for the page, not one per row.
-    expect(screen.queryAllByText("Demo is read-only")).toHaveLength(0);
+    // One indicator for the page, not one per row (the open drawer has its own one-line note).
+    expect(screen.queryAllByText("Demo is read-only").filter((el) => !el.closest('[role="dialog"]'))).toHaveLength(0);
     // The selection column is there (same alignment as a real admin's), but disabled.
     const boxes = screen.getAllByRole("checkbox");
     expect(boxes.length).toBe(3);
@@ -141,6 +141,8 @@ describe("AdminApp", () => {
     const approve = await within(dialog).findByRole("button", { name: "Approve" });
     expect(approve).toHaveAttribute("aria-disabled", "true");
     expect(approve).toHaveAccessibleDescription("Demo is read-only");
+    // One line above the action bar says why the buttons are disabled.
+    expect(within(dialog).getByText("Demo is read-only")).toHaveClass("adm-sheet__note");
     await user.click(approve);
     expect(calls.some((c) => c.init?.method === "POST")).toBe(false);
     expect(within(dialog).getByRole("button", { name: "Reject…" })).toHaveAttribute(
@@ -287,7 +289,7 @@ describe("AdminApp", () => {
     expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "true");
   });
 
-  it("sends a 401 to the sign-in page and other roles to their dashboard", async () => {
+  it("sends a 401 to the sign-in page and shows other roles a no-access page with a way home", async () => {
     mockApi({ "/v1/me": [[401, { error: "unauthenticated" }]] });
     at("/app/admin");
     await waitFor(() => expect(window.location.pathname).toBe("/login"));
@@ -297,7 +299,13 @@ describe("AdminApp", () => {
       "/v1/me": [[200, { role: "traveller", displayName: "Demo traveller", isDemo: true }]],
     });
     at("/app/admin/users");
-    await waitFor(() => expect(window.location.pathname).toBe("/app/traveller"));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("You are signed in as the demo traveller. This area is for admins.");
+    expect(within(alert).getByRole("link", { name: "Go to your home" })).toHaveAttribute("href", "/app/traveller");
+    expect(screen.getByRole("heading", { level: 1, name: "No access" })).toBeInTheDocument();
+    // Nothing of the console loads for a wrong role.
+    expect(window.location.pathname).toBe("/app/admin/users");
+    expect(screen.queryByRole("table")).toBeNull();
   });
 
   it("shows a not-found page inside the shell for an unknown section", async () => {

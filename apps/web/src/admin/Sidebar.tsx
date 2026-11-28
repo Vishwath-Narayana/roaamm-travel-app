@@ -1,13 +1,18 @@
-import { useId } from "react";
+import { Fragment, useId } from "react";
 import { Link } from "../router";
-import { MAIN, RECORDS, SOON, type NavItem } from "./nav";
+import type { NavGroup, NavItem } from "./nav";
 
-/** Navigation groups. Used by the desktop sidebar and the phone menu sheet. */
+/**
+ * Navigation groups of an app shell (admin, traveller, guide). Used by the
+ * desktop sidebar and the phone menu sheet.
+ */
 export function NavGroups({
+  groups,
   slug,
   collapsed,
   onNavigate,
 }: {
+  groups: NavGroup[];
   slug: string;
   collapsed: boolean;
   onNavigate?: () => void;
@@ -29,35 +34,28 @@ export function NavGroups({
   );
   return (
     <>
-      <p className="adm-nav__group" id={`${id}-main`}>
-        Main
-      </p>
-      <ul className="adm-nav__list" aria-labelledby={`${id}-main`}>
-        {MAIN.map(item)}
-      </ul>
-      <p className="adm-nav__group" id={`${id}-records`}>
-        Records
-      </p>
-      <ul className="adm-nav__list" aria-labelledby={`${id}-records`}>
-        {RECORDS.map(item)}
-      </ul>
-      <p className="adm-nav__group" id={`${id}-soon`}>
-        Coming soon
-      </p>
-      <ul className="adm-nav__list" aria-labelledby={`${id}-soon`}>
-        {SOON.map((s) => (
-          <li key={s.label}>
-            <span className="adm-nav__item adm-nav__item--soon" aria-disabled="true" title={`${s.label}: planned for ${s.milestone}`}>
-              <s.icon size={20} />
-              <span className="adm-nav__label">
-                {s.label}
-                <span className="adm-nav__ms">{s.milestone}</span>
-              </span>
-              <span className="visually-hidden"> (not built yet, planned for {s.milestone})</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      {groups.map((g, i) => (
+        <Fragment key={g.label}>
+          <p className="adm-nav__group" id={`${id}-${i}`}>
+            {g.label}
+          </p>
+          <ul className="adm-nav__list" aria-labelledby={`${id}-${i}`}>
+            {g.items?.map(item)}
+            {g.soon?.map((s) => (
+              <li key={s.label}>
+                <span className="adm-nav__item adm-nav__item--soon" aria-disabled="true" title={`${s.label}: planned for ${s.milestone}`}>
+                  <s.icon size={20} />
+                  <span className="adm-nav__label">
+                    {s.label}
+                    <span className="adm-nav__ms">{s.milestone}</span>
+                  </span>
+                  <span className="visually-hidden"> (not built yet, planned for {s.milestone})</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Fragment>
+      ))}
     </>
   );
 }

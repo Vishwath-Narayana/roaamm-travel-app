@@ -32,7 +32,7 @@ const ROLE_LABEL = { traveller: "Traveller", guide: "Guide", admin: "Admin" } as
 const ROLE_TONE: Record<AdminUser["role"], ChipTone> = { traveller: "neutral", guide: "info", admin: "warn" };
 
 const RoleChip = ({ u }: { u: AdminUser }) => <Chip tone={ROLE_TONE[u.role]}>{ROLE_LABEL[u.role]}</Chip>;
-/** Real admin only: the demo console never labels rows (the banner says everything is simulated). */
+/** Real admin only, in the drawer: one table for both scopes, so no Account column. */
 const accountText = (u: AdminUser) => (u.demo ? "Demo" : "Real");
 
 export function Users() {
@@ -78,7 +78,6 @@ export function Users() {
     { key: "id", header: "Short id", size: 16, wide: true, cell: (u) => <span className="mono adm-ref">{u.shortId}</span> },
     { key: "role", header: "Role", size: 16, cell: (u) => <RoleChip u={u} /> },
     { key: "verified", header: "Verified", size: 12, cell: (u) => <VerifiedMark verified={u.verified} /> },
-    ...(readOnly ? [] : [{ key: "account", header: "Account", size: 12, wide: true, cell: accountText } satisfies Column<AdminUser>]),
     {
       key: "joined",
       header: "Joined",
@@ -147,7 +146,8 @@ export function Users() {
           <Pager page={page} hasMore={state.data.hasMore} size={SIZE} shown={state.data.items.length} total={state.data.total} noun={["user", "users"]} onPage={setPage} />
         )}
       </div>
-      {openId && <UserDrawer user={rows?.find((u) => u.id === openId)} loading={!rows} showAccount={!readOnly} onClose={() => openDetail(null)} />}
+      {/* Opened once the rows are here: the sheet sizes to its content, so it must not grow while loading. */}
+      {openId && rows && <UserDrawer user={rows.find((u) => u.id === openId)} loading={false} showAccount={!readOnly} onClose={() => openDetail(null)} />}
     </div>
   );
 }

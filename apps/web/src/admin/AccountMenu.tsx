@@ -1,15 +1,27 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { Me } from "../api/session";
+import { Link } from "../router";
 import { initials } from "./ui";
 
 /** Initials avatar that opens a small menu with the account and Sign out. */
-export function AccountMenu({ me, onSignOut, signingOut }: { me: Me; onSignOut: () => void; signingOut: boolean }) {
+export function AccountMenu({
+  me,
+  role,
+  onSignOut,
+  signingOut,
+}: {
+  me: Me;
+  /** The second line, e.g. "Read-only demo admin" or "Traveller". */
+  role: string;
+  onSignOut: () => void;
+  signingOut: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const item = useRef<HTMLButtonElement>(null);
   const menuId = useId();
-  const name = me.isDemo ? "Demo admin" : me.displayName;
+  const name = me.isDemo ? `Demo ${me.role}` : me.displayName;
 
   useEffect(() => {
     if (!open) return;
@@ -50,8 +62,13 @@ export function AccountMenu({ me, onSignOut, signingOut }: { me: Me; onSignOut: 
         >
           <p className="adm-menu__info" role="none">
             <strong>{name}</strong>
-            <span className="adm-muted">{me.isDemo ? "Read-only demo admin" : "Admin"}</span>
+            <span className="adm-muted">{role}</span>
           </p>
+          {!me.isDemo && (
+            <Link href="/account" role="menuitem" className="adm-menu__item" onClick={() => setOpen(false)}>
+              Account and passkeys
+            </Link>
+          )}
           <button ref={item} type="button" role="menuitem" className="adm-menu__item" disabled={signingOut} onClick={onSignOut}>
             {signingOut ? "Signing out…" : "Sign out"}
           </button>

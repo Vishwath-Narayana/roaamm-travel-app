@@ -60,18 +60,30 @@ public class TripService {
         this.clock = clock;
     }
 
-    public TripList list(SessionService.Current current, String when, int page, Integer size) {
+    /**
+     * The member's own trips. {@code status} (one of STATUSES) and {@code q} (a search over title and
+     * destination, up to 40 characters) are optional; blank means no filter.
+     */
+    public TripList list(SessionService.Current current, String when, String status, String q, int page,
+            Integer size) {
         User user = Access.member(current);
         String w = when == null ? "all" : when;
         if (!WHEN.contains(w)) {
             throw new PasskeyException(400, "invalid_filter");
         }
+        String st = status == null || status.isBlank() ? null : status;
+        if (st != null && !TripRepository.STATUSES.contains(st)) {
+            throw new PasskeyException(400, "invalid_status");
+        }
+        String pattern = PlainText.searchPattern(q);
         int p = Page.page(page);
         int s = Page.size(size, props.pageSize());
-        var rows = repo.listForUser(user.id(), w, today(), s + 1, p * s);
+        var rows = repo.listForUser(user.id(), w, st, pattern, today(), s + 1, p * s);
         Map<String, Long> counts = repo.countsForUser(user.id());
-        return new TripList(Page.of(rows, p, s, "all".equals(w) ? counts.get("total") : null), counts,
-                props.maxPerUser());
+        Long total = !"all".equals(w) ? null
+                : pattern != null ? Long.valueOf(repo.countForUser(user.id(), st, pattern))
+                : counts.get(st == null ? "total" : st);
+        return new TripList(Page.of(rows, p, s, total), counts, props.maxPerUser());
     }
 
     public TripRepository.Trip get(SessionService.Current current, UUID id) {
