@@ -2634,7 +2634,7 @@ button.adm-row:active {
 
 @media (max-width: 767px) {
   /* Forms: one column, 44 px fields, 16 px text (no zoom on focus). */
-  .adm-form__row {
+  .adm .adm-form__row {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2648,7 +2648,8 @@ button.adm-row:active {
     height: var(--ui-tap);
   }
 
-  .adm-form__actions {
+  /* .adm prefix: these must win over the base rules, which come later in this file. */
+  .adm .adm-form__actions {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
@@ -2656,7 +2657,7 @@ button.adm-row:active {
 
   /* A disabled submit sits in its tooltip wrapper: the wrapper and the
      button both take the full cell, so the row stays equal-width. */
-  .adm-form__actions > span {
+  .adm .adm-form__actions > span {
     display: grid;
   }
 
@@ -2664,7 +2665,7 @@ button.adm-row:active {
     width: 100%;
   }
 
-  .adm-dialog .adm-actions {
+  .adm .adm-dialog .adm-actions {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
