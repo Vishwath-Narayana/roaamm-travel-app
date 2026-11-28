@@ -24,7 +24,7 @@
 
 - **M4: done on 2026-11-28**, in five pull requests: M4a (#26, the trips and
   guide application API), M4b (#27, the admin console), M4b.1 (#28) and
-  M4b.2 (#29, the design system and its checks), and M4c (the traveller and
+  M4b.2 (#29, the design system and its checks), and M4c (#33, the traveller and
   guide apps). Study notes: [docs/learn/46](learn/46-m4-accounts-trips-and-admin.md)
   and the per-PR notes it links.
   - **Delivered beyond the original line:** guide applications with admin
